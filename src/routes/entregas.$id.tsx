@@ -30,8 +30,12 @@ function FichaEntrega() {
           <h1 className="text-2xl font-bold">{e.nombre}</h1>
           <div className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
             {cli && <Link to="/clientes/$id" params={{ id: cli.id }} className="hover:underline">{cli.nombre}</Link>}
-            <span>›</span>
-            {pry && <Link to="/proyectos/$id" params={{ id: pry.id }} className="hover:underline">{pry.nombre}</Link>}
+            {pry && cli && pry.nombre !== cli.nombre && (
+              <>
+                <span>›</span>
+                <Link to="/proyectos/$id" params={{ id: pry.id }} className="hover:underline">{pry.nombre}</Link>
+              </>
+            )}
             <span>·</span>
             <Badge variant="secondary">{e.estado}</Badge>
             <span>· {format(parseISO(e.fecha_fin), "d MMM", { locale: es })}</span>
