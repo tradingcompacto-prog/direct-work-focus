@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Table,
@@ -17,9 +18,13 @@ import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { FiltrosBar, useFiltros } from "@/components/FiltrosBar";
 import { EstadoVacio } from "@/components/EstadoVacio";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AccionesMasivasBar } from "@/components/AccionesMasivasBar";
+import { toast } from "sonner";
 
 export function MisEntregasTabla() {
   const [f, setF, resetF] = useFiltros("sa.filtros.misEntregas");
+  const [sel, setSel] = React.useState<Set<string>>(new Set());
   const entregas = ENTREGAS_MOCK.filter((e) => {
     if (f.q && !e.nombre.toLowerCase().includes(f.q.toLowerCase())) return false;
     if (f.cliente && e.cliente_id !== f.cliente) return false;
@@ -27,6 +32,9 @@ export function MisEntregasTabla() {
     if (f.estado && e.estado !== f.estado) return false;
     return true;
   });
+  const toggle = (id: string) =>
+    setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const allSelected = entregas.length > 0 && entregas.every((e) => sel.has(e.id));
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 flex-wrap">
@@ -49,6 +57,15 @@ export function MisEntregasTabla() {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-8">
+              <Checkbox
+                checked={allSelected}
+                onCheckedChange={(v) => {
+                  if (v) setSel(new Set(entregas.map((e) => e.id)));
+                  else setSel(new Set());
+                }}
+              />
+            </TableHead>
             <TableHead>Entrega</TableHead>
             <TableHead>Cliente</TableHead>
             <TableHead>Estado</TableHead>
@@ -65,7 +82,13 @@ export function MisEntregasTabla() {
             const pct = ts.length ? Math.round((cerradas / ts.length) * 100) : 0;
             const responsables = Array.from(new Set(ts.map((t) => t.responsable_id)));
             return (
-              <TableRow key={e.id} className="cursor-pointer hover:bg-muted/40 transition-colors">
+              <TableRow
+                key={e.id}
+                className={`cursor-pointer hover:bg-muted/40 transition-colors ${sel.has(e.id) ? "bg-blue-50/50" : ""}`}
+              >
+                <TableCell onClick={(ev) => ev.stopPropagation()}>
+                  <Checkbox checked={sel.has(e.id)} onCheckedChange={() => toggle(e.id)} />
+                </TableCell>
                 <TableCell className="font-medium">
                   <Link
                     to="/entregas/$id"
@@ -105,6 +128,14 @@ export function MisEntregasTabla() {
           <EstadoVacio emoji="🔍" titulo="Sin entregas" hint="Prueba a quitar los filtros." />
         )}
       </div>
+      <AccionesMasivasBar
+        count={sel.size}
+        onClear={() => setSel(new Set())}
+        onCambiarEstado={() => { toast.success(`Estado cambiado en ${sel.size} entregas`); setSel(new Set()); }}
+        onReasignar={() => { toast.success(`${sel.size} entregas reasignadas`); setSel(new Set()); }}
+        onExportar={() => { toast.success(`${sel.size} entregas exportadas a CSV`); }}
+        onEliminar={() => { toast.success(`${sel.size} entregas eliminadas`); setSel(new Set()); }}
+      />
     </div>
   );
 }

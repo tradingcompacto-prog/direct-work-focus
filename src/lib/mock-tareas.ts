@@ -281,12 +281,16 @@ export const ACTIVIDAD_MOCK: Actividad[] = [
 
 // ─── Notificaciones ───────────────────────────────────────
 export const NOTIFICACIONES_MOCK: Notificacion[] = [
-  { id: "n-1", texto: "Sandra cerró Diseño piezas mayo", fecha: horasAtras(0.08), leida: false, ruta: "/tareas", icono: "check" },
-  { id: "n-2", texto: "Tu tarea Aprobación calendario está activa", fecha: horasAtras(1), leida: false, ruta: "/tareas", icono: "play" },
-  { id: "n-3", texto: "Rubén te asignó Banner promo Meta", fecha: horasAtras(2), leida: false, ruta: "/tareas", icono: "user-plus" },
-  { id: "n-4", texto: "Andrea comentó en Revisar plan de medios Q2", fecha: horasAtras(3), leida: true, ruta: "/tareas", icono: "message" },
-  { id: "n-5", texto: "Vence hoy: Banners display", fecha: horasAtras(5), leida: true, ruta: "/tareas", icono: "alert" },
-  { id: "n-6", texto: "Martín cerró Setup tag manager", fecha: horasAtras(8), leida: true, ruta: "/tareas", icono: "check" },
+  { id: "n-1", texto: "Vence en 2h: Banners display", fecha: horasAtras(0.5), leida: false, ruta: "/tareas", icono: "alert", categoria: "urgente" },
+  { id: "n-2", texto: "Vencida ayer: Texto SEO categoría", fecha: horasAtras(20), leida: false, ruta: "/tareas", icono: "alert", categoria: "urgente" },
+  { id: "n-3", texto: "Vence hoy: Adaptar key visual", fecha: horasAtras(2), leida: false, ruta: "/tareas", icono: "alert", categoria: "urgente" },
+  { id: "n-4", texto: "Rubén te asignó Banner promo Meta", fecha: horasAtras(2), leida: false, ruta: "/tareas", icono: "user-plus", categoria: "importante" },
+  { id: "n-5", texto: "Sandra cerró Diseño piezas mayo", fecha: horasAtras(0.08), leida: false, ruta: "/tareas", icono: "check", categoria: "importante" },
+  { id: "n-6", texto: "Tu tarea Aprobación calendario está activa", fecha: horasAtras(1), leida: false, ruta: "/tareas", icono: "play", categoria: "importante" },
+  { id: "n-7", texto: "Andrea comentó en Revisar plan de medios Q2", fecha: horasAtras(3), leida: true, ruta: "/tareas", icono: "message", categoria: "info" },
+  { id: "n-8", texto: "Pablo comentó en Auditoría SEO", fecha: horasAtras(6), leida: true, ruta: "/tareas", icono: "message", categoria: "info" },
+  { id: "n-9", texto: "Martín cerró Setup tag manager", fecha: horasAtras(8), leida: true, ruta: "/tareas", icono: "check", categoria: "importante" },
+  { id: "n-10", texto: "Edu te mencionó en Coordinar shooting", fecha: horasAtras(14), leida: true, ruta: "/tareas", icono: "message", categoria: "info" },
 ];
 
 // ─── Lookups ──────────────────────────────────────────────
@@ -299,3 +303,59 @@ export const nombreCliente = (id: UUID) => clientePorId(id)?.nombre ?? "—";
 export const nombreProyecto = (id: UUID) => proyectoPorId(id)?.nombre ?? "—";
 export const nombreEntrega = (id: UUID) => entregaPorId(id)?.nombre ?? "—";
 export const tituloTarea = (id: UUID) => tareaPorId(id)?.titulo ?? "—";
+
+// ─── Clientes extra (B11) — añadidos al final tras definirse todos los mocks ───
+const EXTRA_CLIENTES_DEF: Array<[string, string, string, string, "verde" | "amarillo" | "rojo"]> = [
+  ["cli-vega", "Vega Wines", "Bebidas", PAULA, "verde"],
+  ["cli-luma", "Luma Studio", "Diseño", NEREA, "amarillo"],
+  ["cli-orbi", "Orbi Travel", "Turismo", EDU, "verde"],
+  ["cli-norte", "Norte Energy", "Energía", DANI, "rojo"],
+  ["cli-paloma", "Paloma & Co", "Moda", PAULA, "verde"],
+  ["cli-kael", "Kael Health", "Salud", NEREA, "amarillo"],
+  ["cli-ferro", "Ferro Logística", "Logística", EDU, "verde"],
+  ["cli-mapuche", "Mapuche Café", "Hostelería", PAULA, "verde"],
+  ["cli-nestor", "Nestor Legal", "Legal", DANI, "amarillo"],
+  ["cli-tundra", "Tundra Outdoor", "Deporte", NEREA, "verde"],
+  ["cli-altea", "Altea Inmuebles", "Inmobiliario", EDU, "rojo"],
+  ["cli-bruma", "Bruma Cosmetics", "Cosmética", PAULA, "verde"],
+  ["cli-nordic", "Nordic Furniture", "Hogar", NEREA, "amarillo"],
+  ["cli-pelayo", "Pelayo Seguros", "Seguros", DANI, "verde"],
+  ["cli-iris", "Iris Optics", "Óptica", EDU, "verde"],
+  ["cli-amaro", "Amaro Restaurantes", "Hostelería", PAULA, "amarillo"],
+  ["cli-bow", "Bow Music", "Música", NEREA, "verde"],
+  ["cli-lima", "Lima Foods", "Alimentación", EDU, "verde"],
+  ["cli-adra", "Adra Pharma", "Farma", DANI, "amarillo"],
+  ["cli-vento", "Vento Sport", "Deporte", PAULA, "verde"],
+  ["cli-juno", "Juno Beauty", "Cosmética", NEREA, "verde"],
+];
+for (const [id, nombre, sector, pm, salud] of EXTRA_CLIENTES_DEF) {
+  CLIENTES_MOCK.push({
+    id, nombre, sector, pm_id: pm,
+    web: `${nombre.toLowerCase().replace(/[^a-z]/g, "")}.com`,
+    slack: `#${id}`, salud, activo: true,
+  });
+  PROYECTOS_MOCK.push({
+    id: id.replace("cli-", "pry-"),
+    nombre, cliente_id: id, pm_id: pm,
+    estado: "activo", fecha_inicio: dias(-60),
+  });
+}
+const PLANTILLAS_ENTREGA = ["Calendario mayo 2026", "Branding inicial", "Web nueva", "Campaña verano"];
+let _entContador = 100;
+for (const [cliId, , , pm] of EXTRA_CLIENTES_DEF) {
+  const seed = cliId.charCodeAt(4) % 3;
+  const n = 1 + seed;
+  for (let i = 0; i < n; i++) {
+    _entContador += 1;
+    ENTREGAS_MOCK.push({
+      id: `ent-${_entContador}`,
+      nombre: PLANTILLAS_ENTREGA[(i + seed) % PLANTILLAS_ENTREGA.length],
+      cliente_id: cliId,
+      proyecto_id: cliId.replace("cli-", "pry-"),
+      pm_id: pm,
+      estado: "en_curso",
+      fecha_inicio: dias(-5 - (i % 5)),
+      fecha_fin: dias(5 + ((i * 3) % 12)),
+    });
+  }
+}

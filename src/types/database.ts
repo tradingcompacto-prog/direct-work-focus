@@ -103,4 +103,5 @@ export interface Notificacion {
   leida: boolean;
   ruta?: string;
   icono?: "check" | "play" | "user-plus" | "message" | "alert";
+  categoria?: "urgente" | "importante" | "info";
 }

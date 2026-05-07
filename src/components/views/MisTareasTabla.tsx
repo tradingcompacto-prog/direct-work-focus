@@ -18,6 +18,9 @@ import { es } from "date-fns/locale";
 import { Download } from "lucide-react";
 import { EstadoVacio } from "@/components/EstadoVacio";
 import { FiltrosBar, useFiltros } from "@/components/FiltrosBar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AccionesMasivasBar } from "@/components/AccionesMasivasBar";
+import { toast } from "sonner";
 
 const estadoBadge: Record<string, string> = {
   activa: "bg-blue-100 text-blue-800",
@@ -30,6 +33,7 @@ export function MisTareasTabla() {
   const { data: tareas = [] } = useMisTareas();
   const { abrir } = useTareaModal();
   const [f, setF, resetF] = useFiltros("sa.filtros.misTareas");
+  const [sel, setSel] = React.useState<Set<string>>(new Set());
 
   const filtered = tareas.filter((t) => {
     if (f.q && !t.titulo.toLowerCase().includes(f.q.toLowerCase())) return false;
@@ -38,6 +42,10 @@ export function MisTareasTabla() {
     if (f.responsable && t.responsable_id !== f.responsable) return false;
     return true;
   });
+
+  const toggle = (id: string) =>
+    setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const allSelected = filtered.length > 0 && filtered.every((t) => sel.has(t.id));
 
   return (
     <div className="space-y-3">
@@ -66,6 +74,15 @@ export function MisTareasTabla() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-8">
+                <Checkbox
+                  checked={allSelected}
+                  onCheckedChange={(v) => {
+                    if (v) setSel(new Set(filtered.map((t) => t.id)));
+                    else setSel(new Set());
+                  }}
+                />
+              </TableHead>
               <TableHead>Tarea</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Cliente</TableHead>
@@ -80,9 +97,15 @@ export function MisTareasTabla() {
             {filtered.map((t) => (
               <TableRow
                 key={t.id}
-                onClick={() => abrir(t.id)}
-                className="cursor-pointer hover:bg-muted/40 transition-colors"
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).closest("[data-noopen]")) return;
+                  abrir(t.id);
+                }}
+                className={`cursor-pointer hover:bg-muted/40 transition-colors ${sel.has(t.id) ? "bg-blue-50/50" : ""}`}
               >
+                <TableCell data-noopen onClick={(e) => e.stopPropagation()}>
+                  <Checkbox checked={sel.has(t.id)} onCheckedChange={() => toggle(t.id)} />
+                </TableCell>
                 <TableCell className="font-medium">{t.titulo}</TableCell>
                 <TableCell>
                   <Badge variant="secondary" className={estadoBadge[t.estado]}>
@@ -117,6 +140,14 @@ export function MisTareasTabla() {
           />
         )}
       </div>
+      <AccionesMasivasBar
+        count={sel.size}
+        onClear={() => setSel(new Set())}
+        onCambiarEstado={() => { toast.success(`Estado cambiado en ${sel.size} tareas`); setSel(new Set()); }}
+        onReasignar={() => { toast.success(`${sel.size} tareas reasignadas`); setSel(new Set()); }}
+        onExportar={() => { toast.success(`${sel.size} tareas exportadas a CSV`); }}
+        onEliminar={() => { toast.success(`${sel.size} tareas eliminadas`); setSel(new Set()); }}
+      />
     </div>
   );
 }

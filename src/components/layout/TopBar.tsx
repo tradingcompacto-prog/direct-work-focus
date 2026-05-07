@@ -11,13 +11,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRolVista, setRolVista, rolesDisponibles, ROL_LABEL } from "@/lib/rol-vista";
-import { Eye } from "lucide-react";
+import { Eye, Rows3 } from "lucide-react";
+import { useDensidad, type Densidad } from "@/lib/preferencias";
 import { useNotificacionesStore, marcarLeida, marcarTodasLeidas } from "@/lib/notificaciones-store";
 import { usuarioActual } from "@/lib/equipo";
 import { tiempoRelativo } from "@/lib/fechas";
 import { useBusquedaGlobal } from "@/lib/busqueda-context";
 import { cn } from "@/lib/utils";
-import { isToday, parseISO } from "date-fns";
 import type { Notificacion } from "@/types/database";
 
 interface Crumb {
@@ -49,11 +49,19 @@ export function TopBar() {
   const noLeidas = notifs.filter((n) => !n.leida).length;
   const busqueda = useBusquedaGlobal();
   const navigate = useNavigate();
+  const [filtro, setFiltro] = React.useState<"todas" | "urgente" | "importante" | "info">("todas");
 
-  const hoy = notifs.filter((n) => {
-    try { return isToday(parseISO(n.fecha)); } catch { return false; }
-  });
-  const anteriores = notifs.filter((n) => !hoy.includes(n));
+  const filtradas = filtro === "todas" ? notifs : notifs.filter((n) => (n.categoria ?? "info") === filtro);
+  const grupos = {
+    urgente: filtradas.filter((n) => n.categoria === "urgente"),
+    importante: filtradas.filter((n) => n.categoria === "importante"),
+    info: filtradas.filter((n) => (n.categoria ?? "info") === "info"),
+  };
+  const counts = {
+    urgente: notifs.filter((n) => n.categoria === "urgente" && !n.leida).length,
+    importante: notifs.filter((n) => n.categoria === "importante" && !n.leida).length,
+    info: notifs.filter((n) => (n.categoria ?? "info") === "info" && !n.leida).length,
+  };
 
   const segmentos = path.split("/").filter(Boolean);
   const crumbs: Crumb[] = segmentos.map((seg, i) => {
@@ -123,31 +131,54 @@ export function TopBar() {
               Marcar todas leídas
             </button>
           </DropdownMenuLabel>
+          <div className="flex gap-1 px-3 pb-2">
+            {([
+              ["todas", "Todas", null],
+              ["urgente", "🔴 Urgente", counts.urgente],
+              ["importante", "🟡 Importante", counts.importante],
+              ["info", "⚪ Info", counts.info],
+            ] as const).map(([k, label, count]) => (
+              <button
+                key={k}
+                onClick={(e) => { e.preventDefault(); setFiltro(k as typeof filtro); }}
+                className={cn(
+                  "text-[11px] px-2 py-1 rounded border transition",
+                  filtro === k
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-background text-muted-foreground border-border hover:bg-muted/60",
+                )}
+              >
+                {label}
+                {count != null && count > 0 && <span className="ml-1 font-semibold">{count}</span>}
+              </button>
+            ))}
+          </div>
           <DropdownMenuSeparator className="m-0" />
           <div className="max-h-[420px] overflow-y-auto">
-            {notifs.length === 0 && (
+            {filtradas.length === 0 && (
               <div className="text-center py-10 px-4 text-muted-foreground">
                 <BellOff className="h-7 w-7 mx-auto mb-2 opacity-40" />
                 <div className="text-sm">Todo al día 🎉</div>
               </div>
             )}
-            {hoy.length > 0 && (
-              <Grupo titulo="Hoy">
-                {hoy.map((n) => (
-                  <Item key={n.id} n={n} onClick={() => {
-                    marcarLeida(n.id);
-                    if (n.ruta) navigate({ to: n.ruta as never });
-                  }} />
+            {grupos.urgente.length > 0 && (
+              <Grupo titulo="🔴 Urgente">
+                {grupos.urgente.map((n) => (
+                  <Item key={n.id} n={n} onClick={() => { marcarLeida(n.id); if (n.ruta) navigate({ to: n.ruta as never }); }} />
                 ))}
               </Grupo>
             )}
-            {anteriores.length > 0 && (
-              <Grupo titulo="Anteriores">
-                {anteriores.map((n) => (
-                  <Item key={n.id} n={n} onClick={() => {
-                    marcarLeida(n.id);
-                    if (n.ruta) navigate({ to: n.ruta as never });
-                  }} />
+            {grupos.importante.length > 0 && (
+              <Grupo titulo="🟡 Importante">
+                {grupos.importante.map((n) => (
+                  <Item key={n.id} n={n} onClick={() => { marcarLeida(n.id); if (n.ruta) navigate({ to: n.ruta as never }); }} />
+                ))}
+              </Grupo>
+            )}
+            {grupos.info.length > 0 && (
+              <Grupo titulo="⚪ Informativo">
+                {grupos.info.map((n) => (
+                  <Item key={n.id} n={n} onClick={() => { marcarLeida(n.id); if (n.ruta) navigate({ to: n.ruta as never }); }} />
                 ))}
               </Grupo>
             )}
@@ -175,6 +206,7 @@ export function TopBar() {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <VerComo />
+          <DensidadMenu />
           <DropdownMenuItem disabled>Configuración</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem disabled>Salir</DropdownMenuItem>
@@ -201,6 +233,34 @@ function VerComo() {
         >
           <span>{ROL_LABEL[r]}</span>
           {rol === r && <Check className="h-3.5 w-3.5 text-primary" />}
+        </DropdownMenuItem>
+      ))}
+    </>
+  );
+}
+
+const DENSIDAD_LABEL: Record<Densidad, string> = {
+  compacto: "Compacto",
+  normal: "Normal",
+  comodo: "Cómodo",
+};
+
+function DensidadMenu() {
+  const [d, setD] = useDensidad();
+  return (
+    <>
+      <DropdownMenuSeparator />
+      <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5 pt-1">
+        <Rows3 className="h-3 w-3" /> Densidad
+      </DropdownMenuLabel>
+      {(Object.keys(DENSIDAD_LABEL) as Densidad[]).map((k) => (
+        <DropdownMenuItem
+          key={k}
+          onSelect={(e) => { e.preventDefault(); setD(k); }}
+          className="flex items-center justify-between"
+        >
+          <span>{DENSIDAD_LABEL[k]}</span>
+          {d === k && <Check className="h-3.5 w-3.5 text-primary" />}
         </DropdownMenuItem>
       ))}
     </>

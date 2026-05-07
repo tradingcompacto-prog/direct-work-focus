@@ -204,3 +204,19 @@
     animation: pulseSoft 2.4s ease-in-out infinite;
   }
 }
+
+/* ─── Densidad ─────────────────────────────────────────── */
+:root[data-densidad="compacto"] table th,
+:root[data-densidad="compacto"] table td {
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
+}
+:root[data-densidad="compacto"] .card-soft { padding: 0.5rem; }
+:root[data-densidad="compacto"] .text-sm { font-size: 0.78rem; }
+
+:root[data-densidad="comodo"] table th,
+:root[data-densidad="comodo"] table td {
+  padding-top: 0.85rem !important;
+  padding-bottom: 0.85rem !important;
+}
+:root[data-densidad="comodo"] .card-soft { padding: 1.25rem; }
