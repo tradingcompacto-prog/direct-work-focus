@@ -10,44 +10,51 @@ import {
 } from "./mock-tareas";
 import { EQUIPO, USUARIO_ACTUAL_ID } from "./equipo";
 
-const fakeFetch = <T>(data: T, ms = 80): Promise<T> =>
-  new Promise((r) => setTimeout(() => r(data), ms));
+// Mocks expuestos como queries síncronas (con initialData) para que el
+// primer render ya tenga los datos y no aparezca el estado vacío.
+const sync = <T>(data: T) => Promise.resolve(data);
 
 export const useTareas = () =>
-  useQuery({ queryKey: ["tareas"], queryFn: () => fakeFetch(TAREAS_MOCK) });
+  useQuery({ queryKey: ["tareas"], queryFn: () => sync(TAREAS_MOCK), initialData: TAREAS_MOCK });
 export const useEntregas = () =>
-  useQuery({ queryKey: ["entregas"], queryFn: () => fakeFetch(ENTREGAS_MOCK) });
+  useQuery({ queryKey: ["entregas"], queryFn: () => sync(ENTREGAS_MOCK), initialData: ENTREGAS_MOCK });
 export const useProyectos = () =>
-  useQuery({ queryKey: ["proyectos"], queryFn: () => fakeFetch(PROYECTOS_MOCK) });
+  useQuery({ queryKey: ["proyectos"], queryFn: () => sync(PROYECTOS_MOCK), initialData: PROYECTOS_MOCK });
 export const useClientes = () =>
-  useQuery({ queryKey: ["clientes"], queryFn: () => fakeFetch(CLIENTES_MOCK) });
-export const useEquipo = () =>
-  useQuery({ queryKey: ["equipo"], queryFn: () => fakeFetch(EQUIPO.filter((m) => m.activo)) });
+  useQuery({ queryKey: ["clientes"], queryFn: () => sync(CLIENTES_MOCK), initialData: CLIENTES_MOCK });
+export const useEquipo = () => {
+  const data = EQUIPO.filter((m) => m.activo);
+  return useQuery({ queryKey: ["equipo"], queryFn: () => sync(data), initialData: data });
+};
 export const useComentarios = (tareaId?: string) =>
   useQuery({
     queryKey: ["comentarios", tareaId],
-    queryFn: () => fakeFetch(COMENTARIOS_MOCK.filter((c) => c.tarea_id === tareaId)),
+    queryFn: () => sync(COMENTARIOS_MOCK.filter((c) => c.tarea_id === tareaId)),
     enabled: !!tareaId,
+    initialData: tareaId ? COMENTARIOS_MOCK.filter((c) => c.tarea_id === tareaId) : undefined,
   });
 export const useActividad = () =>
-  useQuery({ queryKey: ["actividad"], queryFn: () => fakeFetch(ACTIVIDAD_MOCK) });
+  useQuery({ queryKey: ["actividad"], queryFn: () => sync(ACTIVIDAD_MOCK), initialData: ACTIVIDAD_MOCK });
 export const useNotificaciones = () =>
-  useQuery({ queryKey: ["notificaciones"], queryFn: () => fakeFetch(NOTIFICACIONES_MOCK) });
+  useQuery({ queryKey: ["notificaciones"], queryFn: () => sync(NOTIFICACIONES_MOCK), initialData: NOTIFICACIONES_MOCK });
 
 // Vistas derivadas para "Mis tareas"
-export const useMisTareas = () =>
-  useQuery({
+export const useMisTareas = () => {
+  const data = TAREAS_MOCK.filter(
+    (t) => t.responsable_id === USUARIO_ACTUAL_ID && t.estado !== "completada",
+  );
+  return useQuery({
     queryKey: ["mis-tareas", USUARIO_ACTUAL_ID],
-    queryFn: () =>
-      fakeFetch(
-        TAREAS_MOCK.filter(
-          (t) => t.responsable_id === USUARIO_ACTUAL_ID && t.estado !== "completada",
-        ),
-      ),
+    queryFn: () => sync(data),
+    initialData: data,
   });
+};
 
-export const useMisEntregas = () =>
-  useQuery({
+export const useMisEntregas = () => {
+  const data = ENTREGAS_MOCK.filter((e) => e.pm_id === USUARIO_ACTUAL_ID);
+  return useQuery({
     queryKey: ["mis-entregas", USUARIO_ACTUAL_ID],
-    queryFn: () => fakeFetch(ENTREGAS_MOCK.filter((e) => e.pm_id === USUARIO_ACTUAL_ID)),
+    queryFn: () => sync(data),
+    initialData: data,
   });
+};

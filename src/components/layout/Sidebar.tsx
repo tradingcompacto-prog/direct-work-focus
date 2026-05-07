@@ -19,6 +19,7 @@ import {
   CalendarRange as CalRange2,
   GalleryHorizontalEnd,
   BarChart3,
+  PenSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tienePermiso, USUARIO_ACTUAL_ID } from "@/lib/equipo";
@@ -82,6 +83,15 @@ const SECCIONES: SectionDef[] = [
     items: [
       { to: "/clientes/tarjetas", label: "Tarjetas", icon: Building2, atajo: "G L" },
       { to: "/clientes/tabla", label: "Tabla", icon: Table2 },
+    ],
+  },
+  {
+    label: "Contenido",
+    icon: PenSquare,
+    items: [
+      { to: "/contenido/calendario", label: "Calendario editorial", icon: CalRange2 },
+      { to: "/contenido/pipeline", label: "Pipeline producción", icon: GalleryHorizontalEnd },
+      { to: "/contenido/performance", label: "Performance", icon: BarChart3 },
     ],
   },
   {
