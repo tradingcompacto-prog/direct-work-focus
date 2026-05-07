@@ -10,6 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useRolVista, setRolVista, rolesDisponibles, ROL_LABEL, type RolVista } from "@/lib/rol-vista";
+import { Eye, Check } from "lucide-react";
 import { useNotificacionesStore, marcarLeida, marcarTodasLeidas } from "@/lib/notificaciones-store";
 import { usuarioActual } from "@/lib/equipo";
 import { tiempoRelativo } from "@/lib/fechas";
@@ -171,12 +173,37 @@ export function TopBar() {
               Mi perfil
             </Link>
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <VerComo />
           <DropdownMenuItem disabled>Configuración</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem disabled>Salir</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>
+  );
+}
+
+function VerComo() {
+  const [rol] = useRolVista();
+  const roles = rolesDisponibles();
+  if (roles.length <= 1) return null;
+  return (
+    <>
+      <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5 pt-1">
+        <Eye className="h-3 w-3" /> Ver como
+      </DropdownMenuLabel>
+      {roles.map((r) => (
+        <DropdownMenuItem
+          key={r}
+          onSelect={(e) => { e.preventDefault(); setRolVista(r); }}
+          className="flex items-center justify-between"
+        >
+          <span>{ROL_LABEL[r]}</span>
+          {rol === r && <Check className="h-3.5 w-3.5 text-primary" />}
+        </DropdownMenuItem>
+      ))}
+    </>
   );
 }
 
