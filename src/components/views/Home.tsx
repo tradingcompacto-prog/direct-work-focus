@@ -451,9 +451,21 @@ function HomeEjecutor() {
   );
 }
 
-function Kpi({ titulo, valor, tono }: { titulo: string; valor: number; tono?: "rojo" | "amarillo" | "verde" }) {
-  return (
-    <div className="card-soft p-4">
+function Kpi({
+  titulo,
+  valor,
+  tono,
+  to,
+  search,
+}: {
+  titulo: string;
+  valor: number;
+  tono?: "rojo" | "amarillo" | "verde";
+  to?: string;
+  search?: Record<string, string>;
+}) {
+  const inner = (
+    <>
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{titulo}</div>
       <div
         className={cn(
@@ -465,6 +477,18 @@ function Kpi({ titulo, valor, tono }: { titulo: string; valor: number; tono?: "r
       >
         {valor}
       </div>
-    </div>
+    </>
   );
+  if (to) {
+    return (
+      <Link
+        to={to as never}
+        search={search as never}
+        className="card-soft p-4 hover:shadow-md hover:border-foreground/20 transition cursor-pointer block"
+      >
+        {inner}
+      </Link>
+    );
+  }
+  return <div className="card-soft p-4">{inner}</div>;
 }
