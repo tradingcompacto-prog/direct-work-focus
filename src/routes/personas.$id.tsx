@@ -5,6 +5,7 @@ import { useTareaModal } from "@/lib/tarea-modal-context";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { urgenciaTarea } from "@/lib/fechas";
+import { precisionPersona, promediosPorTipo, tipoLabel } from "@/lib/estimacion";
 
 export const Route = createFileRoute("/personas/$id")({
   component: FichaPersona,
@@ -17,6 +18,9 @@ function FichaPersona() {
   if (!m) return <div className="p-6">Persona no encontrada</div>;
   const activas = TAREAS_MOCK.filter((t) => t.responsable_id === m.id && t.estado !== "completada");
   const vencidas = activas.filter((t) => urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) === "rojo");
+  const precision = precisionPersona(m.id, TAREAS_MOCK);
+  const promedios = promediosPorTipo(m.id, TAREAS_MOCK);
+  const tienePromedios = Object.keys(promedios).length > 0;
 
   return (
     <div className="p-6 space-y-6">
@@ -38,6 +42,35 @@ function FichaPersona() {
           <div className="text-xs text-muted-foreground">activas · {vencidas.length} vencidas</div>
         </div>
       </header>
+
+      {(precision != null || tienePromedios) && (
+        <section className="card-soft p-4 grid gap-4 md:grid-cols-2">
+          {precision != null && (
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                Precisión estimaciones
+              </div>
+              <div className="text-3xl font-semibold tabular-nums">
+                {Math.round(precision * 100)}%
+              </div>
+            </div>
+          )}
+          {tienePromedios && (
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                Promedios por tipo
+              </div>
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {Object.entries(promedios).map(([t, h]) => (
+                  <Badge key={t} variant="secondary" className="font-normal">
+                    {tipoLabel[t as keyof typeof tipoLabel] ?? t}: {h}h
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">
