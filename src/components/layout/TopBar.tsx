@@ -10,8 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useRolVista, setRolVista, rolesDisponibles, ROL_LABEL, type RolVista } from "@/lib/rol-vista";
-import { Eye, Check } from "lucide-react";
+import { useRolVista, setRolVista, rolesDisponibles, ROL_LABEL } from "@/lib/rol-vista";
+import { Eye } from "lucide-react";
 import { useNotificacionesStore, marcarLeida, marcarTodasLeidas } from "@/lib/notificaciones-store";
 import { usuarioActual } from "@/lib/equipo";
 import { tiempoRelativo } from "@/lib/fechas";
