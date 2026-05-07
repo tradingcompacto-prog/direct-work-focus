@@ -239,6 +239,34 @@ function VerComo() {
   );
 }
 
+const DENSIDAD_LABEL: Record<Densidad, string> = {
+  compacto: "Compacto",
+  normal: "Normal",
+  comodo: "Cómodo",
+};
+
+function DensidadMenu() {
+  const [d, setD] = useDensidad();
+  return (
+    <>
+      <DropdownMenuSeparator />
+      <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5 pt-1">
+        <Rows3 className="h-3 w-3" /> Densidad
+      </DropdownMenuLabel>
+      {(Object.keys(DENSIDAD_LABEL) as Densidad[]).map((k) => (
+        <DropdownMenuItem
+          key={k}
+          onSelect={(e) => { e.preventDefault(); setD(k); }}
+          className="flex items-center justify-between"
+        >
+          <span>{DENSIDAD_LABEL[k]}</span>
+          {d === k && <Check className="h-3.5 w-3.5 text-primary" />}
+        </DropdownMenuItem>
+      ))}
+    </>
+  );
+}
+
 function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <div>
