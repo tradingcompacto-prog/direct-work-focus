@@ -15,10 +15,37 @@ import { AvatarStack } from "@/components/AvatarStack";
 import { colorCliente } from "@/lib/cliente-colors";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { FiltrosBar, useFiltros } from "@/components/FiltrosBar";
+import { EstadoVacio } from "@/components/EstadoVacio";
 
 export function MisEntregasTabla() {
+  const [f, setF, resetF] = useFiltros("sa.filtros.misEntregas");
+  const entregas = ENTREGAS_MOCK.filter((e) => {
+    if (f.q && !e.nombre.toLowerCase().includes(f.q.toLowerCase())) return false;
+    if (f.cliente && e.cliente_id !== f.cliente) return false;
+    if (f.responsable && e.pm_id !== f.responsable) return false;
+    if (f.estado && e.estado !== f.estado) return false;
+    return true;
+  });
   return (
-    <div className="card-soft overflow-hidden">
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        <FiltrosBar
+          state={f}
+          onChange={setF}
+          onReset={resetF}
+          placeholder="Buscar entregas…"
+          estados={[
+            { value: "en_curso", label: "En curso" },
+            { value: "cerrada", label: "Cerrada" },
+          ]}
+        />
+        <div className="flex-1" />
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {entregas.length} de {ENTREGAS_MOCK.length}
+        </span>
+      </div>
+      <div className="card-soft overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
@@ -32,7 +59,7 @@ export function MisEntregasTabla() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {ENTREGAS_MOCK.map((e) => {
+          {entregas.map((e) => {
             const ts = TAREAS_MOCK.filter((t) => t.entrega_id === e.id);
             const cerradas = ts.filter((t) => t.estado === "completada").length;
             const pct = ts.length ? Math.round((cerradas / ts.length) * 100) : 0;
@@ -74,6 +101,10 @@ export function MisEntregasTabla() {
           })}
         </TableBody>
       </Table>
+        {entregas.length === 0 && (
+          <EstadoVacio emoji="🔍" titulo="Sin entregas" hint="Prueba a quitar los filtros." />
+        )}
+      </div>
     </div>
   );
 }

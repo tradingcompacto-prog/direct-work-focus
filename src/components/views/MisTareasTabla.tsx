@@ -7,7 +7,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useMisTareas } from "@/lib/queries";
@@ -18,6 +17,7 @@ import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { Download } from "lucide-react";
 import { EstadoVacio } from "@/components/EstadoVacio";
+import { FiltrosBar, useFiltros } from "@/components/FiltrosBar";
 
 const estadoBadge: Record<string, string> = {
   activa: "bg-blue-100 text-blue-800",
@@ -29,36 +29,35 @@ const estadoBadge: Record<string, string> = {
 export function MisTareasTabla() {
   const { data: tareas = [] } = useMisTareas();
   const { abrir } = useTareaModal();
-  const [q, setQ] = React.useState("");
-  const [estado, setEstado] = React.useState<string>("");
+  const [f, setF, resetF] = useFiltros("sa.filtros.misTareas");
 
   const filtered = tareas.filter((t) => {
-    if (q && !t.titulo.toLowerCase().includes(q.toLowerCase())) return false;
-    if (estado && t.estado !== estado) return false;
+    if (f.q && !t.titulo.toLowerCase().includes(f.q.toLowerCase())) return false;
+    if (f.estado && t.estado !== f.estado) return false;
+    if (f.cliente && t.cliente_id !== f.cliente) return false;
+    if (f.responsable && t.responsable_id !== f.responsable) return false;
     return true;
   });
 
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 flex-wrap">
-        <Input
-          placeholder="Buscar tareas..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="max-w-xs"
+        <FiltrosBar
+          state={f}
+          onChange={setF}
+          onReset={resetF}
+          placeholder="Buscar tareas…"
+          estados={[
+            { value: "activa", label: "Activa" },
+            { value: "haciendola", label: "Haciéndola" },
+            { value: "esperando", label: "Esperando" },
+            { value: "completada", label: "Completada" },
+          ]}
         />
-        <select
-          value={estado}
-          onChange={(e) => setEstado(e.target.value)}
-          className="text-sm border border-border rounded-md px-2 py-1.5 bg-background"
-        >
-          <option value="">Todos los estados</option>
-          <option value="activa">Activa</option>
-          <option value="haciendola">Haciéndola</option>
-          <option value="esperando">Esperando</option>
-          <option value="completada">Completada</option>
-        </select>
         <div className="flex-1" />
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {filtered.length} de {tareas.length}
+        </span>
         <Button variant="outline" size="sm" className="gap-1.5">
           <Download className="h-3.5 w-3.5" /> CSV
         </Button>
@@ -114,7 +113,7 @@ export function MisTareasTabla() {
           <EstadoVacio
             emoji="🔍"
             titulo="Nada por aquí"
-            hint={q || estado ? "Prueba a quitar los filtros." : "No tienes tareas activas."}
+            hint={f.q || f.estado || f.cliente || f.responsable ? "Prueba a quitar los filtros." : "No tienes tareas activas."}
           />
         )}
       </div>
