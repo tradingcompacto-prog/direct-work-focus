@@ -268,15 +268,22 @@ function HomeDirector() {
         </h3>
         <ul className="space-y-1.5">
           {carga.map((c) => (
-            <li key={c.id} className="flex items-center gap-3 text-sm">
-              <span className="w-32 truncate">{c.nombre}</span>
-              <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-blue-400 to-blue-600"
-                  style={{ width: `${(c.n / max) * 100}%` }}
-                />
-              </div>
-              <span className="w-8 text-right tabular-nums text-muted-foreground">{c.n}</span>
+            <li key={c.id}>
+              <Link
+                to="/personas/$id"
+                params={{ id: c.id }}
+                className="flex items-center gap-3 text-sm rounded-md px-2 py-1 -mx-2 hover:bg-muted/50 transition"
+                title="Ver tareas"
+              >
+                <span className="w-32 truncate">{c.nombre}</span>
+                <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-400 to-blue-600"
+                    style={{ width: `${(c.n / max) * 100}%` }}
+                  />
+                </div>
+                <span className="w-8 text-right tabular-nums text-muted-foreground">{c.n}</span>
+              </Link>
             </li>
           ))}
         </ul>
