@@ -24,6 +24,7 @@ import { aplicarOverrides, moverEntrega, useEntregasOverridesVersion } from "@/l
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Package } from "lucide-react";
+import { FiltrosBar, useFiltros } from "@/components/FiltrosBar";
 
 const calcular = (entrega: Entrega) => {
   const ts = TAREAS_MOCK.filter((t) => t.entrega_id === entrega.id);
@@ -45,7 +46,14 @@ export function MisEntregasKanban() {
   const inicioMes = startOfMonth(hoy);
   const { data = [] } = useMisEntregas();
   const fuente = data.length ? data : ENTREGAS_MOCK;
-  const todas = aplicarOverrides(fuente);
+  const todasSinFiltrar = aplicarOverrides(fuente);
+  const [f, setF, resetF] = useFiltros("sa.filtros.entregasKanban");
+  const todas = todasSinFiltrar.filter((e) => {
+    if (f.q && !e.nombre.toLowerCase().includes(f.q.toLowerCase())) return false;
+    if (f.cliente && e.cliente_id !== f.cliente) return false;
+    if (f.responsable && e.pm_id !== f.responsable) return false;
+    return true;
+  });
 
   const enCurso = todas.filter((e) => e.estado === "en_curso");
   const cerradas = todas.filter((e) => e.estado === "cerrada" && e.fecha_cierre);
@@ -93,10 +101,18 @@ export function MisEntregasKanban() {
 
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+      <div className="space-y-4">
+        <FiltrosBar
+          state={f}
+          onChange={setF}
+          onReset={resetF}
+          placeholder="Buscar entregas…"
+        />
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {cols.map((col) => (
           <Columna key={col.id} col={col} />
         ))}
+      </div>
       </div>
       <DragOverlay>{activeEntrega && <TarjetaEntrega entrega={activeEntrega} overlay />}</DragOverlay>
     </DndContext>
