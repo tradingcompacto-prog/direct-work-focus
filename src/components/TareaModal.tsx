@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { X, Maximize2, Minimize2, Play, Check, Paperclip, Clock } from "lucide-react";
+import { X, Maximize2, Minimize2, Play, Pause, Check, Paperclip, Clock } from "lucide-react";
 import { useTareaModal } from "@/lib/tarea-modal-context";
 import {
   tareaPorId,
@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CerrarTareaDialog } from "@/components/CerrarTareaDialog";
 import { estimarTarea } from "@/lib/estimacion";
+import { useTimer, empezar, pausar, formatearMs } from "@/lib/timer-store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
@@ -41,6 +42,7 @@ export function TareaModal() {
   const { tareaId, expandido, cerrar, toggleExpandido } = useTareaModal();
   const tarea = tareaId ? tareaPorId(tareaId) : undefined;
   const [cerrandoOpen, setCerrandoOpen] = React.useState(false);
+  const timer = useTimer(tareaId);
 
   React.useEffect(() => {
     if (!tareaId) return;
@@ -64,6 +66,8 @@ export function TareaModal() {
   const desbloquea = tarea.desbloquea_id ? tareaPorId(tarea.desbloquea_id) : null;
   const estim = estimarTarea(tarea, TAREAS_MOCK);
   const horasEstim = tarea.horas_estimadas ?? estim?.horas ?? null;
+  const horasTimer = timer.ms > 0 ? Math.round((timer.ms / 3600000) * 10) / 10 : null;
+  const sugeridaCerrar = horasTimer ?? horasEstim;
 
   return (
     <div className="fixed inset-0 z-50">
@@ -149,13 +153,37 @@ export function TareaModal() {
 
             {/* Acciones */}
             <div className="flex gap-2">
-              <Button
-                size="sm"
-                className="gap-1.5"
-                onClick={() => toast.success(`«${tarea.titulo}» en marcha 🚀`)}
-              >
-                <Play className="h-3.5 w-3.5" /> Empezar
-              </Button>
+              {timer.corriendo ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="gap-1.5"
+                  onClick={() => {
+                    pausar(tarea.id);
+                    toast(`«${tarea.titulo}» en pausa`, {
+                      description: `Llevas ${formatearMs(timer.ms)} acumulados`,
+                    });
+                  }}
+                >
+                  <Pause className="h-3.5 w-3.5" /> Pausar
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => {
+                    empezar(tarea.id);
+                    toast.success(
+                      timer.ms > 0
+                        ? `«${tarea.titulo}» reanudada`
+                        : `«${tarea.titulo}» en marcha 🚀`,
+                    );
+                  }}
+                >
+                  <Play className="h-3.5 w-3.5" />{" "}
+                  {timer.ms > 0 ? "Reanudar" : "Empezar"}
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"
@@ -164,6 +192,20 @@ export function TareaModal() {
               >
                 <Check className="h-3.5 w-3.5" /> Marcar hecha
               </Button>
+              {timer.ms > 0 && (
+                <div
+                  className={cn(
+                    "ml-auto inline-flex items-center gap-1.5 px-2.5 rounded-md text-xs font-medium tabular-nums",
+                    timer.corriendo
+                      ? "bg-emerald-100 text-emerald-800"
+                      : "bg-zinc-100 text-zinc-700",
+                  )}
+                  title={timer.corriendo ? "Cronómetro corriendo" : "En pausa"}
+                >
+                  <Clock className="h-3.5 w-3.5" />
+                  {formatearMs(timer.ms)}
+                </div>
+              )}
             </div>
 
             <Section title="Asignación">
@@ -292,7 +334,7 @@ export function TareaModal() {
         open={cerrandoOpen}
         onOpenChange={setCerrandoOpen}
         tarea={tarea}
-        sugerida={horasEstim}
+        sugerida={sugeridaCerrar}
       />
     </div>
   );
