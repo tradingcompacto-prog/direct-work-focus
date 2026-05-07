@@ -3,6 +3,8 @@ import { useTareas, useEquipo } from "@/lib/queries";
 import { useTareaModal } from "@/lib/tarea-modal-context";
 import { urgenciaTarea } from "@/lib/fechas";
 import { PersonaChip } from "@/components/PersonaChip";
+import { estimarTarea } from "@/lib/estimacion";
+import { TAREAS_MOCK } from "@/lib/mock-tareas";
 import { cn } from "@/lib/utils";
 import type { Tarea } from "@/types/database";
 
@@ -17,6 +19,7 @@ const cardColor = {
 
 export function EquipoCarga() {
   const [modo, setModo] = React.useState<"cards" | "barras">("cards");
+  const [unidad, setUnidad] = React.useState<"tareas" | "horas">("tareas");
   const { data: tareas = [] } = useTareas();
   const { data: equipo = [] } = useEquipo();
   const { abrir } = useTareaModal();
@@ -30,6 +33,14 @@ export function EquipoCarga() {
   for (const t of activas) {
     if (porPersona.has(t.responsable_id)) porPersona.get(t.responsable_id)!.push(t);
   }
+
+  const horasDe = (t: Tarea) => {
+    if (typeof t.horas_estimadas === "number") return t.horas_estimadas;
+    const e = estimarTarea(t, TAREAS_MOCK);
+    return e?.horas ?? 1;
+  };
+  const totalPersona = (lista: Tarea[]) =>
+    unidad === "tareas" ? lista.length : Math.round(lista.reduce((a, t) => a + horasDe(t), 0) * 10) / 10;
   for (const [, lista] of porPersona) {
     lista.sort((a, b) => {
       const ua = urgenciaTarea(a.fecha_fin_min, a.fecha_fin_max);
@@ -40,7 +51,21 @@ export function EquipoCarga() {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <div className="inline-flex rounded-md border border-border overflow-hidden text-sm">
+          <button
+            onClick={() => setUnidad("tareas")}
+            className={cn("px-3 py-1.5", unidad === "tareas" ? "bg-foreground text-background" : "")}
+          >
+            Por nº tareas
+          </button>
+          <button
+            onClick={() => setUnidad("horas")}
+            className={cn("px-3 py-1.5", unidad === "horas" ? "bg-foreground text-background" : "")}
+          >
+            Por horas
+          </button>
+        </div>
         <div className="inline-flex rounded-md border border-border overflow-hidden text-sm">
           <button
             onClick={() => setModo("cards")}
@@ -66,7 +91,10 @@ export function EquipoCarga() {
                 <div key={m.id} className="card-soft w-[260px] shrink-0">
                   <div className="px-3 py-2 border-b border-border flex items-center justify-between">
                     <PersonaChip id={m.id} size="sm" />
-                    <span className="text-xs text-muted-foreground">{lista.length}</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {totalPersona(lista)}
+                      {unidad === "horas" ? "h" : ""}
+                    </span>
                   </div>
                   <div className="p-2 space-y-1.5 max-h-[60vh] overflow-y-auto">
                     {lista.map((t) => {
@@ -113,7 +141,10 @@ export function EquipoCarga() {
                   {cont.amarillo > 0 && <div className="bg-amber-500" style={{ width: `${(cont.amarillo / total) * 100}%` }} />}
                   {cont.azul > 0 && <div className="bg-blue-500" style={{ width: `${(cont.azul / total) * 100}%` }} />}
                 </div>
-                <div className="w-12 text-right text-sm font-medium tabular-nums">{lista.length}</div>
+                <div className="w-14 text-right text-sm font-medium tabular-nums">
+                  {totalPersona(lista)}
+                  {unidad === "horas" ? "h" : ""}
+                </div>
               </div>
             );
           })}

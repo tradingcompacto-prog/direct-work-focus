@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { X, Maximize2, Minimize2, Play, Check, Paperclip } from "lucide-react";
+import { X, Maximize2, Minimize2, Play, Check, Paperclip, Clock } from "lucide-react";
 import { useTareaModal } from "@/lib/tarea-modal-context";
 import {
   tareaPorId,
@@ -9,6 +9,7 @@ import {
   entregaPorId,
   COMENTARIOS_MOCK,
   ACTIVIDAD_MOCK,
+  TAREAS_MOCK,
   tituloTarea,
 } from "@/lib/mock-tareas";
 import { miembroPorId, nombrePorId } from "@/lib/equipo";
@@ -16,6 +17,8 @@ import { tiempoRelativo } from "@/lib/fechas";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { CerrarTareaDialog } from "@/components/CerrarTareaDialog";
+import { estimarTarea } from "@/lib/estimacion";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
@@ -37,6 +40,7 @@ const estadoLabel: Record<string, string> = {
 export function TareaModal() {
   const { tareaId, expandido, cerrar, toggleExpandido } = useTareaModal();
   const tarea = tareaId ? tareaPorId(tareaId) : undefined;
+  const [cerrandoOpen, setCerrandoOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!tareaId) return;
@@ -58,6 +62,8 @@ export function TareaModal() {
   const actividad = ACTIVIDAD_MOCK.filter((a) => a.tarea_id === tarea.id);
   const dependencia = tarea.bloqueada_por_id ? tareaPorId(tarea.bloqueada_por_id) : null;
   const desbloquea = tarea.desbloquea_id ? tareaPorId(tarea.desbloquea_id) : null;
+  const estim = estimarTarea(tarea, TAREAS_MOCK);
+  const horasEstim = tarea.horas_estimadas ?? estim?.horas ?? null;
 
   return (
     <div className="fixed inset-0 z-50">
@@ -154,11 +160,7 @@ export function TareaModal() {
                 size="sm"
                 variant="outline"
                 className="gap-1.5"
-                onClick={() =>
-                  toast.success(`«${tarea.titulo}» marcada como hecha`, {
-                    description: "Una menos en tu lista 👌",
-                  })
-                }
+                onClick={() => setCerrandoOpen(true)}
               >
                 <Check className="h-3.5 w-3.5" /> Marcar hecha
               </Button>
@@ -180,6 +182,41 @@ export function TareaModal() {
                 }
               />
             </Section>
+
+            {(horasEstim != null || tarea.horas_reales != null) && (
+              <Section title="Tiempo" icon={<Clock className="h-3.5 w-3.5" />}>
+                <div className="flex gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Estimado:</span>{" "}
+                    {horasEstim != null ? (
+                      <span className="font-medium">{horasEstim}h</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                    {estim && tarea.horas_estimadas == null && (
+                      <span
+                        className={cn(
+                          "ml-1.5 text-[10px] px-1.5 py-0.5 rounded",
+                          estim.confianza === "alta"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700",
+                        )}
+                      >
+                        auto · {estim.muestras} ref.
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Real:</span>{" "}
+                    {tarea.horas_reales != null ? (
+                      <span className="font-medium">{tarea.horas_reales}h</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </div>
+              </Section>
+            )}
 
             {tarea.descripcion && (
               <Section title="Descripción">
@@ -251,6 +288,12 @@ export function TareaModal() {
           </div>
         </div>
       </aside>
+      <CerrarTareaDialog
+        open={cerrandoOpen}
+        onOpenChange={setCerrandoOpen}
+        tarea={tarea}
+        sugerida={horasEstim}
+      />
     </div>
   );
 }

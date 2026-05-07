@@ -108,6 +108,7 @@ export const TAREAS_MOCK: Tarea[] = [
   { id: "t-023", titulo: "Revisión presupuestos", cliente_id: "cli-sa", proyecto_id: "pry-sa", entrega_id: "ent-020", responsable_id: DANI, solicitante_id: DANI, estado: "activa", prioridad: "media", tipo: "otro", fecha_inicio: dias(8), fecha_fin_min: dias(11), fecha_fin_max: dias(13) },
   { id: "t-024", titulo: "Kickoff campaña Meta", cliente_id: "cli-atipico", proyecto_id: "pry-atipico", entrega_id: "ent-014", responsable_id: PAULA, solicitante_id: NEREA, estado: "activa", prioridad: "media", tipo: "estrategia", fecha_inicio: dias(4), fecha_fin_min: dias(6), fecha_fin_max: dias(7) },
   { id: "t-025", titulo: "Briefing creativo banners", cliente_id: "cli-activtrades", proyecto_id: "pry-activtrades", entrega_id: "ent-010", responsable_id: PAULA, solicitante_id: RUBEN, estado: "completada", prioridad: "media", tipo: "estrategia", fecha_inicio: dias(-7), fecha_fin_min: dias(-5), fecha_fin_max: dias(-5) },
+  // (horas se inyectan más abajo en bloque histórico)
   { id: "t-026", titulo: "Maquetar landing v2", cliente_id: "cli-territorio", proyecto_id: "pry-territorio", entrega_id: "ent-002", responsable_id: SANDRA, solicitante_id: PAULA, estado: "activa", prioridad: "alta", tipo: "diseno", fecha_inicio: dias(1), fecha_fin_min: dias(3), fecha_fin_max: dias(3) },
   { id: "t-027", titulo: "Setup tag manager", cliente_id: "cli-activtrades", proyecto_id: "pry-activtrades", entrega_id: "ent-005", responsable_id: MARTIN, solicitante_id: EDU, estado: "completada", prioridad: "media", tipo: "web", fecha_inicio: dias(-6), fecha_fin_min: dias(-3), fecha_fin_max: dias(-3) },
   { id: "t-100", titulo: "Plan editorial", cliente_id: "cli-dehesa", proyecto_id: "pry-dehesa", entrega_id: "ent-006", responsable_id: "22222222-2222-2222-2222-222222222222", solicitante_id: "22222222-2222-2222-2222-222222222222", estado: "haciendola", prioridad: "alta", tipo: "estrategia", fecha_inicio: dias(-8), fecha_fin_min: dias(-4), fecha_fin_max: dias(-3) },
@@ -176,6 +177,97 @@ export const COMENTARIOS_MOCK: Comentario[] = [
   { id: "c-3", tarea_id: "t-004", autor_id: SANDRA, texto: "Tengo dos rutas creativas, te paso enlaces", fecha: horasAtras(5) },
   { id: "c-4", tarea_id: "t-006", autor_id: PAULA, texto: "Esperando que Andrea termine maquetación", fecha: horasAtras(3) },
 ];
+
+// ─── Horas históricas (estimadas/reales) ──────────────────
+const HORAS_POR_TIPO: Record<string, number> = {
+  diseno: 2.5,
+  copy: 1.5,
+  web: 4,
+  campanas: 2,
+  seo: 3,
+  estrategia: 2.5,
+  otro: 1.5,
+};
+const ruidoSeed = (id: string) => {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return 0.6 + (h % 100) / 125;
+};
+const horasReales = (tipo: string, id: string) =>
+  Math.round((HORAS_POR_TIPO[tipo] ?? 2) * ruidoSeed(id) * 2) / 2;
+
+const HISTORICAS: Tarea[] = (
+  [
+    ["h-001", "Diseño piezas RRSS", "cli-nanami", "ent-001", SANDRA, "diseno"],
+    ["h-002", "Diseño piezas RRSS", "cli-nanami", "ent-009", SANDRA, "diseno"],
+    ["h-003", "Diseño piezas RRSS", "cli-territorio", "ent-002", SANDRA, "diseno"],
+    ["h-004", "Maquetar landing", "cli-territorio", "ent-002", SANDRA, "diseno"],
+    ["h-005", "Maquetar landing", "cli-rentalmode", "ent-004", SANDRA, "diseno"],
+    ["h-006", "Maquetar piezas RRSS", "cli-dehesa", "ent-006", ANDREA, "diseno"],
+    ["h-007", "Maquetar piezas RRSS", "cli-nanami", "ent-009", ANDREA, "diseno"],
+    ["h-008", "Maquetar piezas RRSS", "cli-atipico", "ent-008", ANDREA, "diseno"],
+    ["h-009", "Plan editorial", "cli-dehesa", "ent-006", PAULA, "estrategia"],
+    ["h-010", "Plan editorial", "cli-atipico", "ent-014", PAULA, "estrategia"],
+    ["h-011", "Plan editorial", "cli-nimbo", "ent-007", NEREA, "estrategia"],
+    ["h-012", "Buyer persona", "cli-territorio", "ent-002", PAULA, "estrategia"],
+    ["h-013", "Brief campaña", "cli-fim", "ent-003", NEREA, "estrategia"],
+    ["h-014", "Brief campaña", "cli-nimbo", "ent-007", NEREA, "estrategia"],
+    ["h-015", "Texto SEO categoría", "cli-territorio", "ent-002", PABLO, "copy"],
+    ["h-016", "Texto SEO categoría", "cli-nanami", "ent-009", PABLO, "copy"],
+    ["h-017", "Redacción artículo blog", "cli-rentalmode", "ent-004", PABLO, "copy"],
+    ["h-018", "Redacción artículo blog", "cli-atipico", "ent-008", PABLO, "copy"],
+    ["h-019", "Auditoría SEO técnica", "cli-nanami", "ent-015", PABLO, "seo"],
+    ["h-020", "Auditoría SEO técnica", "cli-activtrades", "ent-005", PABLO, "seo"],
+    ["h-021", "Auditoría backlinks", "cli-nanami", "ent-009", PABLO, "seo"],
+    ["h-022", "Setup analítica", "cli-fim", "ent-003", MARTIN, "web"],
+    ["h-023", "Setup tag manager", "cli-activtrades", "ent-005", MARTIN, "web"],
+    ["h-024", "Migración correos workspace", "cli-sa", "ent-012", MARTIN, "web"],
+    ["h-025", "QA cross-browser", "cli-nanami", "ent-009", MARTIN, "web"],
+    ["h-026", "Optimización pujas Google", "cli-rentalmode", "ent-013", RUBEN, "campanas"],
+    ["h-027", "Setup campaña Meta", "cli-atipico", "ent-014", RUBEN, "campanas"],
+    ["h-028", "Crear conjunto anuncios", "cli-nimbo", "ent-007", RUBEN, "campanas"],
+    ["h-029", "Crear conjunto anuncios", "cli-nanami", "ent-009", RUBEN, "campanas"],
+    ["h-030", "Reporte semanal Ads", "cli-rentalmode", "ent-004", RUBEN, "campanas"],
+    ["h-031", "Briefing creativo banners", "cli-activtrades", "ent-010", PAULA, "estrategia"],
+    ["h-032", "Reunión kickoff", "cli-fim", "ent-003", PAULA, "estrategia"],
+    ["h-033", "Reunión kickoff", "cli-nimbo", "ent-007", EDU, "estrategia"],
+  ] as const
+).map(([id, titulo, cli, ent, resp, tipo], i) => {
+  const real = horasReales(tipo, id);
+  const estim = Math.round(((HORAS_POR_TIPO[tipo] ?? 2) + (i % 3 === 0 ? 0.5 : 0)) * 2) / 2;
+  return {
+    id,
+    titulo,
+    cliente_id: cli,
+    proyecto_id: PROYECTOS_MOCK.find((p) => p.cliente_id === cli)?.id ?? "pry-sa",
+    entrega_id: ent,
+    responsable_id: resp,
+    solicitante_id: PAULA,
+    estado: "completada",
+    prioridad: "media",
+    tipo: tipo as Tarea["tipo"],
+    fecha_inicio: dias(-15 - (i % 10)),
+    fecha_fin_min: dias(-10 - (i % 10)),
+    fecha_fin_max: dias(-10 - (i % 10)),
+    horas_estimadas: estim,
+    horas_reales: real,
+  } satisfies Tarea;
+});
+
+TAREAS_MOCK.push(...HISTORICAS);
+
+// Inyecta horas en cerradas previas + parte de las activas
+for (const t of TAREAS_MOCK) {
+  if (t.id.startsWith("h-")) continue;
+  if (t.estado === "completada" && t.horas_reales == null) {
+    t.horas_reales = horasReales(t.tipo, t.id);
+    t.horas_estimadas = Math.round((HORAS_POR_TIPO[t.tipo] ?? 2) * 2) / 2;
+  } else if (t.estado !== "completada" && t.horas_estimadas == null) {
+    if (ruidoSeed(t.id) <= 0.85) {
+      t.horas_estimadas = Math.round((HORAS_POR_TIPO[t.tipo] ?? 2) * 2) / 2;
+    }
+  }
+}
 
 // ─── Actividad ────────────────────────────────────────────
 export const ACTIVIDAD_MOCK: Actividad[] = [
