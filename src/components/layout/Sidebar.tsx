@@ -26,6 +26,7 @@ import { TAREAS_MOCK, ENTREGAS_MOCK } from "@/lib/mock-tareas";
 import { urgenciaTarea } from "@/lib/fechas";
 import { usePrefSidebarCollapsed } from "@/lib/preferencias";
 import { useCrearModal } from "@/lib/crear-modal-context";
+import { useRolVista } from "@/lib/rol-vista";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,7 +45,8 @@ interface SectionDef {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   items: ItemDef[];
-  needsRol?: "director" | "pm";
+  // Roles que pueden ver esta sección. Si vacío, todos.
+  roles?: ("director" | "pm" | "ejecutor")[];
 }
 
 const SECCIONES: SectionDef[] = [
@@ -76,7 +78,7 @@ const SECCIONES: SectionDef[] = [
   {
     label: "Clientes",
     icon: Building2,
-    needsRol: "pm",
+    roles: ["director", "pm"],
     items: [
       { to: "/clientes/tarjetas", label: "Tarjetas", icon: Building2, atajo: "G L" },
       { to: "/clientes/tabla", label: "Tabla", icon: Table2 },
@@ -85,6 +87,7 @@ const SECCIONES: SectionDef[] = [
   {
     label: "Contenido",
     icon: FileImage,
+    roles: ["director", "pm"],
     items: [
       { to: "/contenido/calendario", label: "Calendario", icon: CalRange2 },
       { to: "/contenido/pipeline", label: "Pipeline", icon: GalleryHorizontalEnd },
@@ -94,7 +97,7 @@ const SECCIONES: SectionDef[] = [
   {
     label: "Brújula",
     icon: Compass,
-    needsRol: "director",
+    roles: ["director"],
     items: [{ to: "/brujula", label: "Resumen ejecutivo", icon: Compass, atajo: "G B" }],
   },
 ];
@@ -125,14 +128,14 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = usePrefSidebarCollapsed();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { abrir } = useCrearModal();
-  const esDirector = tienePermiso("director");
-  const esPm = tienePermiso("pm");
+  const [rolVista] = useRolVista();
+  const esDirector = rolVista === "director";
+  const esPm = rolVista === "pm" || rolVista === "director";
   const badges = badgesPorRuta();
 
   const visibleSecciones = SECCIONES.filter((s) => {
-    if (!s.needsRol) return true;
-    if (s.needsRol === "director") return esDirector;
-    return esPm || esDirector;
+    if (!s.roles) return true;
+    return s.roles.includes(rolVista);
   });
 
   return (
