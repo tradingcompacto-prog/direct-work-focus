@@ -46,6 +46,7 @@ export function CrearModal() {
   const [bloqueadaPorId, setBloqueadaPorId] = React.useState<string>("");
   const [fechaInicio, setFechaInicio] = React.useState<string>("");
   const [fechaFin, setFechaFin] = React.useState<string>("");
+  const [usarRango, setUsarRango] = React.useState(false);
 
   React.useEffect(() => {
     setClienteId(contexto?.cliente_id ?? "");
@@ -57,6 +58,7 @@ export function CrearModal() {
     setBloqueadaPorId("");
     setFechaInicio("");
     setFechaFin("");
+    setUsarRango(false);
   }, [contexto, tipo]);
 
   // Regla: 1 cliente = 1 proyecto (mismo nombre). Auto-seleccionar proyecto al elegir cliente.
@@ -264,24 +266,63 @@ export function CrearModal() {
                       </p>
                     )}
                   </Field>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="Fecha inicio">
-                      <Input
-                        type="date"
-                        value={fechaInicio}
-                        min={minFecha || undefined}
-                        onChange={(e) => setFechaInicio(e.target.value)}
-                      />
+                  {!usarRango ? (
+                    <Field label="Fecha">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="date"
+                          value={fechaFin}
+                          min={minFecha || undefined}
+                          onChange={(e) => {
+                            setFechaFin(e.target.value);
+                            setFechaInicio(e.target.value);
+                          }}
+                          className="flex-1"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setUsarRango(true)}
+                          className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 shrink-0"
+                        >
+                          + rango de fechas
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        Por defecto, la tarea ocupa un solo día.
+                      </p>
                     </Field>
-                    <Field label="Fecha fin">
-                      <Input
-                        type="date"
-                        value={fechaFin}
-                        min={minFecha || fechaInicio || undefined}
-                        onChange={(e) => setFechaFin(e.target.value)}
-                      />
-                    </Field>
-                  </div>
+                  ) : (
+                    <div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Field label="Fecha inicio">
+                          <Input
+                            type="date"
+                            value={fechaInicio}
+                            min={minFecha || undefined}
+                            onChange={(e) => setFechaInicio(e.target.value)}
+                          />
+                        </Field>
+                        <Field label="Fecha fin">
+                          <Input
+                            type="date"
+                            value={fechaFin}
+                            min={minFecha || fechaInicio || undefined}
+                            onChange={(e) => setFechaFin(e.target.value)}
+                          />
+                        </Field>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUsarRango(false);
+                          setFechaInicio(fechaFin || fechaInicio);
+                        }}
+                        className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2 mt-1"
+                      >
+                        − usar una sola fecha
+                      </button>
+                    </div>
+                  )}
                   {minFecha && (
                     <p className="text-[11px] text-amber-700 -mt-2">
                       ⏳ Las fechas no pueden ser anteriores al {minFecha} (cierre previsto de «{dependencia?.titulo}»).
