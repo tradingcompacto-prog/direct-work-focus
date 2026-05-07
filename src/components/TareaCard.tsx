@@ -2,7 +2,7 @@ import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { useTareaModal } from "@/lib/tarea-modal-context";
 import type { Tarea } from "@/types/database";
-import { ClienteLink, ProyectoLink, EntregaLink } from "@/components/EntidadLinks";
+import { ClienteLink, EntregaLink } from "@/components/EntidadLinks";
 import { PersonaChip } from "@/components/PersonaChip";
 import { urgenciaTarea, etiquetaFechaRelativa } from "@/lib/fechas";
 import { cn } from "@/lib/utils";
@@ -34,7 +34,6 @@ export function TareaCard({ tarea, compact = false }: { tarea: Tarea; compact?: 
       {!compact && (
         <div className="mt-1.5 text-xs text-muted-foreground truncate">
           <ClienteLink id={tarea.cliente_id} /> ·{" "}
-          <ProyectoLink id={tarea.proyecto_id} className="text-muted-foreground" /> ·{" "}
           <EntregaLink id={tarea.entrega_id} className="text-muted-foreground" />
         </div>
       )}
