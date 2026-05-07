@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { format, parseISO, startOfDay, isSameDay, differenceInCalendarDays, startOfWeek, isAfter } from "date-fns";
 import { es } from "date-fns/locale";
-import { AlertTriangle, CheckCircle2, Calendar as CalendarIcon, Sparkles, Sun, Sunrise, Moon, Eye, Users, Briefcase, User } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Calendar as CalendarIcon, Sparkles, Sun, Sunrise, Moon, Users, User } from "lucide-react";
 import { TAREAS_MOCK, ENTREGAS_MOCK, ACTIVIDAD_MOCK, clientePorId, entregaPorId } from "@/lib/mock-tareas";
 import { EQUIPO, USUARIO_ACTUAL_ID, usuarioActual, nombrePorId } from "@/lib/equipo";
 import { useTareaModal } from "@/lib/tarea-modal-context";
@@ -10,6 +10,7 @@ import { PersonaChip } from "@/components/PersonaChip";
 import { saludoSegunHora, urgenciaTarea, etiquetaFechaRelativa, tiempoRelativo } from "@/lib/fechas";
 import { colorCliente, bordeIzqCliente } from "@/lib/cliente-colors";
 import { cn } from "@/lib/utils";
+import { useRolVista } from "@/lib/rol-vista";
 
 const iconoHora = () => {
   const h = new Date().getHours();
@@ -19,56 +20,10 @@ const iconoHora = () => {
   return <Moon className="h-6 w-6 text-indigo-500" />;
 };
 
-type RolVista = "director" | "pm" | "ejecutor";
-const ROL_KEY = "sa.home.rolVista";
-
-function useRolVista(): [RolVista, (r: RolVista) => void] {
-  const [r, setR] = useState<RolVista>("pm");
-  useEffect(() => {
-    const v = (typeof window !== "undefined" && localStorage.getItem(ROL_KEY)) as RolVista | null;
-    if (v === "director" || v === "pm" || v === "ejecutor") setR(v);
-  }, []);
-  const set = (v: RolVista) => {
-    setR(v);
-    try { localStorage.setItem(ROL_KEY, v); } catch {}
-  };
-  return [r, set];
-}
-
-function ToggleRol({ value, onChange }: { value: RolVista; onChange: (r: RolVista) => void }) {
-  const opts: { v: RolVista; label: string; icon: typeof Eye }[] = [
-    { v: "director", label: "Director", icon: Users },
-    { v: "pm", label: "PM", icon: Briefcase },
-    { v: "ejecutor", label: "Ejecutor", icon: User },
-  ];
-  return (
-    <div className="inline-flex items-center gap-1 rounded-lg border bg-card p-0.5 text-xs">
-      <span className="px-2 text-muted-foreground flex items-center gap-1">
-        <Eye className="h-3 w-3" /> Ver como
-      </span>
-      {opts.map(({ v, label, icon: Icon }) => (
-        <button
-          key={v}
-          onClick={() => onChange(v)}
-          className={cn(
-            "px-2 py-1 rounded-md flex items-center gap-1 transition",
-            value === v ? "bg-primary text-primary-foreground" : "hover:bg-muted",
-          )}
-        >
-          <Icon className="h-3 w-3" /> {label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export function Home() {
-  const [rol, setRol] = useRolVista();
+  const [rol] = useRolVista();
   return (
     <div className="space-y-4 anim-in">
-      <div className="flex justify-end">
-        <ToggleRol value={rol} onChange={setRol} />
-      </div>
       {rol === "director" && <HomeDirector />}
       {rol === "pm" && <HomePM />}
       {rol === "ejecutor" && <HomeEjecutor />}
