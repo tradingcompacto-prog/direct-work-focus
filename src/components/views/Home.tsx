@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { format, parseISO, startOfDay, isSameDay, differenceInCalendarDays, startOfWeek, isAfter } from "date-fns";
 import { es } from "date-fns/locale";
-import { AlertTriangle, CheckCircle2, Calendar as CalendarIcon, Sparkles, Sun, Sunrise, Moon } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Calendar as CalendarIcon, Sparkles, Sun, Sunrise, Moon, Users, User } from "lucide-react";
 import { TAREAS_MOCK, ENTREGAS_MOCK, ACTIVIDAD_MOCK, clientePorId, entregaPorId } from "@/lib/mock-tareas";
 import { EQUIPO, USUARIO_ACTUAL_ID, usuarioActual, nombrePorId } from "@/lib/equipo";
 import { useTareaModal } from "@/lib/tarea-modal-context";
