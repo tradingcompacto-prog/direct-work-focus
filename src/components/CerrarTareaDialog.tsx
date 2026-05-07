@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { Tarea } from "@/types/database";
+import { detener, getEstadoTimer } from "@/lib/timer-store";
 
 export function CerrarTareaDialog({
   open,
@@ -31,6 +32,8 @@ export function CerrarTareaDialog({
   }, [open, sugerida]);
 
   const cerrarConHoras = (horas: number | null) => {
+    // detener cronómetro si estaba corriendo
+    if (getEstadoTimer(tarea.id).ms > 0) detener(tarea.id);
     if (horas != null) tarea.horas_reales = horas;
     tarea.estado = "completada";
     toast.success(
