@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useMisTareas } from "@/lib/queries";
 import { useTareaModal } from "@/lib/tarea-modal-context";
-import { ClienteLink, ProyectoLink, EntregaLink } from "@/components/EntidadLinks";
+import { ClienteLink, EntregaLink } from "@/components/EntidadLinks";
 import { PersonaChip } from "@/components/PersonaChip";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -69,7 +69,6 @@ export function MisTareasTabla() {
               <TableHead>Tarea</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Cliente</TableHead>
-              <TableHead>Proyecto</TableHead>
               <TableHead>Entrega</TableHead>
               <TableHead>Responsable</TableHead>
               <TableHead>Solicitante</TableHead>
@@ -92,9 +91,6 @@ export function MisTareasTabla() {
                 </TableCell>
                 <TableCell>
                   <ClienteLink id={t.cliente_id} />
-                </TableCell>
-                <TableCell>
-                  <ProyectoLink id={t.proyecto_id} />
                 </TableCell>
                 <TableCell>
                   <EntregaLink id={t.entrega_id} />
