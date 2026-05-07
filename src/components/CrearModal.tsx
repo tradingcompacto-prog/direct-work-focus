@@ -42,6 +42,16 @@ export function CrearModal() {
     setEntregaId(contexto?.entrega_id ?? "");
   }, [contexto, tipo]);
 
+  // Regla: 1 cliente = 1 proyecto (mismo nombre). Auto-seleccionar proyecto al elegir cliente.
+  React.useEffect(() => {
+    if (clienteId) {
+      const pry = PROYECTOS_MOCK.find((p) => p.cliente_id === clienteId);
+      if (pry) setProyectoId(pry.id);
+    } else {
+      setProyectoId("");
+    }
+  }, [clienteId]);
+
   if (!tipo) return null;
 
   const proyectos = clienteId
@@ -95,26 +105,6 @@ export function CrearModal() {
                   </SelectContent>
                 </Select>
               </Field>
-              {(tipo === "tarea" || tipo === "entrega") && (
-                <Field label="Proyecto">
-                  <Select
-                    value={proyectoId}
-                    onValueChange={setProyectoId}
-                    disabled={!!contexto?.proyecto_id}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona proyecto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {proyectos.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-              )}
               {tipo === "tarea" && (
                 <Field label="Entrega">
                   <Select value={entregaId} onValueChange={setEntregaId}>
