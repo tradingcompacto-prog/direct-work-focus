@@ -38,7 +38,12 @@ export function MisTareasTabla() {
 
   const filtered = tareas.filter((t) => {
     if (f.q && !t.titulo.toLowerCase().includes(f.q.toLowerCase())) return false;
-    if (f.estado && t.estado !== f.estado) return false;
+    if (f.estado) {
+      if (t.estado !== f.estado) return false;
+    } else if (t.estado === "completada") {
+      // Por defecto ocultamos completadas salvo que se filtre por ese estado
+      return false;
+    }
     if (f.cliente && t.cliente_id !== f.cliente) return false;
     if (f.responsable && t.responsable_id !== f.responsable) return false;
     if (f.vencidas === "1" && urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) !== "rojo") return false;
