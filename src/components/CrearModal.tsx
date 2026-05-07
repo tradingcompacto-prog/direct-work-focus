@@ -69,8 +69,6 @@ export function CrearModal() {
     }
   }, [clienteId]);
 
-  if (!tipo) return null;
-
   const entregas = proyectoId
     ? ENTREGAS_MOCK.filter((e) => e.proyecto_id === proyectoId)
     : ENTREGAS_MOCK;
@@ -102,6 +100,8 @@ export function CrearModal() {
     if (fechaInicio && fechaInicio < minFecha) setFechaInicio(minFecha);
     if (fechaFin && fechaFin < minFecha) setFechaFin(minFecha);
   }, [minFecha]);
+
+  if (!tipo) return null;
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
