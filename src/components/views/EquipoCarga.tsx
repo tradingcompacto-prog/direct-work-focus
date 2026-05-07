@@ -5,6 +5,8 @@ import { urgenciaTarea } from "@/lib/fechas";
 import { PersonaChip } from "@/components/PersonaChip";
 import { estimarTarea } from "@/lib/estimacion";
 import { TAREAS_MOCK } from "@/lib/mock-tareas";
+import { setResponsable, getResponsable, useOverrides } from "@/lib/fechas-override-store";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Tarea } from "@/types/database";
 
@@ -18,11 +20,13 @@ const cardColor = {
 };
 
 export function EquipoCarga() {
+  useOverrides();
   const [modo, setModo] = React.useState<"cards" | "barras">("cards");
   const [unidad, setUnidad] = React.useState<"tareas" | "horas">("tareas");
   const { data: tareas = [] } = useTareas();
   const { data: equipo = [] } = useEquipo();
   const { abrir } = useTareaModal();
+  const [overTarget, setOverTarget] = React.useState<string | null>(null);
 
   const activas = tareas.filter(
     (t) => t.estado === "activa" || t.estado === "haciendola" || t.estado === "esperando",
@@ -31,7 +35,8 @@ export function EquipoCarga() {
   const porPersona = new Map<string, Tarea[]>();
   for (const m of equipo) porPersona.set(m.id, []);
   for (const t of activas) {
-    if (porPersona.has(t.responsable_id)) porPersona.get(t.responsable_id)!.push(t);
+    const respId = getResponsable(t.id) ?? t.responsable_id;
+    if (porPersona.has(respId)) porPersona.get(respId)!.push(t);
   }
 
   const horasDe = (t: Tarea) => {
@@ -88,7 +93,26 @@ export function EquipoCarga() {
             {equipo.map((m) => {
               const lista = porPersona.get(m.id) ?? [];
               return (
-                <div key={m.id} className="card-soft w-[260px] shrink-0">
+                <div
+                  key={m.id}
+                  className={cn(
+                    "card-soft w-[260px] shrink-0 transition-colors",
+                    overTarget === m.id && "ring-2 ring-blue-400 bg-blue-50/30",
+                  )}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setOverTarget(m.id);
+                  }}
+                  onDragLeave={() => setOverTarget((t) => (t === m.id ? null : t))}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const id = e.dataTransfer.getData("text/tarea");
+                    setOverTarget(null);
+                    if (!id) return;
+                    setResponsable(id, m.id);
+                    toast.success(`Reasignada a ${m.nombre}`);
+                  }}
+                >
                   <div className="px-3 py-2 border-b border-border flex items-center justify-between">
                     <PersonaChip id={m.id} size="sm" />
                     <span className="text-xs text-muted-foreground tabular-nums">
@@ -102,9 +126,14 @@ export function EquipoCarga() {
                       return (
                         <button
                           key={t.id}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData("text/tarea", t.id);
+                            e.dataTransfer.effectAllowed = "move";
+                          }}
                           onClick={() => abrir(t.id)}
                           className={cn(
-                            "block w-full text-left text-xs px-2 py-1.5 rounded border",
+                            "block w-full text-left text-xs px-2 py-1.5 rounded border cursor-grab active:cursor-grabbing",
                             cardColor[u],
                           )}
                         >
