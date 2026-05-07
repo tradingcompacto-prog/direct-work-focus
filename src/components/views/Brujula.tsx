@@ -1,6 +1,7 @@
 import { TAREAS_MOCK, ENTREGAS_MOCK, ACTIVIDAD_MOCK, clientePorId } from "@/lib/mock-tareas";
 import { EQUIPO } from "@/lib/equipo";
 import { urgenciaTarea, tiempoRelativo } from "@/lib/fechas";
+import { estimarTarea } from "@/lib/estimacion";
 import { Link } from "@tanstack/react-router";
 import { format, parseISO, addDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
@@ -25,6 +26,22 @@ export function Brujula() {
   )
     .sort((a, b) => a.fecha_fin.localeCompare(b.fecha_fin))
     .slice(0, 5);
+
+  // Capacidad semanal (horas)
+  const enSemana = TAREAS_MOCK.filter((t) => {
+    if (t.estado === "completada") return false;
+    const f = parseISO(t.fecha_fin_max);
+    return f >= hoy && f <= addDays(hoy, 7);
+  });
+  let horasPlanif = 0;
+  for (const t of enSemana) {
+    const h = t.horas_estimadas ?? estimarTarea(t, TAREAS_MOCK)?.horas;
+    if (h) horasPlanif += h;
+  }
+  horasPlanif = Math.round(horasPlanif);
+  const capacidad = EQUIPO.filter((m) => m.activo).length * 32; // ~32h útiles por persona/semana
+  const utilizacion = capacidad ? Math.round((horasPlanif / capacidad) * 100) : 0;
+  const mostrarHoras = horasPlanif > 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -87,6 +104,38 @@ export function Brujula() {
         <div className="text-5xl font-bold text-green-600">86%</div>
         <p className="text-xs text-muted-foreground mt-2">entregas a tiempo</p>
       </Widget>
+      {mostrarHoras && (
+        <Widget title="⏱ Capacidad esta semana">
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <div className="text-2xl font-bold tabular-nums">{horasPlanif}h</div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Planif.</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold tabular-nums">{capacidad}h</div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Capacidad</div>
+            </div>
+            <div>
+              <div
+                className={`text-2xl font-bold tabular-nums ${
+                  utilizacion > 100 ? "text-red-600" : utilizacion > 85 ? "text-amber-600" : "text-emerald-600"
+                }`}
+              >
+                {utilizacion}%
+              </div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Util.</div>
+            </div>
+          </div>
+          <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden">
+            <div
+              className={`h-full ${
+                utilizacion > 100 ? "bg-red-500" : utilizacion > 85 ? "bg-amber-500" : "bg-emerald-500"
+              }`}
+              style={{ width: `${Math.min(100, utilizacion)}%` }}
+            />
+          </div>
+        </Widget>
+      )}
     </div>
   );
 }
