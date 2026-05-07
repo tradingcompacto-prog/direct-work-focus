@@ -11,7 +11,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRolVista, setRolVista, rolesDisponibles, ROL_LABEL } from "@/lib/rol-vista";
-import { Eye } from "lucide-react";
+import { Eye, Rows3 } from "lucide-react";
+import { useDensidad, type Densidad } from "@/lib/preferencias";
 import { useNotificacionesStore, marcarLeida, marcarTodasLeidas } from "@/lib/notificaciones-store";
 import { usuarioActual } from "@/lib/equipo";
 import { tiempoRelativo } from "@/lib/fechas";
@@ -205,6 +206,7 @@ export function TopBar() {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <VerComo />
+          <DensidadMenu />
           <DropdownMenuItem disabled>Configuración</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem disabled>Salir</DropdownMenuItem>
