@@ -181,4 +181,26 @@
     box-shadow: var(--shadow-card-hover);
     transform: translateY(-1px);
   }
+  .focus-ring:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-ring);
+    border-radius: var(--radius-md);
+  }
+}
+
+@layer utilities {
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .anim-in {
+    animation: fadeInUp 220ms ease both;
+  }
+  @keyframes pulseSoft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
+  .pulse-soft {
+    animation: pulseSoft 2.4s ease-in-out infinite;
+  }
 }

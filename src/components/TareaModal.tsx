@@ -16,6 +16,7 @@ import { tiempoRelativo } from "@/lib/fechas";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -142,10 +143,23 @@ export function TareaModal() {
 
             {/* Acciones */}
             <div className="flex gap-2">
-              <Button size="sm" className="gap-1.5">
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => toast.success(`«${tarea.titulo}» en marcha 🚀`)}
+              >
                 <Play className="h-3.5 w-3.5" /> Empezar
               </Button>
-              <Button size="sm" variant="outline" className="gap-1.5">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() =>
+                  toast.success(`«${tarea.titulo}» marcada como hecha`, {
+                    description: "Una menos en tu lista 👌",
+                  })
+                }
+              >
                 <Check className="h-3.5 w-3.5" /> Marcar hecha
               </Button>
             </div>

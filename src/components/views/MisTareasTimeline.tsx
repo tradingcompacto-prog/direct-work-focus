@@ -6,6 +6,7 @@ import { useTareaModal } from "@/lib/tarea-modal-context";
 import { entregaPorId } from "@/lib/mock-tareas";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { EstadoVacio } from "@/components/EstadoVacio";
 
 const N_DIAS = 14;
 const DAY_W = 60;
@@ -134,9 +135,11 @@ export function MisTareasTimeline() {
                 </div>
               ))}
               {grupos.length === 0 && (
-                <div className="p-12 text-center text-sm text-muted-foreground">
-                  No tienes tareas en los próximos 14 días.
-                </div>
+                <EstadoVacio
+                  emoji="🌴"
+                  titulo="Catorce días limpios por delante"
+                  hint="No tienes tareas con fecha en las próximas 2 semanas. Buen momento para planificar."
+                />
               )}
             </div>
           </div>

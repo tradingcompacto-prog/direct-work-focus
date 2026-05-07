@@ -59,7 +59,7 @@ export function Home() {
   const actividad = ACTIVIDAD_MOCK.slice(0, 5);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 anim-in">
       {/* Saludo */}
       <div className="flex items-center gap-3">
         {iconoHora()}

@@ -31,7 +31,7 @@ export function ClientesTabla() {
         </TableHeader>
         <TableBody>
           {data.map((c) => (
-            <TableRow key={c.id} className="cursor-pointer">
+            <TableRow key={c.id} className="cursor-pointer hover:bg-muted/40 transition-colors">
               <TableCell className="font-medium">
                 <Link to="/clientes/$id" params={{ id: c.id }} className="hover:underline">
                   {c.nombre}
