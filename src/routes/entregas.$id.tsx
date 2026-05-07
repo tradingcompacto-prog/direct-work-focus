@@ -327,3 +327,31 @@ function FilaTarea({ t, onClick, detallada }: { t: typeof TAREAS_MOCK[number]; o
     </button>
   );
 }
+
+function EditableDateChip({ iso, onChange }: { iso: string; onChange: (iso: string) => void }) {
+  const [open, setOpen] = React.useState(false);
+  const date = parseISO(iso);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button className="px-1.5 py-0.5 rounded hover:bg-muted text-foreground/80">
+          {format(date, "d MMM", { locale: es })}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <DayCalendar
+          mode="single"
+          selected={date}
+          onSelect={(d) => {
+            if (!d) return;
+            const out = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+            onChange(out);
+            setOpen(false);
+          }}
+          initialFocus
+          className={cn("p-3 pointer-events-auto")}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
