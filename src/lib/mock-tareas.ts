@@ -281,12 +281,16 @@ export const ACTIVIDAD_MOCK: Actividad[] = [
 
 // ─── Notificaciones ───────────────────────────────────────
 export const NOTIFICACIONES_MOCK: Notificacion[] = [
-  { id: "n-1", texto: "Sandra cerró Diseño piezas mayo", fecha: horasAtras(0.08), leida: false, ruta: "/tareas", icono: "check" },
-  { id: "n-2", texto: "Tu tarea Aprobación calendario está activa", fecha: horasAtras(1), leida: false, ruta: "/tareas", icono: "play" },
-  { id: "n-3", texto: "Rubén te asignó Banner promo Meta", fecha: horasAtras(2), leida: false, ruta: "/tareas", icono: "user-plus" },
-  { id: "n-4", texto: "Andrea comentó en Revisar plan de medios Q2", fecha: horasAtras(3), leida: true, ruta: "/tareas", icono: "message" },
-  { id: "n-5", texto: "Vence hoy: Banners display", fecha: horasAtras(5), leida: true, ruta: "/tareas", icono: "alert" },
-  { id: "n-6", texto: "Martín cerró Setup tag manager", fecha: horasAtras(8), leida: true, ruta: "/tareas", icono: "check" },
+  { id: "n-1", texto: "Vence en 2h: Banners display", fecha: horasAtras(0.5), leida: false, ruta: "/tareas", icono: "alert", categoria: "urgente" },
+  { id: "n-2", texto: "Vencida ayer: Texto SEO categoría", fecha: horasAtras(20), leida: false, ruta: "/tareas", icono: "alert", categoria: "urgente" },
+  { id: "n-3", texto: "Vence hoy: Adaptar key visual", fecha: horasAtras(2), leida: false, ruta: "/tareas", icono: "alert", categoria: "urgente" },
+  { id: "n-4", texto: "Rubén te asignó Banner promo Meta", fecha: horasAtras(2), leida: false, ruta: "/tareas", icono: "user-plus", categoria: "importante" },
+  { id: "n-5", texto: "Sandra cerró Diseño piezas mayo", fecha: horasAtras(0.08), leida: false, ruta: "/tareas", icono: "check", categoria: "importante" },
+  { id: "n-6", texto: "Tu tarea Aprobación calendario está activa", fecha: horasAtras(1), leida: false, ruta: "/tareas", icono: "play", categoria: "importante" },
+  { id: "n-7", texto: "Andrea comentó en Revisar plan de medios Q2", fecha: horasAtras(3), leida: true, ruta: "/tareas", icono: "message", categoria: "info" },
+  { id: "n-8", texto: "Pablo comentó en Auditoría SEO", fecha: horasAtras(6), leida: true, ruta: "/tareas", icono: "message", categoria: "info" },
+  { id: "n-9", texto: "Martín cerró Setup tag manager", fecha: horasAtras(8), leida: true, ruta: "/tareas", icono: "check", categoria: "importante" },
+  { id: "n-10", texto: "Edu te mencionó en Coordinar shooting", fecha: horasAtras(14), leida: true, ruta: "/tareas", icono: "message", categoria: "info" },
 ];
 
 // ─── Lookups ──────────────────────────────────────────────
