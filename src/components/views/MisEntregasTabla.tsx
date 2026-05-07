@@ -21,15 +21,18 @@ import { EstadoVacio } from "@/components/EstadoVacio";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AccionesMasivasBar } from "@/components/AccionesMasivasBar";
 import { toast } from "sonner";
+import { startOfDay } from "date-fns";
 
 export function MisEntregasTabla() {
   const [f, setF, resetF] = useFiltros("sa.filtros.misEntregas");
   const [sel, setSel] = React.useState<Set<string>>(new Set());
+  const hoy = React.useMemo(() => startOfDay(new Date()), []);
   const entregas = ENTREGAS_MOCK.filter((e) => {
     if (f.q && !e.nombre.toLowerCase().includes(f.q.toLowerCase())) return false;
     if (f.cliente && e.cliente_id !== f.cliente) return false;
     if (f.responsable && e.pm_id !== f.responsable) return false;
     if (f.estado && e.estado !== f.estado) return false;
+    if (f.vencidas === "1" && !(e.estado === "en_curso" && parseISO(e.fecha_fin) < hoy)) return false;
     return true;
   });
   const toggle = (id: string) =>
