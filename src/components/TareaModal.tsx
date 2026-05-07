@@ -24,6 +24,14 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import {
+  setTareaFechas,
+  getTareaOverride,
+  useOverrides,
+} from "@/lib/fechas-override-store";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
 
 const estadoColor: Record<string, string> = {
   activa: "bg-blue-100 text-blue-800 border-blue-200",
@@ -40,6 +48,7 @@ const estadoLabel: Record<string, string> = {
 
 export function TareaModal() {
   const { tareaId, expandido, cerrar, toggleExpandido } = useTareaModal();
+  useOverrides();
   const tarea = tareaId ? tareaPorId(tareaId) : undefined;
   const [cerrandoOpen, setCerrandoOpen] = React.useState(false);
   const timer = useTimer(tareaId);
@@ -54,6 +63,11 @@ export function TareaModal() {
   }, [tareaId, cerrar]);
 
   if (!tareaId || !tarea) return null;
+
+  const ov = getTareaOverride(tarea.id);
+  const fInicio = ov?.fin_min ?? tarea.fecha_inicio;
+  const fFinMin = ov?.fin_min ?? tarea.fecha_fin_min;
+  const fFinMax = ov?.fin_max ?? tarea.fecha_fin_max;
 
   const cliente = clientePorId(tarea.cliente_id);
   const proyecto = proyectoPorId(tarea.proyecto_id);
@@ -214,14 +228,21 @@ export function TareaModal() {
             </Section>
 
             <Section title="Fechas">
-              <Field label="Inicio" value={format(parseISO(tarea.fecha_inicio), "d MMM", { locale: es })} />
-              <Field
+              <EditableDate
+                label="Inicio"
+                valueIso={fInicio}
+                onChange={(iso) => {
+                  setTareaFechas(tarea.id, { fin_min: iso });
+                  toast.success("Fecha de inicio actualizada");
+                }}
+              />
+              <EditableDate
                 label="Entrega"
-                value={
-                  tarea.fecha_fin_min === tarea.fecha_fin_max
-                    ? format(parseISO(tarea.fecha_fin_max), "d MMM", { locale: es })
-                    : `${format(parseISO(tarea.fecha_fin_min), "d MMM", { locale: es })} – ${format(parseISO(tarea.fecha_fin_max), "d MMM", { locale: es })}`
-                }
+                valueIso={fFinMax}
+                onChange={(iso) => {
+                  setTareaFechas(tarea.id, { fin_max: iso });
+                  toast.success("Fecha de entrega actualizada");
+                }}
               />
             </Section>
 
