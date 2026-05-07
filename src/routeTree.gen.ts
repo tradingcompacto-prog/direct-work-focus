@@ -26,6 +26,7 @@ import { Route as EntregasKanbanRouteImport } from './routes/entregas.kanban'
 import { Route as EntregasGanttRouteImport } from './routes/entregas.gantt'
 import { Route as EntregasIdRouteImport } from './routes/entregas.$id'
 import { Route as ContenidoPipelineRouteImport } from './routes/contenido.pipeline'
+import { Route as ContenidoPerformanceRouteImport } from './routes/contenido.performance'
 import { Route as ContenidoCalendarioRouteImport } from './routes/contenido.calendario'
 import { Route as ClientesTarjetasRouteImport } from './routes/clientes.tarjetas'
 import { Route as ClientesTablaRouteImport } from './routes/clientes.tabla'
@@ -116,6 +117,11 @@ const ContenidoPipelineRoute = ContenidoPipelineRouteImport.update({
   path: '/contenido/pipeline',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContenidoPerformanceRoute = ContenidoPerformanceRouteImport.update({
+  id: '/contenido/performance',
+  path: '/contenido/performance',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContenidoCalendarioRoute = ContenidoCalendarioRouteImport.update({
   id: '/contenido/calendario',
   path: '/contenido/calendario',
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
   '/contenido/calendario': typeof ContenidoCalendarioRoute
+  '/contenido/performance': typeof ContenidoPerformanceRoute
   '/contenido/pipeline': typeof ContenidoPipelineRoute
   '/entregas/$id': typeof EntregasIdRoute
   '/entregas/gantt': typeof EntregasGanttRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
   '/contenido/calendario': typeof ContenidoCalendarioRoute
+  '/contenido/performance': typeof ContenidoPerformanceRoute
   '/contenido/pipeline': typeof ContenidoPipelineRoute
   '/entregas/$id': typeof EntregasIdRoute
   '/entregas/gantt': typeof EntregasGanttRoute
@@ -191,6 +199,7 @@ export interface FileRoutesById {
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
   '/contenido/calendario': typeof ContenidoCalendarioRoute
+  '/contenido/performance': typeof ContenidoPerformanceRoute
   '/contenido/pipeline': typeof ContenidoPipelineRoute
   '/entregas/$id': typeof EntregasIdRoute
   '/entregas/gantt': typeof EntregasGanttRoute
@@ -216,6 +225,7 @@ export interface FileRouteTypes {
     | '/clientes/tabla'
     | '/clientes/tarjetas'
     | '/contenido/calendario'
+    | '/contenido/performance'
     | '/contenido/pipeline'
     | '/entregas/$id'
     | '/entregas/gantt'
@@ -239,6 +249,7 @@ export interface FileRouteTypes {
     | '/clientes/tabla'
     | '/clientes/tarjetas'
     | '/contenido/calendario'
+    | '/contenido/performance'
     | '/contenido/pipeline'
     | '/entregas/$id'
     | '/entregas/gantt'
@@ -262,6 +273,7 @@ export interface FileRouteTypes {
     | '/clientes/tabla'
     | '/clientes/tarjetas'
     | '/contenido/calendario'
+    | '/contenido/performance'
     | '/contenido/pipeline'
     | '/entregas/$id'
     | '/entregas/gantt'
@@ -286,6 +298,7 @@ export interface RootRouteChildren {
   ClientesTablaRoute: typeof ClientesTablaRoute
   ClientesTarjetasRoute: typeof ClientesTarjetasRoute
   ContenidoCalendarioRoute: typeof ContenidoCalendarioRoute
+  ContenidoPerformanceRoute: typeof ContenidoPerformanceRoute
   ContenidoPipelineRoute: typeof ContenidoPipelineRoute
   EntregasIdRoute: typeof EntregasIdRoute
   EntregasGanttRoute: typeof EntregasGanttRoute
@@ -424,6 +437,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContenidoPipelineRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contenido/performance': {
+      id: '/contenido/performance'
+      path: '/contenido/performance'
+      fullPath: '/contenido/performance'
+      preLoaderRoute: typeof ContenidoPerformanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contenido/calendario': {
       id: '/contenido/calendario'
       path: '/contenido/calendario'
@@ -462,6 +482,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClientesTablaRoute: ClientesTablaRoute,
   ClientesTarjetasRoute: ClientesTarjetasRoute,
   ContenidoCalendarioRoute: ContenidoCalendarioRoute,
+  ContenidoPerformanceRoute: ContenidoPerformanceRoute,
   ContenidoPipelineRoute: ContenidoPipelineRoute,
   EntregasIdRoute: EntregasIdRoute,
   EntregasGanttRoute: EntregasGanttRoute,
