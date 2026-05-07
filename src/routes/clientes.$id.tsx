@@ -50,7 +50,7 @@ function FichaCliente() {
           <div className="flex items-start gap-4">
             <div
               className="h-14 w-14 rounded-xl flex items-center justify-center font-bold text-lg shrink-0"
-              style={{ backgroundColor: color.bg, color: color.fg }}
+              style={{ backgroundColor: color.bg, color: color.text }}
             >
               {c.nombre.slice(0, 2).toUpperCase()}
             </div>
