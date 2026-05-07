@@ -40,9 +40,9 @@ export const useNotificaciones = () =>
 
 // Vistas derivadas para "Mis tareas"
 export const useMisTareas = () => {
-  const data = TAREAS_MOCK.filter(
-    (t) => t.responsable_id === USUARIO_ACTUAL_ID && t.estado !== "completada",
-  );
+  // Devolvemos todas las tareas del usuario (incluidas completadas) para que
+  // los filtros de la tabla puedan mostrarlas cuando se navega con ?estado=completada.
+  const data = TAREAS_MOCK.filter((t) => t.responsable_id === USUARIO_ACTUAL_ID);
   return useQuery({
     queryKey: ["mis-tareas", USUARIO_ACTUAL_ID],
     queryFn: () => sync(data),
