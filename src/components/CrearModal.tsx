@@ -54,9 +54,6 @@ export function CrearModal() {
 
   if (!tipo) return null;
 
-  const proyectos = clienteId
-    ? PROYECTOS_MOCK.filter((p) => p.cliente_id === clienteId)
-    : PROYECTOS_MOCK;
   const entregas = proyectoId
     ? ENTREGAS_MOCK.filter((e) => e.proyecto_id === proyectoId)
     : ENTREGAS_MOCK;
