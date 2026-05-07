@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useMemo } from "react";
 import { addDays, differenceInDays, format, isSameDay, parseISO, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
@@ -7,6 +8,8 @@ import { entregaPorId } from "@/lib/mock-tareas";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { EstadoVacio } from "@/components/EstadoVacio";
+import { setTareaFechas, getTareaOverride, useOverrides } from "@/lib/fechas-override-store";
+import { toast } from "sonner";
 
 const N_DIAS = 14;
 const DAY_W = 60;
@@ -27,6 +30,7 @@ const colorEstado = (estado: string, vencida: boolean) => {
 };
 
 export function MisTareasTimeline() {
+  useOverrides();
   const { data: tareas = [] } = useMisTareas();
   const { abrir } = useTareaModal();
 
@@ -93,8 +97,9 @@ export function MisTareasTimeline() {
                     {entregaPorId(entregaId)?.nombre ?? "Sin entrega"}
                   </div>
                   {ts.map((t) => {
-                    const inicio = parseISO(t.fecha_fin_min);
-                    const fin = parseISO(t.fecha_fin_max);
+                    const ov = getTareaOverride(t.id);
+                    const inicio = parseISO(ov?.fin_min ?? t.fecha_fin_min);
+                    const fin = parseISO(ov?.fin_max ?? t.fecha_fin_max);
                     const startOffset = Math.max(0, differenceInDays(inicio, hoy));
                     const endOffset = Math.min(N_DIAS - 1, differenceInDays(fin, hoy));
                     if (endOffset < 0) return null;
@@ -105,29 +110,16 @@ export function MisTareasTimeline() {
                       <div key={t.id} className="flex items-center" style={{ height: ROW_H }}>
                         <div className="w-[220px] shrink-0 px-3 text-xs truncate">{t.titulo}</div>
                         <div className="relative flex-1" style={{ height: ROW_H }}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button
-                                onClick={() => abrir(t.id)}
-                                className={cn(
-                                  "absolute top-1.5 h-5 rounded-sm text-[10px] text-white px-2 truncate text-left hover:opacity-90 transition",
-                                  colorEstado(t.estado, vencida),
-                                )}
-                                style={{ left: left + 3, width }}
-                              >
-                                {t.titulo}
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <div className="text-xs">
-                                <div className="font-semibold">{t.titulo}</div>
-                                <div>
-                                  {format(inicio, "d MMM", { locale: es })} →{" "}
-                                  {format(fin, "d MMM", { locale: es })}
-                                </div>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
+                          <BarraArrastrable
+                            tareaId={t.id}
+                            titulo={t.titulo}
+                            color={colorEstado(t.estado, vencida)}
+                            left={left + 3}
+                            width={width}
+                            inicio={inicio}
+                            fin={fin}
+                            onClick={() => abrir(t.id)}
+                          />
                         </div>
                       </div>
                     );
