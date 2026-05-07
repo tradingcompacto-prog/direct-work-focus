@@ -24,6 +24,14 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import {
+  setTareaFechas,
+  getTareaOverride,
+  useOverrides,
+} from "@/lib/fechas-override-store";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
 
 const estadoColor: Record<string, string> = {
   activa: "bg-blue-100 text-blue-800 border-blue-200",
@@ -40,6 +48,7 @@ const estadoLabel: Record<string, string> = {
 
 export function TareaModal() {
   const { tareaId, expandido, cerrar, toggleExpandido } = useTareaModal();
+  useOverrides();
   const tarea = tareaId ? tareaPorId(tareaId) : undefined;
   const [cerrandoOpen, setCerrandoOpen] = React.useState(false);
   const timer = useTimer(tareaId);
@@ -54,6 +63,11 @@ export function TareaModal() {
   }, [tareaId, cerrar]);
 
   if (!tareaId || !tarea) return null;
+
+  const ov = getTareaOverride(tarea.id);
+  const fInicio = ov?.fin_min ?? tarea.fecha_inicio;
+  const fFinMin = ov?.fin_min ?? tarea.fecha_fin_min;
+  const fFinMax = ov?.fin_max ?? tarea.fecha_fin_max;
 
   const cliente = clientePorId(tarea.cliente_id);
   const proyecto = proyectoPorId(tarea.proyecto_id);
@@ -214,14 +228,21 @@ export function TareaModal() {
             </Section>
 
             <Section title="Fechas">
-              <Field label="Inicio" value={format(parseISO(tarea.fecha_inicio), "d MMM", { locale: es })} />
-              <Field
+              <EditableDate
+                label="Inicio"
+                valueIso={fInicio}
+                onChange={(iso) => {
+                  setTareaFechas(tarea.id, { fin_min: iso });
+                  toast.success("Fecha de inicio actualizada");
+                }}
+              />
+              <EditableDate
                 label="Entrega"
-                value={
-                  tarea.fecha_fin_min === tarea.fecha_fin_max
-                    ? format(parseISO(tarea.fecha_fin_max), "d MMM", { locale: es })
-                    : `${format(parseISO(tarea.fecha_fin_min), "d MMM", { locale: es })} – ${format(parseISO(tarea.fecha_fin_max), "d MMM", { locale: es })}`
-                }
+                valueIso={fFinMax}
+                onChange={(iso) => {
+                  setTareaFechas(tarea.id, { fin_max: iso });
+                  toast.success("Fecha de entrega actualizada");
+                }}
               />
             </Section>
 
@@ -386,6 +407,46 @@ function Persona({ label, id }: { label: string; id?: string }) {
         </Avatar>
         {m.nombre}
       </Link>
+    </div>
+  );
+}
+
+function EditableDate({
+  label,
+  valueIso,
+  onChange,
+}: {
+  label: string;
+  valueIso: string;
+  onChange: (iso: string) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const date = parseISO(valueIso);
+  return (
+    <div className="text-sm flex gap-2 items-center">
+      <span className="text-muted-foreground w-20">{label}:</span>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-muted text-sm">
+            <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+            {format(date, "d MMM yyyy", { locale: es })}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={(d) => {
+              if (!d) return;
+              const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+              onChange(iso);
+              setOpen(false);
+            }}
+            initialFocus
+            className={cn("p-3 pointer-events-auto")}
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link } from "@tanstack/react-router";
 import { useTareas, useEquipo } from "@/lib/queries";
 import { useTareaModal } from "@/lib/tarea-modal-context";
 import { urgenciaTarea } from "@/lib/fechas";
@@ -115,10 +116,15 @@ export function EquipoCarga() {
                 >
                   <div className="px-3 py-2 border-b border-border flex items-center justify-between">
                     <PersonaChip id={m.id} size="sm" />
-                    <span className="text-xs text-muted-foreground tabular-nums">
+                    <Link
+                      to="/personas/$id"
+                      params={{ id: m.id }}
+                      className="text-xs text-muted-foreground tabular-nums hover:text-foreground hover:underline"
+                      title="Ver todas las tareas"
+                    >
                       {totalPersona(lista)}
                       {unidad === "horas" ? "h" : ""}
-                    </span>
+                    </Link>
                   </div>
                   <div className="p-2 space-y-1.5 max-h-[60vh] overflow-y-auto">
                     {lista.map((t) => {
@@ -161,20 +167,26 @@ export function EquipoCarga() {
             for (const t of lista) cont[urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max)]++;
             const total = lista.length || 1;
             return (
-              <div key={m.id} className="flex items-center gap-3">
+              <Link
+                key={m.id}
+                to="/personas/$id"
+                params={{ id: m.id }}
+                className="flex items-center gap-3 rounded-md px-2 py-1 -mx-2 hover:bg-muted/50 transition"
+                title="Ver tareas de la persona"
+              >
                 <div className="w-40 shrink-0">
-                  <PersonaChip id={m.id} size="sm" />
+                  <PersonaChip id={m.id} size="sm" link={false} />
                 </div>
                 <div className="flex-1 h-6 bg-muted rounded overflow-hidden flex">
-                  {cont.rojo > 0 && <div className="bg-red-500" style={{ width: `${(cont.rojo / total) * 100}%` }} />}
-                  {cont.amarillo > 0 && <div className="bg-amber-500" style={{ width: `${(cont.amarillo / total) * 100}%` }} />}
-                  {cont.azul > 0 && <div className="bg-blue-500" style={{ width: `${(cont.azul / total) * 100}%` }} />}
+                  {cont.rojo > 0 && <div className="bg-red-500" style={{ width: `${(cont.rojo / total) * 100}%` }} title={`${cont.rojo} urgentes`} />}
+                  {cont.amarillo > 0 && <div className="bg-amber-500" style={{ width: `${(cont.amarillo / total) * 100}%` }} title={`${cont.amarillo} próximas`} />}
+                  {cont.azul > 0 && <div className="bg-blue-500" style={{ width: `${(cont.azul / total) * 100}%` }} title={`${cont.azul} con holgura`} />}
                 </div>
                 <div className="w-14 text-right text-sm font-medium tabular-nums">
                   {totalPersona(lista)}
                   {unidad === "horas" ? "h" : ""}
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>

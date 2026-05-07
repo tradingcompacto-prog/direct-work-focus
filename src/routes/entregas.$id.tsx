@@ -21,6 +21,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { colorCliente, bordeIzqCliente } from "@/lib/cliente-colors";
 import { tiempoRelativo, urgenciaTarea, etiquetaFechaRelativa } from "@/lib/fechas";
 import { cn } from "@/lib/utils";
+import {
+  setEntregaFechas,
+  getEntregaOverride,
+  useOverrides,
+} from "@/lib/fechas-override-store";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as DayCalendar } from "@/components/ui/calendar";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/entregas/$id")({
   component: FichaEntrega,
@@ -35,6 +43,7 @@ const estadoTareaCls: Record<string, string> = {
 
 function FichaEntrega() {
   const { id } = Route.useParams();
+  useOverrides();
   const e = entregaPorId(id);
   const { abrir } = useCrearModal();
   const { abrir: abrirTarea } = useTareaModal();
@@ -57,7 +66,10 @@ function FichaEntrega() {
   const abiertas = tareas.filter((t) => t.estado !== "completada");
   const pct = tareas.length ? Math.round((cerradas.length / tareas.length) * 100) : 0;
   const equipo = Array.from(new Set(tareas.map((t) => t.responsable_id)));
-  const dias = differenceInCalendarDays(parseISO(e.fecha_fin), new Date());
+  const ov = getEntregaOverride(e.id);
+  const fInicio = ov?.inicio ?? e.fecha_inicio;
+  const fFin = ov?.fin_max ?? e.fecha_fin;
+  const dias = differenceInCalendarDays(parseISO(fFin), new Date());
   const actividad = ACTIVIDAD_MOCK.filter((a) => a.entrega_id === e.id || tareas.some((t) => t.id === a.tarea_id));
   const color = colorCliente(e.cliente_id);
 
@@ -88,7 +100,21 @@ function FichaEntrega() {
               </Badge>
               <span className="inline-flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5" />
-                {format(parseISO(e.fecha_inicio), "d MMM", { locale: es })} → {format(parseISO(e.fecha_fin), "d MMM", { locale: es })}
+                <EditableDateChip
+                  iso={fInicio}
+                  onChange={(iso) => {
+                    setEntregaFechas(e.id, { inicio: iso });
+                    toast.success("Inicio actualizado");
+                  }}
+                />
+                →
+                <EditableDateChip
+                  iso={fFin}
+                  onChange={(iso) => {
+                    setEntregaFechas(e.id, { fin_max: iso });
+                    toast.success("Entrega actualizada");
+                  }}
+                />
               </span>
               {e.estado === "en_curso" && (
                 <span className={cn(
@@ -299,5 +325,33 @@ function FilaTarea({ t, onClick, detallada }: { t: typeof TAREAS_MOCK[number]; o
         u === "neutro" && "bg-muted text-muted-foreground",
       )}>{etiquetaFechaRelativa(t.fecha_fin_max)}</span>
     </button>
+  );
+}
+
+function EditableDateChip({ iso, onChange }: { iso: string; onChange: (iso: string) => void }) {
+  const [open, setOpen] = React.useState(false);
+  const date = parseISO(iso);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button className="px-1.5 py-0.5 rounded hover:bg-muted text-foreground/80">
+          {format(date, "d MMM", { locale: es })}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <DayCalendar
+          mode="single"
+          selected={date}
+          onSelect={(d) => {
+            if (!d) return;
+            const out = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+            onChange(out);
+            setOpen(false);
+          }}
+          initialFocus
+          className={cn("p-3 pointer-events-auto")}
+        />
+      </PopoverContent>
+    </Popover>
   );
 }
