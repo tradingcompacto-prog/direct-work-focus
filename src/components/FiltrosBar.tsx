@@ -11,13 +11,30 @@ export interface FiltrosState {
   cliente: string;
   responsable: string;
   estado: string;
+  vencidas?: string;
 }
 
-const VACIO: FiltrosState = { q: "", cliente: "", responsable: "", estado: "" };
+const VACIO: FiltrosState = { q: "", cliente: "", responsable: "", estado: "", vencidas: "" };
 
 export function useFiltros(storageKey: string): [FiltrosState, (n: Partial<FiltrosState>) => void, () => void] {
   const [state, setState] = React.useState<FiltrosState>(VACIO);
   React.useEffect(() => {
+    // 1) Lee de URL primero (links externos tipo /tareas/tabla?vencidas=1)
+    let urlSeed: Partial<FiltrosState> = {};
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const keys: (keyof FiltrosState)[] = ["q", "cliente", "responsable", "estado", "vencidas"];
+      for (const k of keys) {
+        const v = sp.get(k);
+        if (v != null) urlSeed[k] = v;
+      }
+    }
+    // 2) Si hay parámetros en URL, ganan; si no, usa storage
+    if (Object.keys(urlSeed).length > 0) {
+      setState({ ...VACIO, ...urlSeed });
+      try { localStorage.setItem(storageKey, JSON.stringify({ ...VACIO, ...urlSeed })); } catch {}
+      return;
+    }
     try {
       const raw = localStorage.getItem(storageKey);
       if (raw) setState({ ...VACIO, ...JSON.parse(raw) });
@@ -52,7 +69,8 @@ export function FiltrosBar({ state, onChange, onReset, estados, placeholder = "B
     (state.q ? 1 : 0) +
     (state.cliente ? 1 : 0) +
     (state.responsable ? 1 : 0) +
-    (state.estado ? 1 : 0);
+    (state.estado ? 1 : 0) +
+    (state.vencidas ? 1 : 0);
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
@@ -82,6 +100,14 @@ export function FiltrosBar({ state, onChange, onReset, estados, placeholder = "B
           <option value="">Todos los estados</option>
           {estados.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
         </Select>
+      )}
+      {state.vencidas === "1" && (
+        <span className="inline-flex items-center gap-1 text-[11px] bg-red-100 text-red-700 rounded px-2 py-1">
+          🔴 Solo vencidas
+          <button onClick={() => onChange({ vencidas: "" })} className="ml-1 hover:opacity-70">
+            <X className="h-3 w-3" />
+          </button>
+        </span>
       )}
       {activos > 0 && (
         <Button variant="ghost" size="sm" onClick={onReset} className="h-9 gap-1.5 text-muted-foreground">
