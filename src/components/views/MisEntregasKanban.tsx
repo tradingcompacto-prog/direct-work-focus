@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useMisEntregas } from "@/lib/queries";
 import { TAREAS_MOCK, ENTREGAS_MOCK } from "@/lib/mock-tareas";
-import { ClienteLink, ProyectoLink } from "@/components/EntidadLinks";
+import { ClienteLink } from "@/components/EntidadLinks";
 import { Progress } from "@/components/ui/progress";
 import { format, parseISO, isAfter, startOfDay, startOfWeek, startOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
@@ -67,7 +67,7 @@ export function MisEntregasKanban() {
                 >
                   <div className="text-sm font-medium">{e.nombre}</div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    <ClienteLink id={e.cliente_id} /> · <ProyectoLink id={e.proyecto_id} />
+                    <ClienteLink id={e.cliente_id} />
                   </div>
                   <div className="mt-2">
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">

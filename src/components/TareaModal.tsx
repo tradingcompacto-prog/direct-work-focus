@@ -85,7 +85,7 @@ export function TareaModal() {
                 {cliente.nombre}
               </Link>
             )}
-            {proyecto && (
+            {proyecto && cliente && proyecto.nombre !== cliente.nombre && (
               <>
                 <span>›</span>
                 <Link

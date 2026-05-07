@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { ENTREGAS_MOCK, TAREAS_MOCK } from "@/lib/mock-tareas";
-import { ClienteLink, ProyectoLink } from "@/components/EntidadLinks";
+import { ClienteLink } from "@/components/EntidadLinks";
 import { PersonaChip } from "@/components/PersonaChip";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -22,7 +22,6 @@ export function MisEntregasTabla() {
           <TableRow>
             <TableHead>Entrega</TableHead>
             <TableHead>Cliente</TableHead>
-            <TableHead>Proyecto</TableHead>
             <TableHead>Estado</TableHead>
             <TableHead>Progreso</TableHead>
             <TableHead>Fecha entrega</TableHead>
@@ -44,9 +43,6 @@ export function MisEntregasTabla() {
                 </TableCell>
                 <TableCell>
                   <ClienteLink id={e.cliente_id} />
-                </TableCell>
-                <TableCell>
-                  <ProyectoLink id={e.proyecto_id} />
                 </TableCell>
                 <TableCell className="capitalize text-xs">{e.estado.replace("_", " ")}</TableCell>
                 <TableCell className="min-w-[140px]">
