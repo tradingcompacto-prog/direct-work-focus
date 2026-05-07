@@ -19,8 +19,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCrearModal } from "@/lib/crear-modal-context";
-import { CLIENTES_MOCK, PROYECTOS_MOCK, ENTREGAS_MOCK } from "@/lib/mock-tareas";
+import { CLIENTES_MOCK, PROYECTOS_MOCK, ENTREGAS_MOCK, TAREAS_MOCK } from "@/lib/mock-tareas";
 import { EQUIPO } from "@/lib/equipo";
+import { estimar } from "@/lib/estimacion";
+import { Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const TITLES: Record<string, string> = {
@@ -35,11 +38,17 @@ export function CrearModal() {
   const [clienteId, setClienteId] = React.useState("");
   const [proyectoId, setProyectoId] = React.useState("");
   const [entregaId, setEntregaId] = React.useState("");
+  const [titulo, setTitulo] = React.useState("");
+  const [tipoTarea, setTipoTarea] = React.useState<string>("");
+  const [responsableId, setResponsableId] = React.useState("");
 
   React.useEffect(() => {
     setClienteId(contexto?.cliente_id ?? "");
     setProyectoId(contexto?.proyecto_id ?? "");
     setEntregaId(contexto?.entrega_id ?? "");
+    setTitulo("");
+    setTipoTarea("");
+    setResponsableId("");
   }, [contexto, tipo]);
 
   // Regla: 1 cliente = 1 proyecto (mismo nombre). Auto-seleccionar proyecto al elegir cliente.
@@ -63,6 +72,19 @@ export function CrearModal() {
     toast.success(`${TITLES[tipo]} creada (mock)`);
     cerrar();
   };
+
+  const estimacion =
+    tipo === "tarea"
+      ? estimar(
+          {
+            titulo: titulo || undefined,
+            tipo: (tipoTarea || undefined) as never,
+            cliente_id: clienteId || undefined,
+            responsable_id: responsableId || undefined,
+          },
+          TAREAS_MOCK,
+        )
+      : null;
 
   return (
     <Dialog open onOpenChange={(o) => (o ? null : cerrar())}>
@@ -120,15 +142,36 @@ export function CrearModal() {
                 </Field>
               )}
               <Field label="Título">
-                <Input required placeholder={`Título de la ${tipo}`} />
+                <Input
+                  required
+                  placeholder={`Título de la ${tipo}`}
+                  value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)}
+                />
               </Field>
               <Field label="Descripción">
                 <Textarea rows={3} />
               </Field>
               {tipo === "tarea" && (
                 <>
+                  <Field label="Tipo">
+                    <Select value={tipoTarea} onValueChange={setTipoTarea}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="diseno">Diseño</SelectItem>
+                        <SelectItem value="copy">Copy</SelectItem>
+                        <SelectItem value="web">Web</SelectItem>
+                        <SelectItem value="campanas">Campañas</SelectItem>
+                        <SelectItem value="seo">SEO</SelectItem>
+                        <SelectItem value="estrategia">Estrategia</SelectItem>
+                        <SelectItem value="otro">Otro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
                   <Field label="Responsable">
-                    <PersonaSelect />
+                    <PersonaSelect value={responsableId} onChange={setResponsableId} />
                   </Field>
                   <div className="grid grid-cols-2 gap-3">
                     <Field label="Fecha inicio">
@@ -151,6 +194,29 @@ export function CrearModal() {
                       </SelectContent>
                     </Select>
                   </Field>
+                  <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs flex items-center gap-2">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                    {estimacion ? (
+                      <span>
+                        Estimación automática:{" "}
+                        <span className="font-semibold">{estimacion.horas}h</span>
+                        <span
+                          className={cn(
+                            "ml-1.5 px-1.5 py-0.5 rounded text-[10px]",
+                            estimacion.confianza === "alta"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-amber-100 text-amber-700",
+                          )}
+                        >
+                          {estimacion.confianza === "alta" ? "alta" : "baja"} confianza · {estimacion.muestras} ref.
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        Sin datos suficientes para estimar todavía.
+                      </span>
+                    )}
+                  </div>
                 </>
               )}
               {tipo === "entrega" && (
@@ -189,9 +255,15 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function PersonaSelect() {
+function PersonaSelect({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange?: (v: string) => void;
+}) {
   return (
-    <Select>
+    <Select value={value} onValueChange={onChange}>
       <SelectTrigger>
         <SelectValue placeholder="Seleccionar persona" />
       </SelectTrigger>
