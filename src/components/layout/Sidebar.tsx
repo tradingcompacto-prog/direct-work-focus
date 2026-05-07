@@ -202,10 +202,11 @@ export function Sidebar() {
                     >
                       <Icon className="h-4 w-4 shrink-0" />
                       {!collapsed && <span className="truncate">{item.label}</span>}
+                      <span className="ml-auto flex items-center gap-1.5">
                       {!collapsed && badge && badge.n > 0 && (
                         <span
                           className={cn(
-                            "ml-auto text-[10px] tabular-nums font-semibold rounded px-1.5 py-0.5",
+                            "text-[10px] tabular-nums font-semibold rounded px-1.5 py-0.5",
                             badge.tone === "rojo"
                               ? "bg-red-100 text-red-700"
                               : badge.tone === "alerta"
@@ -216,11 +217,12 @@ export function Sidebar() {
                           {badge.n}
                         </span>
                       )}
-                      {!collapsed && item.atajo && !(badge && badge.n > 0) && (
-                        <kbd className="ml-auto text-[9px] font-mono text-muted-foreground/70 bg-muted/60 border border-border rounded px-1 py-0.5">
+                      {!collapsed && item.atajo && (
+                        <kbd className="text-[9px] font-mono text-muted-foreground/70 bg-muted/60 border border-border rounded px-1 py-0.5">
                           {item.atajo}
                         </kbd>
                       )}
+                      </span>
                     </Link>
                   );
                   return (
