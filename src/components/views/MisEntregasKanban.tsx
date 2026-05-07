@@ -2,8 +2,10 @@ import { Link } from "@tanstack/react-router";
 import { useMisEntregas } from "@/lib/queries";
 import { TAREAS_MOCK, ENTREGAS_MOCK } from "@/lib/mock-tareas";
 import { ClienteLink } from "@/components/EntidadLinks";
+import { AvatarStack } from "@/components/AvatarStack";
+import { bordeIzqCliente, colorCliente } from "@/lib/cliente-colors";
 import { Progress } from "@/components/ui/progress";
-import { format, parseISO, isAfter, startOfDay, startOfWeek, startOfMonth } from "date-fns";
+import { format, parseISO, isAfter, startOfDay, startOfWeek, startOfMonth, differenceInCalendarDays } from "date-fns";
 import { es } from "date-fns/locale";
 import type { Entrega } from "@/types/database";
 
@@ -15,6 +17,7 @@ const calcular = (entrega: Entrega) => {
     cerradas,
     pendientes: ts.length - cerradas,
     pct: ts.length ? Math.round((cerradas / ts.length) * 100) : 0,
+    responsables: Array.from(new Set(ts.map((t) => t.responsable_id))),
   };
 };
 
@@ -63,22 +66,27 @@ export function MisEntregasKanban() {
                   key={e.id}
                   to="/entregas/$id"
                   params={{ id: e.id }}
-                  className="block card-soft p-3 hover:shadow-md"
+                  className="block card-soft p-3 hover:shadow-md transition border-l-4"
+                  style={bordeIzqCliente(e.cliente_id)}
                 >
                   <div className="text-sm font-medium">{e.nombre}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+                    <span
+                      className="h-1.5 w-1.5 rounded-full inline-block"
+                      style={{ backgroundColor: colorCliente(e.cliente_id).border }}
+                    />
                     <ClienteLink id={e.cliente_id} />
                   </div>
                   <div className="mt-2">
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
-                      <span>{m.cerradas}/{m.total} tareas</span>
+                      <span>✓ {m.cerradas} / {m.total}</span>
                       <span>{m.pct}%</span>
                     </div>
                     <Progress value={m.pct} className="h-1.5" />
                   </div>
                   <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-                    <span>{format(parseISO(e.fecha_fin), "d MMM", { locale: es })}</span>
-                    <span>{m.pendientes} pendientes</span>
+                    <DiasRestantes fecha={e.fecha_fin} />
+                    <AvatarStack ids={m.responsables} size="xs" />
                   </div>
                 </Link>
               );
@@ -87,5 +95,20 @@ export function MisEntregasKanban() {
         </div>
       ))}
     </div>
+  );
+}
+
+function DiasRestantes({ fecha }: { fecha: string }) {
+  const d = parseISO(fecha);
+  const diff = differenceInCalendarDays(d, startOfDay(new Date()));
+  let cls = "bg-green-100 text-green-700";
+  if (diff < 0) cls = "bg-red-100 text-red-700";
+  else if (diff <= 5) cls = "bg-amber-100 text-amber-700";
+  const label =
+    diff < 0 ? `vencida ${Math.abs(diff)}d` : diff === 0 ? "hoy" : `en ${diff}d`;
+  return (
+    <span className={`px-1.5 py-0.5 rounded font-medium ${cls}`}>
+      {format(d, "d MMM", { locale: es })} · {label}
+    </span>
   );
 }

@@ -11,6 +11,8 @@ import { Progress } from "@/components/ui/progress";
 import { ENTREGAS_MOCK, TAREAS_MOCK } from "@/lib/mock-tareas";
 import { ClienteLink } from "@/components/EntidadLinks";
 import { PersonaChip } from "@/components/PersonaChip";
+import { AvatarStack } from "@/components/AvatarStack";
+import { colorCliente } from "@/lib/cliente-colors";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -25,7 +27,7 @@ export function MisEntregasTabla() {
             <TableHead>Estado</TableHead>
             <TableHead>Progreso</TableHead>
             <TableHead>Fecha entrega</TableHead>
-            <TableHead>Pendientes</TableHead>
+            <TableHead>Equipo</TableHead>
             <TableHead>PM</TableHead>
           </TableRow>
         </TableHeader>
@@ -34,10 +36,19 @@ export function MisEntregasTabla() {
             const ts = TAREAS_MOCK.filter((t) => t.entrega_id === e.id);
             const cerradas = ts.filter((t) => t.estado === "completada").length;
             const pct = ts.length ? Math.round((cerradas / ts.length) * 100) : 0;
+            const responsables = Array.from(new Set(ts.map((t) => t.responsable_id)));
             return (
               <TableRow key={e.id} className="cursor-pointer">
                 <TableCell className="font-medium">
-                  <Link to="/entregas/$id" params={{ id: e.id }} className="hover:underline">
+                  <Link
+                    to="/entregas/$id"
+                    params={{ id: e.id }}
+                    className="hover:underline inline-flex items-center gap-2"
+                  >
+                    <span
+                      className="h-2 w-2 rounded-full inline-block shrink-0"
+                      style={{ backgroundColor: colorCliente(e.cliente_id).border }}
+                    />
                     {e.nombre}
                   </Link>
                 </TableCell>
@@ -54,7 +65,7 @@ export function MisEntregasTabla() {
                 <TableCell className="text-xs">
                   {format(parseISO(e.fecha_fin), "d MMM", { locale: es })}
                 </TableCell>
-                <TableCell className="text-xs">{ts.length - cerradas}</TableCell>
+                <TableCell><AvatarStack ids={responsables} size="xs" /></TableCell>
                 <TableCell>
                   <PersonaChip id={e.pm_id} size="xs" />
                 </TableCell>

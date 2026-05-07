@@ -5,14 +5,8 @@ import type { Tarea } from "@/types/database";
 import { ClienteLink, EntregaLink } from "@/components/EntidadLinks";
 import { PersonaChip } from "@/components/PersonaChip";
 import { urgenciaTarea, etiquetaFechaRelativa } from "@/lib/fechas";
+import { bordeIzqCliente, colorCliente } from "@/lib/cliente-colors";
 import { cn } from "@/lib/utils";
-
-const tono = {
-  rojo: "border-l-red-500",
-  amarillo: "border-l-amber-500",
-  azul: "border-l-blue-500",
-  neutro: "border-l-zinc-300",
-};
 
 export function TareaCard({ tarea, compact = false }: { tarea: Tarea; compact?: boolean }) {
   const { abrir } = useTareaModal();
@@ -22,17 +16,29 @@ export function TareaCard({ tarea, compact = false }: { tarea: Tarea; compact?: 
       onClick={() => abrir(tarea.id)}
       className={cn(
         "card-soft cursor-pointer p-3 border-l-4",
-        tono[u],
       )}
+      style={bordeIzqCliente(tarea.cliente_id)}
     >
       <div className="flex items-start justify-between gap-2">
         <h4 className="text-sm font-medium leading-snug min-w-0">{tarea.titulo}</h4>
-        <span className="text-[11px] text-muted-foreground shrink-0 tabular-nums">
+        <span
+          className={cn(
+            "text-[10px] font-semibold tabular-nums shrink-0 px-1.5 py-0.5 rounded",
+            u === "rojo" && "bg-red-100 text-red-700",
+            u === "amarillo" && "bg-amber-100 text-amber-700",
+            u === "azul" && "bg-blue-100 text-blue-700",
+            u === "neutro" && "bg-muted text-muted-foreground",
+          )}
+        >
           {etiquetaFechaRelativa(tarea.fecha_fin_max)}
         </span>
       </div>
       {!compact && (
-        <div className="mt-1.5 text-xs text-muted-foreground truncate">
+        <div className="mt-1.5 text-xs text-muted-foreground truncate flex items-center gap-1.5">
+          <span
+            className="h-1.5 w-1.5 rounded-full inline-block shrink-0"
+            style={{ backgroundColor: colorCliente(tarea.cliente_id).border }}
+          />
           <ClienteLink id={tarea.cliente_id} /> ·{" "}
           <EntregaLink id={tarea.entrega_id} className="text-muted-foreground" />
         </div>
