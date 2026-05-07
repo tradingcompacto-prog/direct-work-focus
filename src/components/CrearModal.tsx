@@ -43,6 +43,7 @@ export function CrearModal() {
   const [tipoTarea, setTipoTarea] = React.useState<string>("");
   const [responsableId, setResponsableId] = React.useState("");
   const [entregaNuevaNombre, setEntregaNuevaNombre] = React.useState<string | null>(null);
+  const [bloqueadaPorId, setBloqueadaPorId] = React.useState<string>("");
 
   React.useEffect(() => {
     setClienteId(contexto?.cliente_id ?? "");
@@ -51,6 +52,7 @@ export function CrearModal() {
     setTitulo("");
     setTipoTarea("");
     setResponsableId("");
+    setBloqueadaPorId("");
   }, [contexto, tipo]);
 
   // Regla: 1 cliente = 1 proyecto (mismo nombre). Auto-seleccionar proyecto al elegir cliente.
@@ -68,6 +70,22 @@ export function CrearModal() {
   const entregas = proyectoId
     ? ENTREGAS_MOCK.filter((e) => e.proyecto_id === proyectoId)
     : ENTREGAS_MOCK;
+
+  // Candidatas para "espera a": tareas de la misma entrega; si no hay entrega elegida, del mismo proyecto/cliente.
+  const candidatasDependencia = React.useMemo(() => {
+    if (tipo !== "tarea") return [];
+    let pool = TAREAS_MOCK;
+    if (entregaId && entregaId !== "__nueva__" && entregaId !== "puntuales") {
+      pool = pool.filter((t) => t.entrega_id === entregaId);
+    } else if (proyectoId) {
+      pool = pool.filter((t) => t.proyecto_id === proyectoId);
+    } else if (clienteId) {
+      pool = pool.filter((t) => t.cliente_id === clienteId);
+    } else {
+      return [];
+    }
+    return pool.filter((t) => t.estado !== "completada");
+  }, [tipo, entregaId, proyectoId, clienteId]);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,6 +209,34 @@ export function CrearModal() {
                   </Field>
                   <Field label="Responsable">
                     <PersonaSelect value={responsableId} onChange={setResponsableId} />
+                  </Field>
+                  <Field label="Espera a (depende de)">
+                    <Select
+                      value={bloqueadaPorId || "__none__"}
+                      onValueChange={(v) => setBloqueadaPorId(v === "__none__" ? "" : v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sin dependencia" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Sin dependencia</SelectItem>
+                        {candidatasDependencia.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.titulo}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {candidatasDependencia.length === 0 && (
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        Elige cliente/entrega para ver tareas a las que puede esperar.
+                      </p>
+                    )}
+                    {bloqueadaPorId && (
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        ⏳ Esta tarea no estará activa hasta que se cierre la dependencia.
+                      </p>
+                    )}
                   </Field>
                   <div className="grid grid-cols-2 gap-3">
                     <Field label="Fecha inicio">
