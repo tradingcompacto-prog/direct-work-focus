@@ -15,6 +15,10 @@ import {
   ListChecks,
   Package,
   Users,
+  FileImage,
+  CalendarRange as CalRange2,
+  GalleryHorizontalEnd,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tienePermiso, USUARIO_ACTUAL_ID } from "@/lib/equipo";
@@ -76,6 +80,15 @@ const SECCIONES: SectionDef[] = [
     items: [
       { to: "/clientes/tarjetas", label: "Tarjetas", icon: Building2, atajo: "G L" },
       { to: "/clientes/tabla", label: "Tabla", icon: Table2 },
+    ],
+  },
+  {
+    label: "Contenido",
+    icon: FileImage,
+    items: [
+      { to: "/contenido/calendario", label: "Calendario", icon: CalRange2 },
+      { to: "/contenido/pipeline", label: "Pipeline", icon: GalleryHorizontalEnd },
+      { to: "/contenido/performance", label: "Performance", icon: BarChart3 },
     ],
   },
   {

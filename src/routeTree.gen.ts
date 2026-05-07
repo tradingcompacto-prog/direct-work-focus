@@ -25,6 +25,9 @@ import { Route as EntregasTablaRouteImport } from './routes/entregas.tabla'
 import { Route as EntregasKanbanRouteImport } from './routes/entregas.kanban'
 import { Route as EntregasGanttRouteImport } from './routes/entregas.gantt'
 import { Route as EntregasIdRouteImport } from './routes/entregas.$id'
+import { Route as ContenidoPipelineRouteImport } from './routes/contenido.pipeline'
+import { Route as ContenidoPerformanceRouteImport } from './routes/contenido.performance'
+import { Route as ContenidoCalendarioRouteImport } from './routes/contenido.calendario'
 import { Route as ClientesTarjetasRouteImport } from './routes/clientes.tarjetas'
 import { Route as ClientesTablaRouteImport } from './routes/clientes.tabla'
 import { Route as ClientesIdRouteImport } from './routes/clientes.$id'
@@ -109,6 +112,21 @@ const EntregasIdRoute = EntregasIdRouteImport.update({
   path: '/entregas/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContenidoPipelineRoute = ContenidoPipelineRouteImport.update({
+  id: '/contenido/pipeline',
+  path: '/contenido/pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContenidoPerformanceRoute = ContenidoPerformanceRouteImport.update({
+  id: '/contenido/performance',
+  path: '/contenido/performance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContenidoCalendarioRoute = ContenidoCalendarioRouteImport.update({
+  id: '/contenido/calendario',
+  path: '/contenido/calendario',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClientesTarjetasRoute = ClientesTarjetasRouteImport.update({
   id: '/clientes/tarjetas',
   path: '/clientes/tarjetas',
@@ -131,6 +149,9 @@ export interface FileRoutesByFullPath {
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
+  '/contenido/calendario': typeof ContenidoCalendarioRoute
+  '/contenido/performance': typeof ContenidoPerformanceRoute
+  '/contenido/pipeline': typeof ContenidoPipelineRoute
   '/entregas/$id': typeof EntregasIdRoute
   '/entregas/gantt': typeof EntregasGanttRoute
   '/entregas/kanban': typeof EntregasKanbanRoute
@@ -152,6 +173,9 @@ export interface FileRoutesByTo {
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
+  '/contenido/calendario': typeof ContenidoCalendarioRoute
+  '/contenido/performance': typeof ContenidoPerformanceRoute
+  '/contenido/pipeline': typeof ContenidoPipelineRoute
   '/entregas/$id': typeof EntregasIdRoute
   '/entregas/gantt': typeof EntregasGanttRoute
   '/entregas/kanban': typeof EntregasKanbanRoute
@@ -174,6 +198,9 @@ export interface FileRoutesById {
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
+  '/contenido/calendario': typeof ContenidoCalendarioRoute
+  '/contenido/performance': typeof ContenidoPerformanceRoute
+  '/contenido/pipeline': typeof ContenidoPipelineRoute
   '/entregas/$id': typeof EntregasIdRoute
   '/entregas/gantt': typeof EntregasGanttRoute
   '/entregas/kanban': typeof EntregasKanbanRoute
@@ -197,6 +224,9 @@ export interface FileRouteTypes {
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
+    | '/contenido/calendario'
+    | '/contenido/performance'
+    | '/contenido/pipeline'
     | '/entregas/$id'
     | '/entregas/gantt'
     | '/entregas/kanban'
@@ -218,6 +248,9 @@ export interface FileRouteTypes {
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
+    | '/contenido/calendario'
+    | '/contenido/performance'
+    | '/contenido/pipeline'
     | '/entregas/$id'
     | '/entregas/gantt'
     | '/entregas/kanban'
@@ -239,6 +272,9 @@ export interface FileRouteTypes {
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
+    | '/contenido/calendario'
+    | '/contenido/performance'
+    | '/contenido/pipeline'
     | '/entregas/$id'
     | '/entregas/gantt'
     | '/entregas/kanban'
@@ -261,6 +297,9 @@ export interface RootRouteChildren {
   ClientesIdRoute: typeof ClientesIdRoute
   ClientesTablaRoute: typeof ClientesTablaRoute
   ClientesTarjetasRoute: typeof ClientesTarjetasRoute
+  ContenidoCalendarioRoute: typeof ContenidoCalendarioRoute
+  ContenidoPerformanceRoute: typeof ContenidoPerformanceRoute
+  ContenidoPipelineRoute: typeof ContenidoPipelineRoute
   EntregasIdRoute: typeof EntregasIdRoute
   EntregasGanttRoute: typeof EntregasGanttRoute
   EntregasKanbanRoute: typeof EntregasKanbanRoute
@@ -391,6 +430,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EntregasIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contenido/pipeline': {
+      id: '/contenido/pipeline'
+      path: '/contenido/pipeline'
+      fullPath: '/contenido/pipeline'
+      preLoaderRoute: typeof ContenidoPipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contenido/performance': {
+      id: '/contenido/performance'
+      path: '/contenido/performance'
+      fullPath: '/contenido/performance'
+      preLoaderRoute: typeof ContenidoPerformanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contenido/calendario': {
+      id: '/contenido/calendario'
+      path: '/contenido/calendario'
+      fullPath: '/contenido/calendario'
+      preLoaderRoute: typeof ContenidoCalendarioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/clientes/tarjetas': {
       id: '/clientes/tarjetas'
       path: '/clientes/tarjetas'
@@ -421,6 +481,9 @@ const rootRouteChildren: RootRouteChildren = {
   ClientesIdRoute: ClientesIdRoute,
   ClientesTablaRoute: ClientesTablaRoute,
   ClientesTarjetasRoute: ClientesTarjetasRoute,
+  ContenidoCalendarioRoute: ContenidoCalendarioRoute,
+  ContenidoPerformanceRoute: ContenidoPerformanceRoute,
+  ContenidoPipelineRoute: ContenidoPipelineRoute,
   EntregasIdRoute: EntregasIdRoute,
   EntregasGanttRoute: EntregasGanttRoute,
   EntregasKanbanRoute: EntregasKanbanRoute,
