@@ -82,7 +82,7 @@ export function MisTareasTabla() {
               <TableRow
                 key={t.id}
                 onClick={() => abrir(t.id)}
-                className="cursor-pointer"
+                className="cursor-pointer hover:bg-muted/40 transition-colors"
               >
                 <TableCell className="font-medium">{t.titulo}</TableCell>
                 <TableCell>

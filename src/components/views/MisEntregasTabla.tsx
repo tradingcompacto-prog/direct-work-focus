@@ -38,7 +38,7 @@ export function MisEntregasTabla() {
             const pct = ts.length ? Math.round((cerradas / ts.length) * 100) : 0;
             const responsables = Array.from(new Set(ts.map((t) => t.responsable_id)));
             return (
-              <TableRow key={e.id} className="cursor-pointer">
+              <TableRow key={e.id} className="cursor-pointer hover:bg-muted/40 transition-colors">
                 <TableCell className="font-medium">
                   <Link
                     to="/entregas/$id"
