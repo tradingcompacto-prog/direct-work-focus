@@ -25,6 +25,7 @@ import { Route as EntregasTablaRouteImport } from './routes/entregas.tabla'
 import { Route as EntregasKanbanRouteImport } from './routes/entregas.kanban'
 import { Route as EntregasGanttRouteImport } from './routes/entregas.gantt'
 import { Route as EntregasIdRouteImport } from './routes/entregas.$id'
+import { Route as ContenidoCalendarioRouteImport } from './routes/contenido.calendario'
 import { Route as ClientesTarjetasRouteImport } from './routes/clientes.tarjetas'
 import { Route as ClientesTablaRouteImport } from './routes/clientes.tabla'
 import { Route as ClientesIdRouteImport } from './routes/clientes.$id'
@@ -109,6 +110,11 @@ const EntregasIdRoute = EntregasIdRouteImport.update({
   path: '/entregas/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContenidoCalendarioRoute = ContenidoCalendarioRouteImport.update({
+  id: '/contenido/calendario',
+  path: '/contenido/calendario',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClientesTarjetasRoute = ClientesTarjetasRouteImport.update({
   id: '/clientes/tarjetas',
   path: '/clientes/tarjetas',
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
+  '/contenido/calendario': typeof ContenidoCalendarioRoute
   '/entregas/$id': typeof EntregasIdRoute
   '/entregas/gantt': typeof EntregasGanttRoute
   '/entregas/kanban': typeof EntregasKanbanRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
+  '/contenido/calendario': typeof ContenidoCalendarioRoute
   '/entregas/$id': typeof EntregasIdRoute
   '/entregas/gantt': typeof EntregasGanttRoute
   '/entregas/kanban': typeof EntregasKanbanRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
+  '/contenido/calendario': typeof ContenidoCalendarioRoute
   '/entregas/$id': typeof EntregasIdRoute
   '/entregas/gantt': typeof EntregasGanttRoute
   '/entregas/kanban': typeof EntregasKanbanRoute
@@ -197,6 +206,7 @@ export interface FileRouteTypes {
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
+    | '/contenido/calendario'
     | '/entregas/$id'
     | '/entregas/gantt'
     | '/entregas/kanban'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
+    | '/contenido/calendario'
     | '/entregas/$id'
     | '/entregas/gantt'
     | '/entregas/kanban'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
+    | '/contenido/calendario'
     | '/entregas/$id'
     | '/entregas/gantt'
     | '/entregas/kanban'
@@ -261,6 +273,7 @@ export interface RootRouteChildren {
   ClientesIdRoute: typeof ClientesIdRoute
   ClientesTablaRoute: typeof ClientesTablaRoute
   ClientesTarjetasRoute: typeof ClientesTarjetasRoute
+  ContenidoCalendarioRoute: typeof ContenidoCalendarioRoute
   EntregasIdRoute: typeof EntregasIdRoute
   EntregasGanttRoute: typeof EntregasGanttRoute
   EntregasKanbanRoute: typeof EntregasKanbanRoute
@@ -391,6 +404,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EntregasIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contenido/calendario': {
+      id: '/contenido/calendario'
+      path: '/contenido/calendario'
+      fullPath: '/contenido/calendario'
+      preLoaderRoute: typeof ContenidoCalendarioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/clientes/tarjetas': {
       id: '/clientes/tarjetas'
       path: '/clientes/tarjetas'
@@ -421,6 +441,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClientesIdRoute: ClientesIdRoute,
   ClientesTablaRoute: ClientesTablaRoute,
   ClientesTarjetasRoute: ClientesTarjetasRoute,
+  ContenidoCalendarioRoute: ContenidoCalendarioRoute,
   EntregasIdRoute: EntregasIdRoute,
   EntregasGanttRoute: EntregasGanttRoute,
   EntregasKanbanRoute: EntregasKanbanRoute,
@@ -439,3 +460,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
