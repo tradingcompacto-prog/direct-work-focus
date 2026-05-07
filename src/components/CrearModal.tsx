@@ -42,6 +42,7 @@ export function CrearModal() {
   const [titulo, setTitulo] = React.useState("");
   const [tipoTarea, setTipoTarea] = React.useState<string>("");
   const [responsableId, setResponsableId] = React.useState("");
+  const [entregaNuevaNombre, setEntregaNuevaNombre] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setClienteId(contexto?.cliente_id ?? "");
@@ -67,8 +68,6 @@ export function CrearModal() {
   const entregas = proyectoId
     ? ENTREGAS_MOCK.filter((e) => e.proyecto_id === proyectoId)
     : ENTREGAS_MOCK;
-
-  const [entregaNuevaNombre, setEntregaNuevaNombre] = React.useState<string | null>(null);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
