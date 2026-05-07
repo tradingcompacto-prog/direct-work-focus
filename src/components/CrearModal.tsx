@@ -25,6 +25,7 @@ import { estimar } from "@/lib/estimacion";
 import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ComboboxCrear } from "@/components/ComboboxCrear";
 
 const TITLES: Record<string, string> = {
   tarea: "Nueva tarea",
@@ -66,6 +67,8 @@ export function CrearModal() {
   const entregas = proyectoId
     ? ENTREGAS_MOCK.filter((e) => e.proyecto_id === proyectoId)
     : ENTREGAS_MOCK;
+
+  const [entregaNuevaNombre, setEntregaNuevaNombre] = React.useState<string | null>(null);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,34 +114,51 @@ export function CrearModal() {
           ) : (
             <>
               <Field label="Cliente">
-                <Select value={clienteId} onValueChange={setClienteId} disabled={!!contexto?.cliente_id}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CLIENTES_MOCK.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ComboboxCrear
+                  options={CLIENTES_MOCK.map((c) => ({
+                    value: c.id,
+                    label: c.nombre,
+                    hint: c.sector,
+                  }))}
+                  value={clienteId}
+                  onChange={setClienteId}
+                  disabled={!!contexto?.cliente_id}
+                  placeholder="Selecciona cliente"
+                  searchPlaceholder="Buscar cliente…"
+                  emptyText="Sin clientes"
+                  onCrearNuevo={(nombre) => {
+                    toast.success(`Cliente «${nombre}» creado (mock)`);
+                  }}
+                  crearLabel="Crear cliente"
+                />
               </Field>
               {tipo === "tarea" && (
                 <Field label="Entrega">
-                  <Select value={entregaId} onValueChange={setEntregaId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Trabajos puntuales" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="puntuales">Trabajos puntuales</SelectItem>
-                      {entregas.map((e) => (
-                        <SelectItem key={e.id} value={e.id}>
-                          {e.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <ComboboxCrear
+                    options={[
+                      { value: "puntuales", label: "Trabajos puntuales" },
+                      ...entregas.map((e) => ({ value: e.id, label: e.nombre })),
+                    ]}
+                    value={entregaNuevaNombre ? `__nueva__` : entregaId}
+                    onChange={(v) => {
+                      setEntregaId(v);
+                      setEntregaNuevaNombre(null);
+                    }}
+                    placeholder="Trabajos puntuales"
+                    searchPlaceholder="Buscar entrega…"
+                    emptyText="Sin entregas"
+                    onCrearNuevo={(nombre) => {
+                      setEntregaNuevaNombre(nombre);
+                      setEntregaId("__nueva__");
+                      toast.success(`Entrega «${nombre}» se creará al guardar`);
+                    }}
+                    crearLabel="Crear entrega"
+                  />
+                  {entregaNuevaNombre && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Nueva entrega: <span className="font-medium">{entregaNuevaNombre}</span>
+                    </p>
+                  )}
                 </Field>
               )}
               <Field label="Título">
