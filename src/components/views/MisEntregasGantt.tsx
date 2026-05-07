@@ -5,6 +5,7 @@ import { es } from "date-fns/locale";
 import { useNavigate } from "@tanstack/react-router";
 import { ENTREGAS_MOCK, clientePorId } from "@/lib/mock-tareas";
 import { cn } from "@/lib/utils";
+import { colorCliente } from "@/lib/cliente-colors";
 import { setEntregaFechas, getEntregaOverride, useOverrides } from "@/lib/fechas-override-store";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -30,11 +31,11 @@ export function MisEntregasGantt() {
     return Array.from(m.entries());
   }, [entregas]);
 
-  const colorUrgencia = (fechaFin: Date) => {
+  const urgenciaRing = (fechaFin: Date) => {
     const diff = differenceInDays(fechaFin, hoy);
-    if (diff < 0) return "bg-red-500";
-    if (diff <= 3) return "bg-amber-500";
-    return "bg-blue-500";
+    if (diff < 0) return "ring-2 ring-red-500";
+    if (diff <= 3) return "ring-2 ring-amber-500";
+    return "";
   };
 
   return (
@@ -83,7 +84,8 @@ export function MisEntregasGantt() {
                   <BarraEntrega
                     entregaId={e.id}
                     titulo={e.nombre}
-                    color={colorUrgencia(fin)}
+                    bg={colorCliente(clienteId).border}
+                    ringClass={urgenciaRing(fin)}
                     left={left}
                     width={width}
                     inicio={inicio}
@@ -104,7 +106,8 @@ export function MisEntregasGantt() {
 function BarraEntrega({
   entregaId,
   titulo,
-  color,
+  bg,
+  ringClass,
   left,
   width,
   inicio,
@@ -113,7 +116,8 @@ function BarraEntrega({
 }: {
   entregaId: string;
   titulo: string;
-  color: string;
+  bg: string;
+  ringClass: string;
   left: number;
   width: number;
   inicio: Date;
@@ -177,11 +181,11 @@ function BarraEntrega({
       <TooltipTrigger asChild>
         <div
           className={cn(
-            "absolute top-1.5 h-5 rounded-sm text-[10px] text-white px-2 truncate text-left group",
-            color,
+            "absolute top-1.5 h-5 rounded-sm text-[10px] px-2 truncate text-left group font-medium",
+            ringClass,
             drag ? "shadow-lg cursor-grabbing" : "cursor-grab hover:opacity-90",
           )}
-          style={{ left: visualLeft, width: visualWidth }}
+          style={{ left: visualLeft, width: visualWidth, backgroundColor: bg, color: "#fff" }}
           onPointerDown={onPointerDown("move")}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}

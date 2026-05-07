@@ -312,43 +312,73 @@ function HomeDirector() {
   );
 }
 
-// ─── Vista Ejecutor ───────────────────────────────────────
+// ─── Vista Ejecutor (misma estructura que Director, filtrada al usuario) ───
 function HomeEjecutor() {
   const u = usuarioActual();
   const hoy = useMemo(() => startOfDay(new Date()), []);
   const { abrir } = useTareaModal();
 
-  const mias = TAREAS_MOCK.filter((t) => t.responsable_id === USUARIO_ACTUAL_ID && t.estado !== "completada")
-    .sort((a, b) => a.fecha_fin_max.localeCompare(b.fecha_fin_max));
+  const mias = TAREAS_MOCK.filter((t) => t.responsable_id === USUARIO_ACTUAL_ID);
+  const activas = mias.filter((t) => t.estado !== "completada");
+  const vencidas = activas.filter((t) => urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) === "rojo");
+  const misEntregasIds = new Set(activas.map((t) => t.entrega_id));
+  const entregasRiesgo = ENTREGAS_MOCK.filter(
+    (e) => misEntregasIds.has(e.id) && e.estado === "en_curso" && parseISO(e.fecha_fin) < hoy,
+  );
+  const cerradas = mias.filter((t) => t.estado === "completada").length;
 
-  const hoyTareas = mias.filter((t) => differenceInCalendarDays(parseISO(t.fecha_fin_max), hoy) <= 0);
-  const resto = mias.filter((t) => differenceInCalendarDays(parseISO(t.fecha_fin_max), hoy) > 0);
+  // Carga personal por cliente (en lugar de carga por persona)
+  const porCliente = new Map<string, number>();
+  for (const t of activas) porCliente.set(t.cliente_id, (porCliente.get(t.cliente_id) ?? 0) + 1);
+  const carga = Array.from(porCliente.entries())
+    .map(([cid, n]) => ({ id: cid, nombre: clientePorId(cid)?.nombre ?? "—", n }))
+    .sort((a, b) => b.n - a.n);
+  const max = Math.max(1, ...carga.map((c) => c.n));
+
+  const proximas = [...activas]
+    .sort((a, b) => a.fecha_fin_max.localeCompare(b.fecha_fin_max))
+    .slice(0, 6);
 
   return (
     <>
       <div className="flex items-center gap-3">
         <User className="h-6 w-6 text-primary" />
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{saludoSegunHora()}, {u.nombre.split(" ")[0]}</h1>
-          <p className="text-sm text-muted-foreground">{mias.length} tareas en tu lista · empieza por las de arriba</p>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {saludoSegunHora()}, {u.nombre.split(" ")[0]}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Vista ejecutor · solo tu trabajo en {format(hoy, "EEEE d", { locale: es })}
+          </p>
         </div>
       </div>
 
-      <section>
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Para hoy</h2>
-        {hoyTareas.length === 0 ? (
-          <div className="card-soft p-6 text-center text-sm text-muted-foreground">🎉 Nada urgente para hoy.</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Kpi titulo="Mis tareas activas" valor={activas.length} />
+        <Kpi titulo="Vencidas" valor={vencidas.length} tono="rojo" />
+        <Kpi titulo="Mis entregas en riesgo" valor={entregasRiesgo.length} tono="amarillo" />
+        <Kpi titulo="Cerradas" valor={cerradas} tono="verde" />
+      </div>
+
+      <section className="card-soft p-4">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+          <Sparkles className="h-3.5 w-3.5" /> Mis próximas tareas
+        </h3>
+        {proximas.length === 0 ? (
+          <div className="text-sm text-muted-foreground">🎉 Sin tareas pendientes.</div>
         ) : (
           <ul className="space-y-1.5">
-            {hoyTareas.map((t) => (
+            {proximas.map((t) => (
               <li key={t.id}>
                 <button
                   onClick={() => abrir(t.id)}
-                  className="w-full text-left card-soft p-3 hover:shadow-md transition border-l-4 flex items-center justify-between gap-2"
+                  className="w-full text-left text-sm flex items-center justify-between gap-2 px-2 py-1.5 rounded hover:bg-muted/50 border-l-2"
                   style={bordeIzqCliente(t.cliente_id)}
                 >
                   <span className="truncate">{t.titulo}</span>
-                  <span className="text-xs text-muted-foreground shrink-0">{etiquetaFechaRelativa(t.fecha_fin_max)}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {etiquetaFechaRelativa(t.fecha_fin_max)}
+                  </span>
                 </button>
               </li>
             ))}
@@ -356,22 +386,66 @@ function HomeEjecutor() {
         )}
       </section>
 
-      <section>
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Próximas</h2>
-        <ul className="space-y-1">
-          {resto.slice(0, 8).map((t) => (
-            <li key={t.id}>
-              <button
-                onClick={() => abrir(t.id)}
-                className="w-full text-left text-sm flex items-center justify-between gap-2 px-3 py-2 rounded hover:bg-muted/50 border-l-2"
-                style={bordeIzqCliente(t.cliente_id)}
-              >
-                <span className="truncate">{t.titulo}</span>
-                <span className="text-xs text-muted-foreground shrink-0">{etiquetaFechaRelativa(t.fecha_fin_max)}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+      <section className="card-soft p-4">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+          <Users className="h-3.5 w-3.5" /> Mi carga por cliente
+        </h3>
+        {carga.length === 0 ? (
+          <div className="text-sm text-muted-foreground">Sin clientes activos.</div>
+        ) : (
+          <ul className="space-y-1.5">
+            {carga.map((c) => (
+              <li key={c.id} className="flex items-center gap-3 text-sm">
+                <span className="w-32 truncate flex items-center gap-2">
+                  <span
+                    className="h-2 w-2 rounded-full inline-block shrink-0"
+                    style={{ backgroundColor: colorCliente(c.id).border }}
+                  />
+                  {c.nombre}
+                </span>
+                <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full"
+                    style={{
+                      width: `${(c.n / max) * 100}%`,
+                      backgroundColor: colorCliente(c.id).border,
+                    }}
+                  />
+                </div>
+                <span className="w-8 text-right tabular-nums text-muted-foreground">{c.n}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="card-soft p-4">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+          <AlertTriangle className="h-3.5 w-3.5" /> Mis entregas en riesgo
+        </h3>
+        {entregasRiesgo.length === 0 ? (
+          <div className="text-sm text-muted-foreground">Sin entregas vencidas 👌</div>
+        ) : (
+          <ul className="space-y-1.5">
+            {entregasRiesgo.slice(0, 6).map((e) => (
+              <li key={e.id}>
+                <Link
+                  to="/entregas/$id"
+                  params={{ id: e.id }}
+                  className="flex items-center justify-between text-sm px-2 py-1.5 rounded hover:bg-muted/50"
+                >
+                  <span className="truncate">
+                    {e.nombre} ·{" "}
+                    <span className="text-muted-foreground">{clientePorId(e.cliente_id)?.nombre}</span>
+                  </span>
+                  <span className="text-xs text-red-600 font-medium shrink-0">
+                    {etiquetaFechaRelativa(e.fecha_fin)}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </>
   );
