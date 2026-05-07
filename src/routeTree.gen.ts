@@ -25,6 +25,7 @@ import { Route as EntregasTablaRouteImport } from './routes/entregas.tabla'
 import { Route as EntregasKanbanRouteImport } from './routes/entregas.kanban'
 import { Route as EntregasGanttRouteImport } from './routes/entregas.gantt'
 import { Route as EntregasIdRouteImport } from './routes/entregas.$id'
+import { Route as ContenidoPipelineRouteImport } from './routes/contenido.pipeline'
 import { Route as ContenidoCalendarioRouteImport } from './routes/contenido.calendario'
 import { Route as ClientesTarjetasRouteImport } from './routes/clientes.tarjetas'
 import { Route as ClientesTablaRouteImport } from './routes/clientes.tabla'
@@ -110,6 +111,11 @@ const EntregasIdRoute = EntregasIdRouteImport.update({
   path: '/entregas/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContenidoPipelineRoute = ContenidoPipelineRouteImport.update({
+  id: '/contenido/pipeline',
+  path: '/contenido/pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContenidoCalendarioRoute = ContenidoCalendarioRouteImport.update({
   id: '/contenido/calendario',
   path: '/contenido/calendario',
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
   '/contenido/calendario': typeof ContenidoCalendarioRoute
+  '/contenido/pipeline': typeof ContenidoPipelineRoute
   '/entregas/$id': typeof EntregasIdRoute
   '/entregas/gantt': typeof EntregasGanttRoute
   '/entregas/kanban': typeof EntregasKanbanRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByTo {
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
   '/contenido/calendario': typeof ContenidoCalendarioRoute
+  '/contenido/pipeline': typeof ContenidoPipelineRoute
   '/entregas/$id': typeof EntregasIdRoute
   '/entregas/gantt': typeof EntregasGanttRoute
   '/entregas/kanban': typeof EntregasKanbanRoute
@@ -183,6 +191,7 @@ export interface FileRoutesById {
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
   '/contenido/calendario': typeof ContenidoCalendarioRoute
+  '/contenido/pipeline': typeof ContenidoPipelineRoute
   '/entregas/$id': typeof EntregasIdRoute
   '/entregas/gantt': typeof EntregasGanttRoute
   '/entregas/kanban': typeof EntregasKanbanRoute
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
     | '/clientes/tabla'
     | '/clientes/tarjetas'
     | '/contenido/calendario'
+    | '/contenido/pipeline'
     | '/entregas/$id'
     | '/entregas/gantt'
     | '/entregas/kanban'
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
     | '/clientes/tabla'
     | '/clientes/tarjetas'
     | '/contenido/calendario'
+    | '/contenido/pipeline'
     | '/entregas/$id'
     | '/entregas/gantt'
     | '/entregas/kanban'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/clientes/tabla'
     | '/clientes/tarjetas'
     | '/contenido/calendario'
+    | '/contenido/pipeline'
     | '/entregas/$id'
     | '/entregas/gantt'
     | '/entregas/kanban'
@@ -274,6 +286,7 @@ export interface RootRouteChildren {
   ClientesTablaRoute: typeof ClientesTablaRoute
   ClientesTarjetasRoute: typeof ClientesTarjetasRoute
   ContenidoCalendarioRoute: typeof ContenidoCalendarioRoute
+  ContenidoPipelineRoute: typeof ContenidoPipelineRoute
   EntregasIdRoute: typeof EntregasIdRoute
   EntregasGanttRoute: typeof EntregasGanttRoute
   EntregasKanbanRoute: typeof EntregasKanbanRoute
@@ -404,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EntregasIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contenido/pipeline': {
+      id: '/contenido/pipeline'
+      path: '/contenido/pipeline'
+      fullPath: '/contenido/pipeline'
+      preLoaderRoute: typeof ContenidoPipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contenido/calendario': {
       id: '/contenido/calendario'
       path: '/contenido/calendario'
@@ -442,6 +462,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClientesTablaRoute: ClientesTablaRoute,
   ClientesTarjetasRoute: ClientesTarjetasRoute,
   ContenidoCalendarioRoute: ContenidoCalendarioRoute,
+  ContenidoPipelineRoute: ContenidoPipelineRoute,
   EntregasIdRoute: EntregasIdRoute,
   EntregasGanttRoute: EntregasGanttRoute,
   EntregasKanbanRoute: EntregasKanbanRoute,
