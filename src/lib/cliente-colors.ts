@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { CLIENTES_MOCK } from "@/lib/mock-tareas";
 
 // Paleta de 12 colores pastel (oklch para coherencia con el design system).
@@ -27,11 +28,11 @@ export function colorCliente(clienteId: string) {
 }
 
 /** Estilo en línea para borde izquierdo coloreado de la tarjeta */
-export function bordeIzqCliente(clienteId: string): React.CSSProperties {
+export function bordeIzqCliente(clienteId: string): CSSProperties {
   return { borderLeftColor: colorCliente(clienteId).border, borderLeftWidth: 4 };
 }
 
 /** Punto de color para anteponer a un nombre de cliente */
-export function puntoCliente(clienteId: string): React.CSSProperties {
+export function puntoCliente(clienteId: string): CSSProperties {
   return { backgroundColor: colorCliente(clienteId).border };
 }
