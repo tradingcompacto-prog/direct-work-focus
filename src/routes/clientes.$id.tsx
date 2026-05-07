@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { clientePorId, PROYECTOS_MOCK, ENTREGAS_MOCK, TAREAS_MOCK, ACTIVIDAD_MOCK } from "@/lib/mock-tareas";
+import { Key, Users2, Lightbulb, BookOpen } from "lucide-react";
 import { PersonaChip } from "@/components/PersonaChip";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,10 @@ function FichaCliente() {
   if (!c) return <div className="p-6">Cliente no encontrado</div>;
 
   const proyectos = PROYECTOS_MOCK.filter((p) => p.cliente_id === c.id);
+  const proyectoPrincipal = proyectos[0];
+  const clienteDesde = proyectoPrincipal
+    ? format(parseISO(proyectoPrincipal.fecha_inicio), "MMM yyyy", { locale: es })
+    : "—";
   const entregas = ENTREGAS_MOCK.filter((e) => e.cliente_id === c.id);
   const tareas = TAREAS_MOCK.filter((t) => t.cliente_id === c.id);
   const tareasActivas = tareas.filter((t) => t.estado !== "completada");
@@ -80,7 +85,7 @@ function FichaCliente() {
 
         {/* Mini stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
-          <Stat label="Proyectos" valor={proyectos.length} />
+          <Stat label="Cliente desde" textoValor={clienteDesde} />
           <Stat label="Entregas abiertas" valor={entregasAbiertas.length} />
           <Stat label="Tareas activas" valor={tareasActivas.length} />
           <Stat label="Equipo asignado" valor={equipoIds.length} />
@@ -214,24 +219,66 @@ function FichaCliente() {
 
         {/* Notas */}
         <TabsContent value="notas" className="mt-4">
-          <div className="card-soft p-6 text-sm text-muted-foreground flex items-start gap-3">
-            <FileText className="h-5 w-5 mt-0.5 text-muted-foreground/70" />
-            <div>
-              <div className="font-medium text-foreground mb-1">Notas internas del cliente</div>
-              <p>Aquí irán anotaciones compartidas del equipo: contactos, contraseñas seguras, particularidades, lecciones aprendidas…</p>
-            </div>
-          </div>
+          <NotasCliente clienteId={c.id} />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function Stat({ label, valor }: { label: string; valor: number }) {
+function Stat({ label, valor, textoValor }: { label: string; valor?: number; textoValor?: string }) {
   return (
     <div className="rounded-lg bg-muted/40 px-3 py-2">
       <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="text-xl font-semibold tabular-nums">{valor}</div>
+      <div className="text-xl font-semibold tabular-nums capitalize">{textoValor ?? valor}</div>
+    </div>
+  );
+}
+
+function NotasCliente({ clienteId }: { clienteId: string }) {
+  // Mock simple: contenido informativo por sección. Persistencia futura.
+  const bloques = [
+    {
+      Icon: BookOpen,
+      titulo: "Briefing y contexto",
+      texto:
+        "Marca con tono cercano y honesto. El cliente prefiere comunicación por Slack en horario laboral. Aprobaciones por correo el viernes.",
+    },
+    {
+      Icon: Users2,
+      titulo: "Contactos clave",
+      texto:
+        "Contacto principal: Marta Ruiz (CMO). Aprobación final: Jorge L. (Director). CC siempre a marketing@cliente.com.",
+    },
+    {
+      Icon: Key,
+      titulo: "Accesos",
+      texto:
+        "Las credenciales de Meta Ads, GA4 y Search Console están en el gestor compartido. Pedir acceso a Paula antes de tocar la cuenta.",
+    },
+    {
+      Icon: Lightbulb,
+      titulo: "Particularidades y lecciones",
+      texto:
+        "Evitar enviar piezas en agosto (cierre de oficina). Han funcionado mejor los formatos verticales con texto corto y CTA único.",
+    },
+  ];
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {bloques.map(({ Icon, titulo, texto }) => (
+        <div key={titulo} className="card-soft p-4 flex items-start gap-3">
+          <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+            <Icon className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div>
+            <div className="font-medium text-sm mb-1">{titulo}</div>
+            <p className="text-sm text-muted-foreground leading-relaxed">{texto}</p>
+          </div>
+        </div>
+      ))}
+      <p className="md:col-span-2 text-[11px] text-muted-foreground text-center mt-1">
+        Las notas son visibles para todo el equipo. Edición próximamente.
+      </p>
     </div>
   );
 }
