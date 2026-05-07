@@ -17,6 +17,7 @@ import { PersonaChip } from "@/components/PersonaChip";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { Download } from "lucide-react";
+import { EstadoVacio } from "@/components/EstadoVacio";
 
 const estadoBadge: Record<string, string> = {
   activa: "bg-blue-100 text-blue-800",
@@ -110,9 +111,11 @@ export function MisTareasTabla() {
           </TableBody>
         </Table>
         {filtered.length === 0 && (
-          <div className="p-12 text-center text-sm text-muted-foreground">
-            Sin resultados.
-          </div>
+          <EstadoVacio
+            emoji="🔍"
+            titulo="Nada por aquí"
+            hint={q || estado ? "Prueba a quitar los filtros." : "No tienes tareas activas."}
+          />
         )}
       </div>
     </div>

@@ -85,7 +85,10 @@ export function EquipoCarga() {
                       );
                     })}
                     {lista.length === 0 && (
-                      <div className="text-xs text-muted-foreground text-center py-4">Sin tareas</div>
+                      <div className="text-xs text-muted-foreground text-center py-6">
+                        <span className="text-2xl block mb-1">🍃</span>
+                        Sin tareas activas
+                      </div>
                     )}
                   </div>
                 </div>
