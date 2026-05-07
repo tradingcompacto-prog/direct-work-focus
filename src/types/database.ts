@@ -33,6 +33,8 @@ export interface Tarea {
   fecha_fin_max: string;
   bloqueada_por_id?: UUID | null;
   desbloquea_id?: UUID | null;
+  horas_estimadas?: number | null;
+  horas_reales?: number | null;
 }
 
 export type EstadoEntrega = "en_curso" | "cerrada";
