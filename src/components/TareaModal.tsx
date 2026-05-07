@@ -410,3 +410,43 @@ function Persona({ label, id }: { label: string; id?: string }) {
     </div>
   );
 }
+
+function EditableDate({
+  label,
+  valueIso,
+  onChange,
+}: {
+  label: string;
+  valueIso: string;
+  onChange: (iso: string) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const date = parseISO(valueIso);
+  return (
+    <div className="text-sm flex gap-2 items-center">
+      <span className="text-muted-foreground w-20">{label}:</span>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-muted text-sm">
+            <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+            {format(date, "d MMM yyyy", { locale: es })}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={(d) => {
+              if (!d) return;
+              const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+              onChange(iso);
+              setOpen(false);
+            }}
+            initialFocus
+            className={cn("p-3 pointer-events-auto")}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
