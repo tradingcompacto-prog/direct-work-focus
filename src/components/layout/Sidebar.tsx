@@ -17,7 +17,9 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { tienePermiso } from "@/lib/equipo";
+import { tienePermiso, USUARIO_ACTUAL_ID } from "@/lib/equipo";
+import { TAREAS_MOCK, ENTREGAS_MOCK } from "@/lib/mock-tareas";
+import { urgenciaTarea } from "@/lib/fechas";
 import { usePrefSidebarCollapsed } from "@/lib/preferencias";
 import { useCrearModal } from "@/lib/crear-modal-context";
 import {
@@ -83,12 +85,35 @@ const SECCIONES: SectionDef[] = [
   },
 ];
 
+function badgesPorRuta(): Record<string, { n: number; tone?: "rojo" | "alerta" }> {
+  const misT = TAREAS_MOCK.filter(
+    (t) => t.responsable_id === USUARIO_ACTUAL_ID && t.estado !== "completada",
+  );
+  const misE = ENTREGAS_MOCK.filter((e) => e.pm_id === USUARIO_ACTUAL_ID && e.estado === "en_curso");
+  const vencidas = TAREAS_MOCK.filter(
+    (t) => t.estado !== "completada" && urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) === "rojo",
+  );
+  const cargaAlertas = misT.filter(
+    (t) => urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) === "rojo",
+  ).length;
+  return {
+    "/tareas/timeline": { n: misT.length },
+    "/tareas/tabla": { n: misT.length },
+    "/entregas/kanban": { n: misE.length },
+    "/entregas/gantt": { n: misE.length },
+    "/entregas/tabla": { n: misE.length },
+    "/equipo/carga": { n: cargaAlertas, tone: cargaAlertas > 0 ? "alerta" : undefined },
+    "/brujula": { n: vencidas.length, tone: vencidas.length > 0 ? "rojo" : undefined },
+  };
+}
+
 export function Sidebar() {
   const [collapsed, setCollapsed] = usePrefSidebarCollapsed();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { abrir } = useCrearModal();
   const esDirector = tienePermiso("director");
   const esPm = tienePermiso("pm");
+  const badges = badgesPorRuta();
 
   const visibleSecciones = SECCIONES.filter((s) => {
     if (!s.needsRol) return true;
@@ -162,6 +187,7 @@ export function Sidebar() {
                 {sec.items.map((item) => {
                   const active = path.startsWith(item.to);
                   const Icon = item.icon;
+                  const badge = badges[item.to];
                   const link = (
                     <Link
                       to={item.to}
@@ -175,6 +201,20 @@ export function Sidebar() {
                     >
                       <Icon className="h-4 w-4 shrink-0" />
                       {!collapsed && <span className="truncate">{item.label}</span>}
+                      {!collapsed && badge && badge.n > 0 && (
+                        <span
+                          className={cn(
+                            "ml-auto text-[10px] tabular-nums font-semibold rounded px-1.5 py-0.5",
+                            badge.tone === "rojo"
+                              ? "bg-red-100 text-red-700"
+                              : badge.tone === "alerta"
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-muted text-muted-foreground",
+                          )}
+                        >
+                          {badge.n}
+                        </span>
+                      )}
                     </Link>
                   );
                   return (
