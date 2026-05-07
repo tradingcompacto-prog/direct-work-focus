@@ -28,15 +28,22 @@ export const etiquetaFechaRelativa = (fecha_fin_max: string): string => {
 };
 
 export const tiempoRelativo = (iso: string): string => {
+  if (!iso) return "—";
   const d = parseISO(iso);
+  if (Number.isNaN(d.getTime())) return "—";
   const ms = Date.now() - d.getTime();
+  if (ms < 0) return "ahora";
   const min = Math.round(ms / 60000);
   if (min < 1) return "ahora";
   if (min < 60) return `hace ${min} min`;
   const h = Math.round(min / 60);
   if (h < 24) return `hace ${h}h`;
   const days = Math.round(h / 24);
-  return `hace ${days}d`;
+  if (days < 30) return `hace ${days}d`;
+  const meses = Math.round(days / 30);
+  if (meses < 12) return `hace ${meses} m`;
+  const años = Math.round(meses / 12);
+  return `hace ${años}a`;
 };
 
 export const saludoSegunHora = (d: Date = new Date()) => {
