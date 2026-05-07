@@ -47,7 +47,7 @@ const SECCIONES: SectionDef[] = [
     label: "Mis tareas",
     icon: ListChecks,
     items: [
-      { to: "/tareas/timeline", label: "Timeline", icon: CalendarDays },
+      { to: "/tareas/timeline", label: "Timeline", icon: CalendarDays, atajo: "G T" },
       { to: "/tareas/tabla", label: "Tabla", icon: Table2 },
     ],
   },
@@ -55,7 +55,7 @@ const SECCIONES: SectionDef[] = [
     label: "Mis entregas",
     icon: Package,
     items: [
-      { to: "/entregas/kanban", label: "Kanban", icon: KanbanSquare },
+      { to: "/entregas/kanban", label: "Kanban", icon: KanbanSquare, atajo: "G K" },
       { to: "/entregas/gantt", label: "Gantt", icon: GanttChartSquare },
       { to: "/entregas/tabla", label: "Tabla", icon: Table2 },
     ],
@@ -64,7 +64,7 @@ const SECCIONES: SectionDef[] = [
     label: "El equipo",
     icon: Users,
     items: [
-      { to: "/equipo/carga", label: "Carga", icon: Map },
+      { to: "/equipo/carga", label: "Carga", icon: Map, atajo: "G C" },
       { to: "/equipo/calendario", label: "Calendario maestro", icon: CalendarRange },
     ],
   },
@@ -73,7 +73,7 @@ const SECCIONES: SectionDef[] = [
     icon: Building2,
     needsRol: "pm",
     items: [
-      { to: "/clientes/tarjetas", label: "Tarjetas", icon: Building2 },
+      { to: "/clientes/tarjetas", label: "Tarjetas", icon: Building2, atajo: "G L" },
       { to: "/clientes/tabla", label: "Tabla", icon: Table2 },
     ],
   },
@@ -81,7 +81,7 @@ const SECCIONES: SectionDef[] = [
     label: "Brújula",
     icon: Compass,
     needsRol: "director",
-    items: [{ to: "/brujula", label: "Resumen ejecutivo", icon: Compass }],
+    items: [{ to: "/brujula", label: "Resumen ejecutivo", icon: Compass, atajo: "G B" }],
   },
 ];
 
