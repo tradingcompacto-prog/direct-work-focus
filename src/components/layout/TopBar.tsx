@@ -17,7 +17,6 @@ import { usuarioActual } from "@/lib/equipo";
 import { tiempoRelativo } from "@/lib/fechas";
 import { useBusquedaGlobal } from "@/lib/busqueda-context";
 import { cn } from "@/lib/utils";
-import { isToday, parseISO } from "date-fns";
 import type { Notificacion } from "@/types/database";
 
 interface Crumb {
