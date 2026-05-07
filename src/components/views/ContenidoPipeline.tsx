@@ -18,12 +18,31 @@ import {
 import { aplicarOverridesPosts, moverPost, usePostsOverridesVersion } from "@/lib/contenido-store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { FiltrosBar, useFiltros } from "@/components/FiltrosBar";
 
 const COLUMNAS: EstadoPost[] = ["idea", "redaccion", "diseno", "revision", "programado", "publicado"];
 
 export function ContenidoPipeline() {
   usePostsOverridesVersion();
-  const posts = aplicarOverridesPosts(POSTS_MOCK);
+  const todos = aplicarOverridesPosts(POSTS_MOCK);
+  const [f, setF, resetF] = useFiltros("sa.filtros.pipeline");
+  const [canal, setCanal] = React.useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("sa.filtros.pipeline.canal") ?? "";
+  });
+  React.useEffect(() => {
+    try {
+      if (canal) localStorage.setItem("sa.filtros.pipeline.canal", canal);
+      else localStorage.removeItem("sa.filtros.pipeline.canal");
+    } catch {}
+  }, [canal]);
+  const posts = todos.filter((p) => {
+    if (f.q && !p.titulo.toLowerCase().includes(f.q.toLowerCase())) return false;
+    if (f.cliente && p.cliente_id !== f.cliente) return false;
+    if (f.responsable && p.responsable_id !== f.responsable) return false;
+    if (canal && p.canal !== canal) return false;
+    return true;
+  });
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const activePost = activeId ? posts.find((p) => p.id === activeId) : null;
@@ -46,6 +65,26 @@ export function ContenidoPipeline() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Pipeline de contenido</h1>
           <p className="text-sm text-muted-foreground mt-1">Arrastra los posts entre columnas para cambiar su estado.</p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <FiltrosBar state={f} onChange={setF} onReset={() => { resetF(); setCanal(""); }} placeholder="Buscar posts…" />
+          <select
+            value={canal}
+            onChange={(e) => setCanal(e.target.value)}
+            className={cn(
+              "text-sm border border-border rounded-md px-2 h-9 bg-background hover:bg-muted/40 transition cursor-pointer",
+              canal && "border-blue-400 bg-blue-50/30 text-blue-900",
+            )}
+          >
+            <option value="">Todos los canales</option>
+            {Object.entries(CANAL_LABEL).map(([v, l]) => (
+              <option key={v} value={v}>{l}</option>
+            ))}
+          </select>
+          <div className="flex-1" />
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {posts.length} de {todos.length}
+          </span>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {COLUMNAS.map((col) => (
