@@ -85,7 +85,6 @@ export function MisEntregasGantt() {
                     entregaId={e.id}
                     titulo={e.nombre}
                     bg={colorCliente(clienteId).border}
-                    text={colorCliente(clienteId).text}
                     ringClass={urgenciaRing(fin)}
                     left={left}
                     width={width}
@@ -108,7 +107,6 @@ function BarraEntrega({
   entregaId,
   titulo,
   bg,
-  text,
   ringClass,
   left,
   width,
@@ -119,7 +117,6 @@ function BarraEntrega({
   entregaId: string;
   titulo: string;
   bg: string;
-  text: string;
   ringClass: string;
   left: number;
   width: number;
