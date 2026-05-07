@@ -303,3 +303,59 @@ export const nombreCliente = (id: UUID) => clientePorId(id)?.nombre ?? "—";
 export const nombreProyecto = (id: UUID) => proyectoPorId(id)?.nombre ?? "—";
 export const nombreEntrega = (id: UUID) => entregaPorId(id)?.nombre ?? "—";
 export const tituloTarea = (id: UUID) => tareaPorId(id)?.titulo ?? "—";
+
+// ─── Clientes extra (B11) — añadidos al final tras definirse todos los mocks ───
+const EXTRA_CLIENTES_DEF: Array<[string, string, string, string, "verde" | "amarillo" | "rojo"]> = [
+  ["cli-vega", "Vega Wines", "Bebidas", PAULA, "verde"],
+  ["cli-luma", "Luma Studio", "Diseño", NEREA, "amarillo"],
+  ["cli-orbi", "Orbi Travel", "Turismo", EDU, "verde"],
+  ["cli-norte", "Norte Energy", "Energía", DANI, "rojo"],
+  ["cli-paloma", "Paloma & Co", "Moda", PAULA, "verde"],
+  ["cli-kael", "Kael Health", "Salud", NEREA, "amarillo"],
+  ["cli-ferro", "Ferro Logística", "Logística", EDU, "verde"],
+  ["cli-mapuche", "Mapuche Café", "Hostelería", PAULA, "verde"],
+  ["cli-nestor", "Nestor Legal", "Legal", DANI, "amarillo"],
+  ["cli-tundra", "Tundra Outdoor", "Deporte", NEREA, "verde"],
+  ["cli-altea", "Altea Inmuebles", "Inmobiliario", EDU, "rojo"],
+  ["cli-bruma", "Bruma Cosmetics", "Cosmética", PAULA, "verde"],
+  ["cli-nordic", "Nordic Furniture", "Hogar", NEREA, "amarillo"],
+  ["cli-pelayo", "Pelayo Seguros", "Seguros", DANI, "verde"],
+  ["cli-iris", "Iris Optics", "Óptica", EDU, "verde"],
+  ["cli-amaro", "Amaro Restaurantes", "Hostelería", PAULA, "amarillo"],
+  ["cli-bow", "Bow Music", "Música", NEREA, "verde"],
+  ["cli-lima", "Lima Foods", "Alimentación", EDU, "verde"],
+  ["cli-adra", "Adra Pharma", "Farma", DANI, "amarillo"],
+  ["cli-vento", "Vento Sport", "Deporte", PAULA, "verde"],
+  ["cli-juno", "Juno Beauty", "Cosmética", NEREA, "verde"],
+];
+for (const [id, nombre, sector, pm, salud] of EXTRA_CLIENTES_DEF) {
+  CLIENTES_MOCK.push({
+    id, nombre, sector, pm_id: pm,
+    web: `${nombre.toLowerCase().replace(/[^a-z]/g, "")}.com`,
+    slack: `#${id}`, salud, activo: true,
+  });
+  PROYECTOS_MOCK.push({
+    id: id.replace("cli-", "pry-"),
+    nombre, cliente_id: id, pm_id: pm,
+    estado: "activo", fecha_inicio: dias(-60),
+  });
+}
+const PLANTILLAS_ENTREGA = ["Calendario mayo 2026", "Branding inicial", "Web nueva", "Campaña verano"];
+let _entContador = 100;
+for (const [cliId, , , pm] of EXTRA_CLIENTES_DEF) {
+  const seed = cliId.charCodeAt(4) % 3;
+  const n = 1 + seed;
+  for (let i = 0; i < n; i++) {
+    _entContador += 1;
+    ENTREGAS_MOCK.push({
+      id: `ent-${_entContador}`,
+      nombre: PLANTILLAS_ENTREGA[(i + seed) % PLANTILLAS_ENTREGA.length],
+      cliente_id: cliId,
+      proyecto_id: cliId.replace("cli-", "pry-"),
+      pm_id: pm,
+      estado: "en_curso",
+      fecha_inicio: dias(-5 - (i % 5)),
+      fecha_fin: dias(5 + ((i * 3) % 12)),
+    });
+  }
+}
