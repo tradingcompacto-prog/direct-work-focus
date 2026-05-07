@@ -34,6 +34,7 @@ interface ItemDef {
   to: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  atajo?: string;
 }
 interface SectionDef {
   label: string;
@@ -214,6 +215,11 @@ export function Sidebar() {
                         >
                           {badge.n}
                         </span>
+                      )}
+                      {!collapsed && item.atajo && !(badge && badge.n > 0) && (
+                        <kbd className="ml-auto text-[9px] font-mono text-muted-foreground/70 bg-muted/60 border border-border rounded px-1 py-0.5">
+                          {item.atajo}
+                        </kbd>
                       )}
                     </Link>
                   );
