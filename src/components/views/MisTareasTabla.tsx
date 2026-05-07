@@ -21,6 +21,7 @@ import { FiltrosBar, useFiltros } from "@/components/FiltrosBar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AccionesMasivasBar } from "@/components/AccionesMasivasBar";
 import { toast } from "sonner";
+import { urgenciaTarea } from "@/lib/fechas";
 
 const estadoBadge: Record<string, string> = {
   activa: "bg-blue-100 text-blue-800",
@@ -40,6 +41,7 @@ export function MisTareasTabla() {
     if (f.estado && t.estado !== f.estado) return false;
     if (f.cliente && t.cliente_id !== f.cliente) return false;
     if (f.responsable && t.responsable_id !== f.responsable) return false;
+    if (f.vencidas === "1" && urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) !== "rojo") return false;
     return true;
   });
 
