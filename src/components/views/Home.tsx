@@ -256,10 +256,10 @@ function HomeDirector() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Kpi titulo="Tareas activas" valor={activas.length} />
-        <Kpi titulo="Vencidas" valor={vencidas.length} tono="rojo" />
-        <Kpi titulo="Entregas en riesgo" valor={entregasRiesgo.length} tono="amarillo" />
-        <Kpi titulo="Cerradas" valor={cerradasHoy} tono="verde" />
+        <Kpi titulo="Tareas activas" valor={activas.length} to="/tareas/tabla" />
+        <Kpi titulo="Vencidas" valor={vencidas.length} tono="rojo" to="/tareas/tabla" search={{ vencidas: "1" }} />
+        <Kpi titulo="Entregas en riesgo" valor={entregasRiesgo.length} tono="amarillo" to="/entregas/tabla" search={{ vencidas: "1" }} />
+        <Kpi titulo="Cerradas" valor={cerradasHoy} tono="verde" to="/tareas/tabla" search={{ estado: "completada" }} />
       </div>
 
       <section className="card-soft p-4">
@@ -354,10 +354,10 @@ function HomeEjecutor() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Kpi titulo="Mis tareas activas" valor={activas.length} />
-        <Kpi titulo="Vencidas" valor={vencidas.length} tono="rojo" />
-        <Kpi titulo="Mis entregas en riesgo" valor={entregasRiesgo.length} tono="amarillo" />
-        <Kpi titulo="Cerradas" valor={cerradas} tono="verde" />
+        <Kpi titulo="Mis tareas activas" valor={activas.length} to="/tareas/tabla" />
+        <Kpi titulo="Vencidas" valor={vencidas.length} tono="rojo" to="/tareas/tabla" search={{ vencidas: "1" }} />
+        <Kpi titulo="Mis entregas en riesgo" valor={entregasRiesgo.length} tono="amarillo" to="/entregas/tabla" search={{ vencidas: "1" }} />
+        <Kpi titulo="Cerradas" valor={cerradas} tono="verde" to="/tareas/tabla" search={{ estado: "completada" }} />
       </div>
 
       <section className="card-soft p-4">
@@ -451,9 +451,21 @@ function HomeEjecutor() {
   );
 }
 
-function Kpi({ titulo, valor, tono }: { titulo: string; valor: number; tono?: "rojo" | "amarillo" | "verde" }) {
-  return (
-    <div className="card-soft p-4">
+function Kpi({
+  titulo,
+  valor,
+  tono,
+  to,
+  search,
+}: {
+  titulo: string;
+  valor: number;
+  tono?: "rojo" | "amarillo" | "verde";
+  to?: string;
+  search?: Record<string, string>;
+}) {
+  const inner = (
+    <>
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{titulo}</div>
       <div
         className={cn(
@@ -465,6 +477,18 @@ function Kpi({ titulo, valor, tono }: { titulo: string; valor: number; tono?: "r
       >
         {valor}
       </div>
-    </div>
+    </>
   );
+  if (to) {
+    return (
+      <Link
+        to={to as never}
+        search={search as never}
+        className="card-soft p-4 hover:shadow-md hover:border-foreground/20 transition cursor-pointer block"
+      >
+        {inner}
+      </Link>
+    );
+  }
+  return <div className="card-soft p-4">{inner}</div>;
 }

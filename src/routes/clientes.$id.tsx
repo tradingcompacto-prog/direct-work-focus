@@ -86,8 +86,8 @@ function FichaCliente() {
         {/* Mini stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
           <Stat label="Cliente desde" textoValor={clienteDesde} />
-          <Stat label="Entregas abiertas" valor={entregasAbiertas.length} />
-          <Stat label="Tareas activas" valor={tareasActivas.length} />
+          <Stat label="Entregas abiertas" valor={entregasAbiertas.length} to="/entregas/tabla" search={{ cliente: c.id, estado: "en_curso" }} />
+          <Stat label="Tareas activas" valor={tareasActivas.length} to="/tareas/tabla" search={{ cliente: c.id }} />
           <Stat label="Equipo asignado" valor={equipoIds.length} />
         </div>
       </header>
@@ -226,13 +226,37 @@ function FichaCliente() {
   );
 }
 
-function Stat({ label, valor, textoValor }: { label: string; valor?: number; textoValor?: string }) {
-  return (
-    <div className="rounded-lg bg-muted/40 px-3 py-2">
+function Stat({
+  label,
+  valor,
+  textoValor,
+  to,
+  search,
+}: {
+  label: string;
+  valor?: number;
+  textoValor?: string;
+  to?: string;
+  search?: Record<string, string>;
+}) {
+  const inner = (
+    <>
       <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="text-xl font-semibold tabular-nums capitalize">{textoValor ?? valor}</div>
-    </div>
+    </>
   );
+  if (to) {
+    return (
+      <Link
+        to={to as never}
+        search={search as never}
+        className="rounded-lg bg-muted/40 px-3 py-2 hover:bg-muted/70 transition cursor-pointer block"
+      >
+        {inner}
+      </Link>
+    );
+  }
+  return <div className="rounded-lg bg-muted/40 px-3 py-2">{inner}</div>;
 }
 
 function NotasCliente({ clienteId }: { clienteId: string }) {
