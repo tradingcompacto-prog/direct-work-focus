@@ -44,6 +44,8 @@ export function CrearModal() {
   const [responsableId, setResponsableId] = React.useState("");
   const [entregaNuevaNombre, setEntregaNuevaNombre] = React.useState<string | null>(null);
   const [bloqueadaPorId, setBloqueadaPorId] = React.useState<string>("");
+  const [fechaInicio, setFechaInicio] = React.useState<string>("");
+  const [fechaFin, setFechaFin] = React.useState<string>("");
 
   React.useEffect(() => {
     setClienteId(contexto?.cliente_id ?? "");
@@ -53,6 +55,8 @@ export function CrearModal() {
     setTipoTarea("");
     setResponsableId("");
     setBloqueadaPorId("");
+    setFechaInicio("");
+    setFechaFin("");
   }, [contexto, tipo]);
 
   // Regla: 1 cliente = 1 proyecto (mismo nombre). Auto-seleccionar proyecto al elegir cliente.
@@ -87,8 +91,30 @@ export function CrearModal() {
     return pool.filter((t) => t.estado !== "completada");
   }, [tipo, entregaId, proyectoId, clienteId]);
 
+  const dependencia = bloqueadaPorId
+    ? TAREAS_MOCK.find((t) => t.id === bloqueadaPorId)
+    : null;
+  const minFecha = dependencia?.fecha_fin_max ?? "";
+
+  // Si la dependencia cambia y la fecha actual es anterior, la ajustamos.
+  React.useEffect(() => {
+    if (!minFecha) return;
+    if (fechaInicio && fechaInicio < minFecha) setFechaInicio(minFecha);
+    if (fechaFin && fechaFin < minFecha) setFechaFin(minFecha);
+  }, [minFecha]);
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (tipo === "tarea" && minFecha) {
+      if (fechaInicio && fechaInicio < minFecha) {
+        toast.error(`La fecha de inicio no puede ser anterior al ${minFecha} (cierre de la dependencia)`);
+        return;
+      }
+      if (fechaFin && fechaFin < minFecha) {
+        toast.error(`La fecha de fin no puede ser anterior al ${minFecha} (cierre de la dependencia)`);
+        return;
+      }
+    }
     toast.success(`${TITLES[tipo]} creada (mock)`);
     cerrar();
   };
@@ -240,12 +266,27 @@ export function CrearModal() {
                   </Field>
                   <div className="grid grid-cols-2 gap-3">
                     <Field label="Fecha inicio">
-                      <Input type="date" />
+                      <Input
+                        type="date"
+                        value={fechaInicio}
+                        min={minFecha || undefined}
+                        onChange={(e) => setFechaInicio(e.target.value)}
+                      />
                     </Field>
                     <Field label="Fecha fin">
-                      <Input type="date" />
+                      <Input
+                        type="date"
+                        value={fechaFin}
+                        min={minFecha || fechaInicio || undefined}
+                        onChange={(e) => setFechaFin(e.target.value)}
+                      />
                     </Field>
                   </div>
+                  {minFecha && (
+                    <p className="text-[11px] text-amber-700 -mt-2">
+                      ⏳ Las fechas no pueden ser anteriores al {minFecha} (cierre previsto de «{dependencia?.titulo}»).
+                    </p>
+                  )}
                   <Field label="Prioridad">
                     <Select defaultValue="media">
                       <SelectTrigger>
