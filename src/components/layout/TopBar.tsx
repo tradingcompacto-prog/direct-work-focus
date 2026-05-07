@@ -1,6 +1,6 @@
 import * as React from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Bell, Search } from "lucide-react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Bell, Search, Check, Play, UserPlus, MessageSquare, AlertTriangle, BellOff } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -10,10 +10,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useNotificaciones } from "@/lib/queries";
+import { useNotificacionesStore, marcarLeida, marcarTodasLeidas } from "@/lib/notificaciones-store";
 import { usuarioActual } from "@/lib/equipo";
 import { tiempoRelativo } from "@/lib/fechas";
 import { useBusquedaGlobal } from "@/lib/busqueda-context";
+import { cn } from "@/lib/utils";
+import { isToday, parseISO } from "date-fns";
+import type { Notificacion } from "@/types/database";
 
 interface Crumb {
   label: string;
@@ -40,9 +43,15 @@ const labelMap: Record<string, string> = {
 export function TopBar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const u = usuarioActual();
-  const { data: notifs = [] } = useNotificaciones();
+  const { notificaciones: notifs } = useNotificacionesStore();
   const noLeidas = notifs.filter((n) => !n.leida).length;
   const busqueda = useBusquedaGlobal();
+  const navigate = useNavigate();
+
+  const hoy = notifs.filter((n) => {
+    try { return isToday(parseISO(n.fecha)); } catch { return false; }
+  });
+  const anteriores = notifs.filter((n) => !hoy.includes(n));
 
   const segmentos = path.split("/").filter(Boolean);
   const crumbs: Crumb[] = segmentos.map((seg, i) => {
@@ -94,21 +103,52 @@ export function TopBar() {
             )}
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-80">
-          <DropdownMenuLabel className="flex items-center justify-between">
-            <span>Notificaciones</span>
-            <button className="text-[11px] text-muted-foreground hover:text-foreground">
+        <DropdownMenuContent align="end" className="w-96 p-0">
+          <DropdownMenuLabel className="flex items-center justify-between px-3 py-2.5">
+            <span className="flex items-center gap-2">
+              Notificaciones
+              {noLeidas > 0 && (
+                <span className="text-[10px] font-semibold bg-red-100 text-red-700 rounded px-1.5 py-0.5">
+                  {noLeidas} sin leer
+                </span>
+              )}
+            </span>
+            <button
+              onClick={(e) => { e.preventDefault(); marcarTodasLeidas(); }}
+              disabled={noLeidas === 0}
+              className="text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-40"
+            >
               Marcar todas leídas
             </button>
           </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <div className="max-h-80 overflow-y-auto">
-            {notifs.map((n) => (
-              <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-0.5 py-2">
-                <span className={n.leida ? "text-muted-foreground" : "font-medium"}>{n.texto}</span>
-                <span className="text-[11px] text-muted-foreground">{tiempoRelativo(n.fecha)}</span>
-              </DropdownMenuItem>
-            ))}
+          <DropdownMenuSeparator className="m-0" />
+          <div className="max-h-[420px] overflow-y-auto">
+            {notifs.length === 0 && (
+              <div className="text-center py-10 px-4 text-muted-foreground">
+                <BellOff className="h-7 w-7 mx-auto mb-2 opacity-40" />
+                <div className="text-sm">Todo al día 🎉</div>
+              </div>
+            )}
+            {hoy.length > 0 && (
+              <Grupo titulo="Hoy">
+                {hoy.map((n) => (
+                  <Item key={n.id} n={n} onClick={() => {
+                    marcarLeida(n.id);
+                    if (n.ruta) navigate({ to: n.ruta as never });
+                  }} />
+                ))}
+              </Grupo>
+            )}
+            {anteriores.length > 0 && (
+              <Grupo titulo="Anteriores">
+                {anteriores.map((n) => (
+                  <Item key={n.id} n={n} onClick={() => {
+                    marcarLeida(n.id);
+                    if (n.ruta) navigate({ to: n.ruta as never });
+                  }} />
+                ))}
+              </Grupo>
+            )}
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
