@@ -1,6 +1,6 @@
 import * as React from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Bell, Search } from "lucide-react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Bell, Search, Check, Play, UserPlus, MessageSquare, AlertTriangle, BellOff } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -10,10 +10,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useNotificaciones } from "@/lib/queries";
+import { useNotificacionesStore, marcarLeida, marcarTodasLeidas } from "@/lib/notificaciones-store";
 import { usuarioActual } from "@/lib/equipo";
 import { tiempoRelativo } from "@/lib/fechas";
 import { useBusquedaGlobal } from "@/lib/busqueda-context";
+import { cn } from "@/lib/utils";
+import { isToday, parseISO } from "date-fns";
+import type { Notificacion } from "@/types/database";
 
 interface Crumb {
   label: string;
@@ -40,9 +43,15 @@ const labelMap: Record<string, string> = {
 export function TopBar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const u = usuarioActual();
-  const { data: notifs = [] } = useNotificaciones();
+  const { notificaciones: notifs } = useNotificacionesStore();
   const noLeidas = notifs.filter((n) => !n.leida).length;
   const busqueda = useBusquedaGlobal();
+  const navigate = useNavigate();
+
+  const hoy = notifs.filter((n) => {
+    try { return isToday(parseISO(n.fecha)); } catch { return false; }
+  });
+  const anteriores = notifs.filter((n) => !hoy.includes(n));
 
   const segmentos = path.split("/").filter(Boolean);
   const crumbs: Crumb[] = segmentos.map((seg, i) => {
@@ -94,21 +103,52 @@ export function TopBar() {
             )}
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-80">
-          <DropdownMenuLabel className="flex items-center justify-between">
-            <span>Notificaciones</span>
-            <button className="text-[11px] text-muted-foreground hover:text-foreground">
+        <DropdownMenuContent align="end" className="w-96 p-0">
+          <DropdownMenuLabel className="flex items-center justify-between px-3 py-2.5">
+            <span className="flex items-center gap-2">
+              Notificaciones
+              {noLeidas > 0 && (
+                <span className="text-[10px] font-semibold bg-red-100 text-red-700 rounded px-1.5 py-0.5">
+                  {noLeidas} sin leer
+                </span>
+              )}
+            </span>
+            <button
+              onClick={(e) => { e.preventDefault(); marcarTodasLeidas(); }}
+              disabled={noLeidas === 0}
+              className="text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-40"
+            >
               Marcar todas leídas
             </button>
           </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <div className="max-h-80 overflow-y-auto">
-            {notifs.map((n) => (
-              <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-0.5 py-2">
-                <span className={n.leida ? "text-muted-foreground" : "font-medium"}>{n.texto}</span>
-                <span className="text-[11px] text-muted-foreground">{tiempoRelativo(n.fecha)}</span>
-              </DropdownMenuItem>
-            ))}
+          <DropdownMenuSeparator className="m-0" />
+          <div className="max-h-[420px] overflow-y-auto">
+            {notifs.length === 0 && (
+              <div className="text-center py-10 px-4 text-muted-foreground">
+                <BellOff className="h-7 w-7 mx-auto mb-2 opacity-40" />
+                <div className="text-sm">Todo al día 🎉</div>
+              </div>
+            )}
+            {hoy.length > 0 && (
+              <Grupo titulo="Hoy">
+                {hoy.map((n) => (
+                  <Item key={n.id} n={n} onClick={() => {
+                    marcarLeida(n.id);
+                    if (n.ruta) navigate({ to: n.ruta as never });
+                  }} />
+                ))}
+              </Grupo>
+            )}
+            {anteriores.length > 0 && (
+              <Grupo titulo="Anteriores">
+                {anteriores.map((n) => (
+                  <Item key={n.id} n={n} onClick={() => {
+                    marcarLeida(n.id);
+                    if (n.ruta) navigate({ to: n.ruta as never });
+                  }} />
+                ))}
+              </Grupo>
+            )}
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -137,5 +177,49 @@ export function TopBar() {
         </DropdownMenuContent>
       </DropdownMenu>
     </header>
+  );
+}
+
+function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {titulo}
+      </div>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+const ICONOS = {
+  check: { Icon: Check, cls: "bg-green-100 text-green-700" },
+  play: { Icon: Play, cls: "bg-blue-100 text-blue-700" },
+  "user-plus": { Icon: UserPlus, cls: "bg-violet-100 text-violet-700" },
+  message: { Icon: MessageSquare, cls: "bg-zinc-100 text-zinc-700" },
+  alert: { Icon: AlertTriangle, cls: "bg-amber-100 text-amber-700" },
+} as const;
+
+function Item({ n, onClick }: { n: Notificacion; onClick: () => void }) {
+  const meta = ICONOS[n.icono ?? "message"] ?? ICONOS.message;
+  const Icon = meta.Icon;
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full text-left px-3 py-2.5 flex gap-3 items-start hover:bg-muted/60 transition border-l-2",
+        n.leida ? "border-transparent" : "border-blue-500 bg-blue-50/30",
+      )}
+    >
+      <span className={cn("h-7 w-7 rounded-full flex items-center justify-center shrink-0", meta.cls)}>
+        <Icon className="h-3.5 w-3.5" />
+      </span>
+      <span className="flex-1 min-w-0">
+        <span className={cn("block text-sm leading-snug", !n.leida && "font-medium")}>
+          {n.texto}
+        </span>
+        <span className="block text-[11px] text-muted-foreground mt-0.5">{tiempoRelativo(n.fecha)}</span>
+      </span>
+      {!n.leida && <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0 mt-2" />}
+    </button>
   );
 }
