@@ -1,10 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { format, parseISO, startOfDay, isSameDay, differenceInCalendarDays, startOfWeek, isAfter } from "date-fns";
 import { es } from "date-fns/locale";
-import { AlertTriangle, CheckCircle2, Calendar as CalendarIcon, Sparkles, Sun, Sunrise, Moon } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Calendar as CalendarIcon, Sparkles, Sun, Sunrise, Moon, Eye, Users, Briefcase, User } from "lucide-react";
 import { TAREAS_MOCK, ENTREGAS_MOCK, ACTIVIDAD_MOCK, clientePorId, entregaPorId } from "@/lib/mock-tareas";
-import { USUARIO_ACTUAL_ID, usuarioActual } from "@/lib/equipo";
+import { EQUIPO, USUARIO_ACTUAL_ID, usuarioActual, nombrePorId } from "@/lib/equipo";
 import { useTareaModal } from "@/lib/tarea-modal-context";
 import { PersonaChip } from "@/components/PersonaChip";
 import { saludoSegunHora, urgenciaTarea, etiquetaFechaRelativa, tiempoRelativo } from "@/lib/fechas";
@@ -19,7 +19,64 @@ const iconoHora = () => {
   return <Moon className="h-6 w-6 text-indigo-500" />;
 };
 
+type RolVista = "director" | "pm" | "ejecutor";
+const ROL_KEY = "sa.home.rolVista";
+
+function useRolVista(): [RolVista, (r: RolVista) => void] {
+  const [r, setR] = useState<RolVista>("pm");
+  useEffect(() => {
+    const v = (typeof window !== "undefined" && localStorage.getItem(ROL_KEY)) as RolVista | null;
+    if (v === "director" || v === "pm" || v === "ejecutor") setR(v);
+  }, []);
+  const set = (v: RolVista) => {
+    setR(v);
+    try { localStorage.setItem(ROL_KEY, v); } catch {}
+  };
+  return [r, set];
+}
+
+function ToggleRol({ value, onChange }: { value: RolVista; onChange: (r: RolVista) => void }) {
+  const opts: { v: RolVista; label: string; icon: typeof Eye }[] = [
+    { v: "director", label: "Director", icon: Users },
+    { v: "pm", label: "PM", icon: Briefcase },
+    { v: "ejecutor", label: "Ejecutor", icon: User },
+  ];
+  return (
+    <div className="inline-flex items-center gap-1 rounded-lg border bg-card p-0.5 text-xs">
+      <span className="px-2 text-muted-foreground flex items-center gap-1">
+        <Eye className="h-3 w-3" /> Ver como
+      </span>
+      {opts.map(({ v, label, icon: Icon }) => (
+        <button
+          key={v}
+          onClick={() => onChange(v)}
+          className={cn(
+            "px-2 py-1 rounded-md flex items-center gap-1 transition",
+            value === v ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+          )}
+        >
+          <Icon className="h-3 w-3" /> {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function Home() {
+  const [rol, setRol] = useRolVista();
+  return (
+    <div className="space-y-4 anim-in">
+      <div className="flex justify-end">
+        <ToggleRol value={rol} onChange={setRol} />
+      </div>
+      {rol === "director" && <HomeDirector />}
+      {rol === "pm" && <HomePM />}
+      {rol === "ejecutor" && <HomeEjecutor />}
+    </div>
+  );
+}
+
+function HomePM() {
   const u = usuarioActual();
   const hoy = useMemo(() => startOfDay(new Date()), []);
   const inicioSemana = useMemo(() => startOfWeek(hoy, { weekStartsOn: 1 }), [hoy]);
@@ -210,6 +267,168 @@ export function Home() {
           ))}
         </ul>
       </section>
+    </div>
+  );
+}
+
+// ─── Vista Director ───────────────────────────────────────
+function HomeDirector() {
+  const u = usuarioActual();
+  const hoy = useMemo(() => startOfDay(new Date()), []);
+
+  const activas = TAREAS_MOCK.filter((t) => t.estado !== "completada");
+  const vencidas = activas.filter((t) => urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) === "rojo");
+  const entregasRiesgo = ENTREGAS_MOCK.filter(
+    (e) => e.estado === "en_curso" && parseISO(e.fecha_fin) < hoy,
+  );
+  const cerradasHoy = TAREAS_MOCK.filter((t) => t.estado === "completada").length;
+
+  // Carga por persona
+  const carga = EQUIPO.filter((m) => m.activo).map((m) => {
+    const n = activas.filter((t) => t.responsable_id === m.id).length;
+    return { id: m.id, nombre: m.nombre, n };
+  }).sort((a, b) => b.n - a.n);
+  const max = Math.max(1, ...carga.map((c) => c.n));
+
+  return (
+    <>
+      <div className="flex items-center gap-3">
+        <Users className="h-6 w-6 text-primary" />
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{saludoSegunHora()}, {u.nombre.split(" ")[0]}</h1>
+          <p className="text-sm text-muted-foreground">Vista Director · pulso del equipo en {format(hoy, "EEEE d", { locale: es })}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Kpi titulo="Tareas activas" valor={activas.length} />
+        <Kpi titulo="Vencidas" valor={vencidas.length} tono="rojo" />
+        <Kpi titulo="Entregas en riesgo" valor={entregasRiesgo.length} tono="amarillo" />
+        <Kpi titulo="Cerradas" valor={cerradasHoy} tono="verde" />
+      </div>
+
+      <section className="card-soft p-4">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+          <Users className="h-3.5 w-3.5" /> Carga por persona
+        </h3>
+        <ul className="space-y-1.5">
+          {carga.map((c) => (
+            <li key={c.id} className="flex items-center gap-3 text-sm">
+              <span className="w-32 truncate">{c.nombre}</span>
+              <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-400 to-blue-600"
+                  style={{ width: `${(c.n / max) * 100}%` }}
+                />
+              </div>
+              <span className="w-8 text-right tabular-nums text-muted-foreground">{c.n}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="card-soft p-4">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+          <AlertTriangle className="h-3.5 w-3.5" /> Entregas en riesgo
+        </h3>
+        {entregasRiesgo.length === 0 ? (
+          <div className="text-sm text-muted-foreground">Ninguna entrega vencida 👌</div>
+        ) : (
+          <ul className="space-y-1.5">
+            {entregasRiesgo.slice(0, 6).map((e) => (
+              <li key={e.id}>
+                <Link to="/entregas/$id" params={{ id: e.id }} className="flex items-center justify-between text-sm px-2 py-1.5 rounded hover:bg-muted/50">
+                  <span className="truncate">{e.nombre} · <span className="text-muted-foreground">{clientePorId(e.cliente_id)?.nombre}</span></span>
+                  <span className="text-xs text-red-600 font-medium shrink-0">{etiquetaFechaRelativa(e.fecha_fin)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </>
+  );
+}
+
+// ─── Vista Ejecutor ───────────────────────────────────────
+function HomeEjecutor() {
+  const u = usuarioActual();
+  const hoy = useMemo(() => startOfDay(new Date()), []);
+  const { abrir } = useTareaModal();
+
+  const mias = TAREAS_MOCK.filter((t) => t.responsable_id === USUARIO_ACTUAL_ID && t.estado !== "completada")
+    .sort((a, b) => a.fecha_fin_max.localeCompare(b.fecha_fin_max));
+
+  const hoyTareas = mias.filter((t) => differenceInCalendarDays(parseISO(t.fecha_fin_max), hoy) <= 0);
+  const resto = mias.filter((t) => differenceInCalendarDays(parseISO(t.fecha_fin_max), hoy) > 0);
+
+  return (
+    <>
+      <div className="flex items-center gap-3">
+        <User className="h-6 w-6 text-primary" />
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{saludoSegunHora()}, {u.nombre.split(" ")[0]}</h1>
+          <p className="text-sm text-muted-foreground">{mias.length} tareas en tu lista · empieza por las de arriba</p>
+        </div>
+      </div>
+
+      <section>
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Para hoy</h2>
+        {hoyTareas.length === 0 ? (
+          <div className="card-soft p-6 text-center text-sm text-muted-foreground">🎉 Nada urgente para hoy.</div>
+        ) : (
+          <ul className="space-y-1.5">
+            {hoyTareas.map((t) => (
+              <li key={t.id}>
+                <button
+                  onClick={() => abrir(t.id)}
+                  className="w-full text-left card-soft p-3 hover:shadow-md transition border-l-4 flex items-center justify-between gap-2"
+                  style={bordeIzqCliente(t.cliente_id)}
+                >
+                  <span className="truncate">{t.titulo}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{etiquetaFechaRelativa(t.fecha_fin_max)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Próximas</h2>
+        <ul className="space-y-1">
+          {resto.slice(0, 8).map((t) => (
+            <li key={t.id}>
+              <button
+                onClick={() => abrir(t.id)}
+                className="w-full text-left text-sm flex items-center justify-between gap-2 px-3 py-2 rounded hover:bg-muted/50 border-l-2"
+                style={bordeIzqCliente(t.cliente_id)}
+              >
+                <span className="truncate">{t.titulo}</span>
+                <span className="text-xs text-muted-foreground shrink-0">{etiquetaFechaRelativa(t.fecha_fin_max)}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </>
+  );
+}
+
+function Kpi({ titulo, valor, tono }: { titulo: string; valor: number; tono?: "rojo" | "amarillo" | "verde" }) {
+  return (
+    <div className="card-soft p-4">
+      <div className="text-xs uppercase tracking-wider text-muted-foreground">{titulo}</div>
+      <div
+        className={cn(
+          "text-3xl font-semibold tabular-nums mt-1",
+          tono === "rojo" && "text-red-600",
+          tono === "amarillo" && "text-amber-600",
+          tono === "verde" && "text-emerald-600",
+        )}
+      >
+        {valor}
+      </div>
     </div>
   );
 }
