@@ -153,3 +153,120 @@ const Legend = ({ color, label }: { color: string; label: string }) => (
     <span className={cn("h-3 w-3 rounded-sm", color)} /> {label}
   </span>
 );
+
+function BarraArrastrable({
+  tareaId,
+  titulo,
+  color,
+  left,
+  width,
+  inicio,
+  fin,
+  onClick,
+}: {
+  tareaId: string;
+  titulo: string;
+  color: string;
+  left: number;
+  width: number;
+  inicio: Date;
+  fin: Date;
+  onClick: () => void;
+}) {
+  const [drag, setDrag] = React.useState<null | {
+    mode: "move" | "left" | "right";
+    startX: number;
+    deltaDays: number;
+    moved: boolean;
+  }>(null);
+
+  const onPointerDown = (mode: "move" | "left" | "right") => (e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    setDrag({ mode, startX: e.clientX, deltaDays: 0, moved: false });
+  };
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!drag) return;
+    const px = e.clientX - drag.startX;
+    const d = Math.round(px / DAY_W);
+    if (d !== drag.deltaDays) setDrag({ ...drag, deltaDays: d, moved: true });
+  };
+
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (!drag) return;
+    (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+    if (!drag.moved || drag.deltaDays === 0) {
+      setDrag(null);
+      onClick();
+      return;
+    }
+    const d = drag.deltaDays;
+    const shift = (date: Date, n: number) =>
+      format(addDays(date, n), "yyyy-MM-dd");
+    if (drag.mode === "move") {
+      setTareaFechas(tareaId, { fin_min: shift(inicio, d), fin_max: shift(fin, d) });
+    } else if (drag.mode === "left") {
+      setTareaFechas(tareaId, { fin_min: shift(inicio, d) });
+    } else {
+      setTareaFechas(tareaId, { fin_max: shift(fin, d) });
+    }
+    toast.success("Fecha actualizada", { description: titulo });
+    setDrag(null);
+  };
+
+  const offset = drag ? drag.deltaDays * DAY_W : 0;
+  const visualLeft =
+    drag?.mode === "left" ? left + offset : drag?.mode === "right" ? left : left + offset;
+  const visualWidth =
+    drag?.mode === "left"
+      ? Math.max(DAY_W * 0.5, width - offset)
+      : drag?.mode === "right"
+      ? Math.max(DAY_W * 0.5, width + offset)
+      : width;
+
+  const previewInicio = drag
+    ? addDays(inicio, drag.mode === "right" ? 0 : drag.deltaDays)
+    : inicio;
+  const previewFin = drag
+    ? addDays(fin, drag.mode === "left" ? 0 : drag.deltaDays)
+    : fin;
+
+  return (
+    <Tooltip open={drag?.moved || undefined}>
+      <TooltipTrigger asChild>
+        <div
+          className={cn(
+            "absolute top-1.5 h-5 rounded-sm text-[10px] text-white px-2 truncate text-left transition-shadow group",
+            color,
+            drag ? "shadow-lg cursor-grabbing" : "cursor-grab hover:opacity-90",
+          )}
+          style={{ left: visualLeft, width: visualWidth }}
+          onPointerDown={onPointerDown("move")}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+        >
+          {titulo}
+          <span
+            onPointerDown={onPointerDown("left")}
+            className="absolute left-0 top-0 h-full w-1.5 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-black/30 rounded-l-sm"
+          />
+          <span
+            onPointerDown={onPointerDown("right")}
+            className="absolute right-0 top-0 h-full w-1.5 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-black/30 rounded-r-sm"
+          />
+        </div>
+      </TooltipTrigger>
+      <TooltipContent>
+        <div className="text-xs">
+          <div className="font-semibold">{titulo}</div>
+          <div>
+            {format(previewInicio, "d MMM", { locale: es })} →{" "}
+            {format(previewFin, "d MMM", { locale: es })}
+          </div>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
