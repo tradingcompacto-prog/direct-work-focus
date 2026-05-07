@@ -45,7 +45,7 @@ export function ClientesTarjetas() {
             </div>
             <div className="text-xs text-muted-foreground mt-0.5">{c.sector}</div>
             <div className="mt-3 flex items-center justify-between">
-              <PersonaChip id={c.pm_id} size="xs" />
+              <PersonaChip id={c.pm_id} size="xs" link={false} />
               <AvatarStack ids={equipo} size="xs" />
             </div>
             {proxima && (
