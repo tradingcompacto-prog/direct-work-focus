@@ -179,3 +179,47 @@ export function TopBar() {
     </header>
   );
 }
+
+function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {titulo}
+      </div>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+const ICONOS = {
+  check: { Icon: Check, cls: "bg-green-100 text-green-700" },
+  play: { Icon: Play, cls: "bg-blue-100 text-blue-700" },
+  "user-plus": { Icon: UserPlus, cls: "bg-violet-100 text-violet-700" },
+  message: { Icon: MessageSquare, cls: "bg-zinc-100 text-zinc-700" },
+  alert: { Icon: AlertTriangle, cls: "bg-amber-100 text-amber-700" },
+} as const;
+
+function Item({ n, onClick }: { n: Notificacion; onClick: () => void }) {
+  const meta = ICONOS[n.icono ?? "message"] ?? ICONOS.message;
+  const Icon = meta.Icon;
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full text-left px-3 py-2.5 flex gap-3 items-start hover:bg-muted/60 transition border-l-2",
+        n.leida ? "border-transparent" : "border-blue-500 bg-blue-50/30",
+      )}
+    >
+      <span className={cn("h-7 w-7 rounded-full flex items-center justify-center shrink-0", meta.cls)}>
+        <Icon className="h-3.5 w-3.5" />
+      </span>
+      <span className="flex-1 min-w-0">
+        <span className={cn("block text-sm leading-snug", !n.leida && "font-medium")}>
+          {n.texto}
+        </span>
+        <span className="block text-[11px] text-muted-foreground mt-0.5">{tiempoRelativo(n.fecha)}</span>
+      </span>
+      {!n.leida && <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0 mt-2" />}
+    </button>
+  );
+}
