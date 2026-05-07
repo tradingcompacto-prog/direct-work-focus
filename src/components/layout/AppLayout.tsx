@@ -8,6 +8,7 @@ import { CrearModal } from "@/components/CrearModal";
 import { BusquedaProvider } from "@/lib/busqueda-context";
 import { BusquedaGlobal } from "@/components/BusquedaGlobal";
 import { Toaster } from "@/components/ui/sonner";
+import { AtajosGlobales } from "@/lib/atajos";
 
 export function AppLayout() {
   return (
@@ -26,6 +27,7 @@ export function AppLayout() {
           <TareaModal />
           <CrearModal />
           <BusquedaGlobal />
+          <AtajosGlobales />
           <Toaster />
         </CrearModalProvider>
       </TareaModalProvider>
