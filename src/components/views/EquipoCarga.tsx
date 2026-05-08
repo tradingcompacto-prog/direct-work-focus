@@ -20,6 +20,23 @@ const cardColor = {
   neutro: "bg-zinc-50 text-zinc-700 border-zinc-200",
 };
 
+/** Semáforo de carga por persona. Devuelve nivel según unidad. */
+function nivelCarga(total: number, unidad: "tareas" | "horas"): "verde" | "amarillo" | "rojo" {
+  if (unidad === "tareas") {
+    if (total <= 5) return "verde";
+    if (total <= 10) return "amarillo";
+    return "rojo";
+  }
+  if (total <= 20) return "verde";
+  if (total <= 35) return "amarillo";
+  return "rojo";
+}
+const dotCarga: Record<"verde" | "amarillo" | "rojo", string> = {
+  verde: "bg-emerald-500",
+  amarillo: "bg-amber-500",
+  rojo: "bg-red-500",
+};
+
 export function EquipoCarga() {
   useOverrides();
   const [modo, setModo] = React.useState<"cards" | "barras">("cards");
@@ -115,7 +132,13 @@ export function EquipoCarga() {
                   }}
                 >
                   <div className="px-3 py-2 border-b border-border flex items-center justify-between">
-                    <PersonaChip id={m.id} size="sm" />
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span
+                        className={cn("h-2 w-2 rounded-full shrink-0", dotCarga[nivelCarga(totalPersona(lista), unidad)])}
+                        title={`Carga ${nivelCarga(totalPersona(lista), unidad)}`}
+                      />
+                      <PersonaChip id={m.id} size="sm" />
+                    </div>
                     <Link
                       to="/personas/$id"
                       params={{ id: m.id }}
