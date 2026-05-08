@@ -29,6 +29,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as DayCalendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
+import { useTareasVersion } from "@/lib/tareas-store";
 
 export const Route = createFileRoute("/entregas/$id")({
   component: FichaEntrega,
@@ -44,6 +45,7 @@ const estadoTareaCls: Record<string, string> = {
 function FichaEntrega() {
   const { id } = Route.useParams();
   useOverrides();
+  useTareasVersion();
   const e = entregaPorId(id);
   const { abrir } = useCrearModal();
   const { abrir: abrirTarea } = useTareaModal();

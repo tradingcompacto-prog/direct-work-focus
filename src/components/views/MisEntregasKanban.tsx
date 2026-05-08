@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Package } from "lucide-react";
 import { FiltrosBar, useFiltros } from "@/components/FiltrosBar";
+import { useTareasVersion } from "@/lib/tareas-store";
 
 const calcular = (entrega: Entrega) => {
   const ts = TAREAS_MOCK.filter((t) => t.entrega_id === entrega.id);
@@ -40,6 +41,7 @@ const calcular = (entrega: Entrega) => {
 type ColId = "en_curso" | "hoy" | "semana" | "mes";
 
 export function MisEntregasKanban() {
+  useTareasVersion();
   useEntregasOverridesVersion(); // re-render on changes
   const hoy = startOfDay(new Date());
   const inicioSemana = startOfWeek(hoy, { weekStartsOn: 1 });

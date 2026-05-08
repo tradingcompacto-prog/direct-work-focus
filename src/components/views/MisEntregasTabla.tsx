@@ -22,8 +22,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AccionesMasivasBar } from "@/components/AccionesMasivasBar";
 import { toast } from "sonner";
 import { startOfDay } from "date-fns";
+import { useTareasVersion } from "@/lib/tareas-store";
 
 export function MisEntregasTabla() {
+  useTareasVersion();
   const [f, setF, resetF] = useFiltros("sa.filtros.misEntregas");
   const [sel, setSel] = React.useState<Set<string>>(new Set());
   const hoy = React.useMemo(() => startOfDay(new Date()), []);

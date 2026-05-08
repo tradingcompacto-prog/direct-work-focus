@@ -9,13 +9,20 @@ import {
   NOTIFICACIONES_MOCK,
 } from "./mock-tareas";
 import { EQUIPO, USUARIO_ACTUAL_ID } from "./equipo";
+import { useTareasVersion } from "./tareas-store";
 
 // Mocks expuestos como queries síncronas (con initialData) para que el
 // primer render ya tenga los datos y no aparezca el estado vacío.
 const sync = <T>(data: T) => Promise.resolve(data);
 
-export const useTareas = () =>
-  useQuery({ queryKey: ["tareas"], queryFn: () => sync(TAREAS_MOCK), initialData: TAREAS_MOCK });
+export const useTareas = () => {
+  const v = useTareasVersion();
+  return useQuery({
+    queryKey: ["tareas", v],
+    queryFn: () => sync(TAREAS_MOCK),
+    initialData: TAREAS_MOCK,
+  });
+};
 export const useEntregas = () =>
   useQuery({ queryKey: ["entregas"], queryFn: () => sync(ENTREGAS_MOCK), initialData: ENTREGAS_MOCK });
 export const useProyectos = () =>
@@ -40,11 +47,12 @@ export const useNotificaciones = () =>
 
 // Vistas derivadas para "Mis tareas"
 export const useMisTareas = () => {
+  const v = useTareasVersion();
   // Devolvemos todas las tareas del usuario (incluidas completadas) para que
   // los filtros de la tabla puedan mostrarlas cuando se navega con ?estado=completada.
   const data = TAREAS_MOCK.filter((t) => t.responsable_id === USUARIO_ACTUAL_ID);
   return useQuery({
-    queryKey: ["mis-tareas", USUARIO_ACTUAL_ID],
+    queryKey: ["mis-tareas", USUARIO_ACTUAL_ID, v],
     queryFn: () => sync(data),
     initialData: data,
   });

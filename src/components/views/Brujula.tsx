@@ -5,8 +5,10 @@ import { estimarTarea } from "@/lib/estimacion";
 import { Link } from "@tanstack/react-router";
 import { format, parseISO, addDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
+import { useTareasVersion } from "@/lib/tareas-store";
 
 export function Brujula() {
+  useTareasVersion();
   const hoy = startOfDay(new Date());
   const vencidas = TAREAS_MOCK.filter(
     (t) => t.estado !== "completada" && urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) === "rojo",

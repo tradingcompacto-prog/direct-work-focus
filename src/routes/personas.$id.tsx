@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { urgenciaTarea } from "@/lib/fechas";
 import { precisionPersona, promediosPorTipo, tipoLabel } from "@/lib/estimacion";
+import { useTareasVersion } from "@/lib/tareas-store";
 
 export const Route = createFileRoute("/personas/$id")({
   component: FichaPersona,
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/personas/$id")({
 
 function FichaPersona() {
   const { id } = Route.useParams();
+  useTareasVersion();
   const m = miembroPorId(id);
   const { abrir } = useTareaModal();
   if (!m) return <div className="p-6">Persona no encontrada</div>;
