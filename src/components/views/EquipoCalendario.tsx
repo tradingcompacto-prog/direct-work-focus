@@ -62,9 +62,10 @@ export function EquipoCalendario() {
   }, [entregasNormales]);
 
   // Eventos con rango (campañas + fechas + vacaciones) → expandir a cada día
+  type Evento = { id: string; tipo: Capa; label: string; entregaId?: string };
   const eventosPorDia = React.useMemo(() => {
-    const m = new Map<string, Array<{ id: string; tipo: Capa; label: string; sub?: string; href?: { to: string; params: { id: string } } }>>();
-    const push = (k: string, ev: { id: string; tipo: Capa; label: string; sub?: string; href?: { to: string; params: { id: string } } }) => {
+    const m = new Map<string, Evento[]>();
+    const push = (k: string, ev: Evento) => {
       const arr = m.get(k) ?? [];
       arr.push(ev);
       m.set(k, arr);
@@ -77,9 +78,8 @@ export function EquipoCalendario() {
         push(format(d, "yyyy-MM-dd"), {
           id: c.id,
           tipo: "campanas",
-          label: c.nombre,
-          sub: clientePorId(c.cliente_id)?.nombre,
-          href: { to: "/entregas/$id", params: { id: c.id } },
+          label: `${clientePorId(c.cliente_id)?.nombre ?? ""}: ${c.nombre}`,
+          entregaId: c.id,
         });
       }
     }
@@ -182,8 +182,8 @@ export function EquipoCalendario() {
                         {ev.label}
                       </span>
                     );
-                    return ev.href ? (
-                      <Link key={ev.id + k} to={ev.href.to} params={ev.href.params}>
+                    return ev.entregaId ? (
+                      <Link key={ev.id + k} to="/entregas/$id" params={{ id: ev.entregaId }}>
                         {content}
                       </Link>
                     ) : (
