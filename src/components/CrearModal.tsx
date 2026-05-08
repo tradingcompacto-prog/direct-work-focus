@@ -26,7 +26,7 @@ import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ComboboxCrear } from "@/components/ComboboxCrear";
-import { CATEGORIAS_ENTREGA, etiquetaCategoria } from "@/lib/categorias";
+import { CATEGORIAS_ENTREGA, labelCategoria } from "@/lib/categorias";
 import type { CategoriaEntrega } from "@/types/database";
 
 const TITLES: Record<string, string> = {
@@ -288,8 +288,8 @@ export function CrearModal() {
                     </SelectTrigger>
                     <SelectContent>
                       {CATEGORIAS_ENTREGA.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {etiquetaCategoria(c)}
+                        <SelectItem key={c.value} value={c.value}>
+                          {labelCategoria(c.value)}
                         </SelectItem>
                       ))}
                     </SelectContent>
