@@ -184,6 +184,7 @@ function TarjetaEntrega({ entrega: e, overlay }: { entrega: Entrega; overlay?: b
         <span className="h-1.5 w-1.5 rounded-full inline-block" style={{ backgroundColor: colorCliente(e.cliente_id).border }} />
         <ClienteLink id={e.cliente_id} />
       </div>
+      {e.categoria && <CategoriaBadge cat={e.categoria} />}
       <div className="mt-2">
         <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
           <span>✓ {m.cerradas} / {m.total}</span>
