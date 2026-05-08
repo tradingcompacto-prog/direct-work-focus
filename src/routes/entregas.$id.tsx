@@ -26,6 +26,13 @@ import {
   getEntregaOverride,
   useOverrides,
 } from "@/lib/fechas-override-store";
+import {
+  aplicarOverrides,
+  cerrarEntrega,
+  reabrirEntrega,
+  useEntregasOverridesVersion,
+} from "@/lib/entregas-store";
+import { labelCategoria, colorCategoria } from "@/lib/categorias";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as DayCalendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
@@ -46,7 +53,9 @@ function FichaEntrega() {
   const { id } = Route.useParams();
   useOverrides();
   useTareasVersion();
-  const e = entregaPorId(id);
+  useEntregasOverridesVersion();
+  const eBase = entregaPorId(id);
+  const e = eBase ? aplicarOverrides([eBase])[0] : undefined;
   const { abrir } = useCrearModal();
   const { abrir: abrirTarea } = useTareaModal();
   const [tab, setTab] = React.useState("resumen");
@@ -136,6 +145,29 @@ function FichaEntrega() {
           <Button size="sm" onClick={() => abrir("tarea", { cliente_id: e.cliente_id, proyecto_id: e.proyecto_id, entrega_id: e.id })}>
             <Plus className="h-4 w-4 mr-1" /> Tarea
           </Button>
+          {e.estado === "en_curso" ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                cerrarEntrega(e.id);
+                toast.success("Entrega cerrada");
+              }}
+            >
+              <CheckCircle2 className="h-4 w-4 mr-1" /> Cerrar entrega
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                reabrirEntrega(e.id);
+                toast.success("Entrega reabierta");
+              }}
+            >
+              Reabrir
+            </Button>
+          )}
         </div>
 
         {/* Progreso */}
