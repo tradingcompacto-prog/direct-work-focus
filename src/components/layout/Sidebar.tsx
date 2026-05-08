@@ -66,7 +66,7 @@ const SECCIONES: SectionDef[] = [
     icon: Package,
     items: [
       { to: "/entregas/kanban", label: "Kanban", icon: KanbanSquare, atajo: "G K" },
-      { to: "/entregas/gantt", label: "Gantt", icon: GanttChartSquare },
+      { to: "/entregas/gantt", label: "Timeline", icon: CalendarDays },
       { to: "/entregas/tabla", label: "Tabla", icon: Table2 },
     ],
   },
