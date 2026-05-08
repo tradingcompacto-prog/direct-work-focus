@@ -14,6 +14,7 @@ import { es } from "date-fns/locale";
 import { colorCliente, bordeIzqCliente } from "@/lib/cliente-colors";
 import { etiquetaFechaRelativa, urgenciaTarea, tiempoRelativo } from "@/lib/fechas";
 import { cn } from "@/lib/utils";
+import { useTareasVersion } from "@/lib/tareas-store";
 
 export const Route = createFileRoute("/clientes/$id")({
   component: FichaCliente,
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/clientes/$id")({
 
 function FichaCliente() {
   const { id } = Route.useParams();
+  useTareasVersion();
   const c = clientePorId(id);
   const { abrir } = useCrearModal();
   const { abrir: abrirTarea } = useTareaModal();
