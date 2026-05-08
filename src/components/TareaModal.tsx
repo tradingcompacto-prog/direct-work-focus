@@ -20,7 +20,16 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CerrarTareaDialog } from "@/components/CerrarTareaDialog";
 import { estimarTarea } from "@/lib/estimacion";
 import { useTimer, empezar, pausar, formatearMs } from "@/lib/timer-store";
-import { setEstadoTarea } from "@/lib/tareas-store";
+import {
+  setEstadoTarea,
+  marcarParaRevisar,
+  devolverAResponsable,
+  completarTarea,
+  reasignarTarea,
+} from "@/lib/tareas-store";
+import { useRolVista } from "@/lib/rol-vista";
+import { ReasignarTareaDialog } from "@/components/ReasignarTareaDialog";
+import { Send, UserCog, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
@@ -37,13 +46,15 @@ import { CalendarIcon } from "lucide-react";
 const estadoColor: Record<string, string> = {
   activa: "bg-blue-100 text-blue-800 border-blue-200",
   haciendola: "bg-amber-100 text-amber-800 border-amber-200",
-  esperando: "bg-zinc-100 text-zinc-700 border-zinc-200",
+  pausada: "bg-zinc-100 text-zinc-700 border-zinc-200",
+  revision: "bg-purple-100 text-purple-800 border-purple-200",
   completada: "bg-green-100 text-green-800 border-green-200",
 };
 const estadoLabel: Record<string, string> = {
   activa: "Activa",
   haciendola: "Haciéndola",
-  esperando: "Esperando",
+  pausada: "Pausada",
+  revision: "En revisión",
   completada: "Completada",
 };
 
@@ -52,7 +63,10 @@ export function TareaModal() {
   useOverrides();
   const tarea = tareaId ? tareaPorId(tareaId) : undefined;
   const [cerrandoOpen, setCerrandoOpen] = React.useState(false);
+  const [reasignarOpen, setReasignarOpen] = React.useState(false);
   const timer = useTimer(tareaId);
+  const [rolVista] = useRolVista();
+  const esPmODirector = rolVista === "pm" || rolVista === "director";
 
   React.useEffect(() => {
     if (!tareaId) return;
@@ -77,12 +91,11 @@ export function TareaModal() {
   const solicitante = miembroPorId(tarea.solicitante_id);
   const comentarios = COMENTARIOS_MOCK.filter((c) => c.tarea_id === tarea.id);
   const actividad = ACTIVIDAD_MOCK.filter((a) => a.tarea_id === tarea.id);
-  const dependencia = tarea.bloqueada_por_id ? tareaPorId(tarea.bloqueada_por_id) : null;
-  const desbloquea = tarea.desbloquea_id ? tareaPorId(tarea.desbloquea_id) : null;
   const estim = estimarTarea(tarea, TAREAS_MOCK);
   const horasEstim = tarea.horas_estimadas ?? estim?.horas ?? null;
   const horasTimer = timer.ms > 0 ? Math.round((timer.ms / 3600000) * 10) / 10 : null;
   const sugeridaCerrar = horasTimer ?? horasEstim;
+  const enRevision = tarea.estado === "revision";
 
   return (
     <div className="fixed inset-0 z-50">
@@ -166,8 +179,47 @@ export function TareaModal() {
               </Badge>
             </div>
 
+            {/* Bloque revisión: 3 botones (solo PM/Director ven y actúan) */}
+            {enRevision && esPmODirector && (
+              <div className="rounded-lg border border-purple-200 bg-purple-50/50 p-3 space-y-2">
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-purple-700">
+                  🔍 Esta tarea está pendiente de revisión
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
+                    onClick={() => {
+                      devolverAResponsable(tarea.id);
+                      toast.success(`✓ Tarea devuelta a ${nombrePorId(tarea.responsable_id)}`);
+                    }}
+                  >
+                    <Send className="h-3.5 w-3.5" /> Volver a enviar
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-purple-600 hover:bg-purple-700 text-white gap-1.5"
+                    onClick={() => setReasignarOpen(true)}
+                  >
+                    <UserCog className="h-3.5 w-3.5" /> Reasignar
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+                    onClick={() => {
+                      completarTarea(tarea.id);
+                      toast.success("✓ Tarea cerrada");
+                      cerrar();
+                    }}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Completar
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Acciones */}
-            <div className="flex gap-2">
+            {!enRevision && <div className="flex gap-2 flex-wrap">
               {timer.corriendo ? (
                 <Button
                   size="sm"
@@ -175,7 +227,7 @@ export function TareaModal() {
                   className="gap-1.5"
                   onClick={() => {
                     pausar(tarea.id);
-                    setEstadoTarea(tarea.id, "esperando");
+                    setEstadoTarea(tarea.id, "pausada");
                     toast(`«${tarea.titulo}» en pausa`, {
                       description: `Llevas ${formatearMs(timer.ms)} acumulados`,
                     });
@@ -204,11 +256,27 @@ export function TareaModal() {
               <Button
                 size="sm"
                 variant="outline"
+                className="gap-1.5 border-purple-300 text-purple-700 hover:bg-purple-50"
+                onClick={() => {
+                  marcarParaRevisar(tarea.id);
+                  toast.success("✅ Marcada para revisar", {
+                    description: "El PM la revisará en su bandeja",
+                  });
+                  cerrar();
+                }}
+              >
+                <Check className="h-3.5 w-3.5" /> Marcar para revisar
+              </Button>
+              {esPmODirector && (
+              <Button
+                size="sm"
+                variant="outline"
                 className="gap-1.5"
                 onClick={() => setCerrandoOpen(true)}
               >
                 <Check className="h-3.5 w-3.5" /> Marcar hecha
               </Button>
+              )}
               {timer.ms > 0 && (
                 <div
                   className={cn(
@@ -223,7 +291,7 @@ export function TareaModal() {
                   {formatearMs(timer.ms)}
                 </div>
               )}
-            </div>
+            </div>}
 
             <Section title="Asignación">
               <Persona label="Responsable" id={responsable?.id} />
@@ -290,22 +358,6 @@ export function TareaModal() {
               </Section>
             )}
 
-            {(dependencia || desbloquea) && (
-              <Section title="Dependencias">
-                {dependencia && (
-                  <p className="text-sm">
-                    ⏳ Espera a: <span className="font-medium">{dependencia.titulo}</span> (
-                    {nombrePorId(dependencia.responsable_id)})
-                  </p>
-                )}
-                {desbloquea && (
-                  <p className="text-sm">
-                    🔓 Cuando termines: <span className="font-medium">{desbloquea.titulo}</span>
-                  </p>
-                )}
-              </Section>
-            )}
-
             <Section title="Archivos (Drive)" icon={<Paperclip className="h-3.5 w-3.5" />}>
               <div className="grid grid-cols-3 gap-2">
                 <div className="aspect-square rounded-md bg-muted flex items-center justify-center text-xs text-muted-foreground">
@@ -359,6 +411,12 @@ export function TareaModal() {
         onOpenChange={setCerrandoOpen}
         tarea={tarea}
         sugerida={sugeridaCerrar}
+      />
+      <ReasignarTareaDialog
+        open={reasignarOpen}
+        onOpenChange={setReasignarOpen}
+        tarea={tarea}
+        onDone={() => cerrar()}
       />
     </div>
   );

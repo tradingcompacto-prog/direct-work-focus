@@ -20,7 +20,8 @@ const colorEstado = (estado: string, vencida: boolean) => {
   switch (estado) {
     case "haciendola":
       return "bg-amber-500";
-    case "esperando":
+    case "pausada":
+    case "revision":
       return "bg-zinc-400";
     case "completada":
       return "bg-green-500/50";

@@ -28,6 +28,44 @@ export function setHorasReales(id: string, horas: number | null) {
   emit();
 }
 
+export function marcarParaRevisar(id: string) {
+  setEstadoTarea(id, "revision");
+}
+
+export function devolverAResponsable(id: string) {
+  const t = TAREAS_MOCK.find((x) => x.id === id);
+  if (!t) return;
+  const hoy = new Date().toISOString().slice(0, 10);
+  t.fecha_fin_min = hoy;
+  t.fecha_fin_max = hoy;
+  t.estado = "haciendola";
+  emit();
+}
+
+export function reasignarTarea(
+  id: string,
+  nuevoResponsable: string,
+  fechaFin: string,
+) {
+  const t = TAREAS_MOCK.find((x) => x.id === id);
+  if (!t) return;
+  const hoy = new Date().toISOString().slice(0, 10);
+  t.responsable_id = nuevoResponsable;
+  t.fecha_inicio = hoy;
+  t.fecha_fin_min = fechaFin;
+  t.fecha_fin_max = fechaFin;
+  t.estado = "activa";
+  emit();
+}
+
+export function completarTarea(id: string) {
+  const t = TAREAS_MOCK.find((x) => x.id === id);
+  if (!t) return;
+  t.estado = "completada";
+  t.cerrado_at = new Date().toISOString();
+  emit();
+}
+
 export function notifyTareasChanged() {
   emit();
 }

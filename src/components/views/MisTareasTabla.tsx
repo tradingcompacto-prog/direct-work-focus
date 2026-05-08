@@ -26,7 +26,8 @@ import { urgenciaTarea } from "@/lib/fechas";
 const estadoBadge: Record<string, string> = {
   activa: "bg-blue-100 text-blue-800",
   haciendola: "bg-amber-100 text-amber-800",
-  esperando: "bg-zinc-100 text-zinc-700",
+  pausada: "bg-zinc-100 text-zinc-700",
+  revision: "bg-purple-100 text-purple-800",
   completada: "bg-green-100 text-green-800",
 };
 
@@ -65,7 +66,8 @@ export function MisTareasTabla() {
           estados={[
             { value: "activa", label: "Activa" },
             { value: "haciendola", label: "Haciéndola" },
-            { value: "esperando", label: "Esperando" },
+            { value: "pausada", label: "Pausada" },
+            { value: "revision", label: "En revisión" },
             { value: "completada", label: "Completada" },
           ]}
         />
