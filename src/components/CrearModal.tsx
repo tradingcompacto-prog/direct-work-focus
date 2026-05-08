@@ -26,6 +26,8 @@ import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ComboboxCrear } from "@/components/ComboboxCrear";
+import { CATEGORIAS_ENTREGA, etiquetaCategoria } from "@/lib/categorias";
+import type { CategoriaEntrega } from "@/types/database";
 
 const TITLES: Record<string, string> = {
   tarea: "Nueva tarea",
@@ -40,25 +42,23 @@ export function CrearModal() {
   const [proyectoId, setProyectoId] = React.useState("");
   const [entregaId, setEntregaId] = React.useState("");
   const [titulo, setTitulo] = React.useState("");
-  const [tipoTarea, setTipoTarea] = React.useState<string>("");
   const [responsableId, setResponsableId] = React.useState("");
   const [entregaNuevaNombre, setEntregaNuevaNombre] = React.useState<string | null>(null);
-  const [bloqueadaPorId, setBloqueadaPorId] = React.useState<string>("");
   const [fechaInicio, setFechaInicio] = React.useState<string>("");
   const [fechaFin, setFechaFin] = React.useState<string>("");
   const [usarRango, setUsarRango] = React.useState(false);
+  const [categoria, setCategoria] = React.useState<CategoriaEntrega | "">("");
 
   React.useEffect(() => {
     setClienteId(contexto?.cliente_id ?? "");
     setProyectoId(contexto?.proyecto_id ?? "");
     setEntregaId(contexto?.entrega_id ?? "");
     setTitulo("");
-    setTipoTarea("");
     setResponsableId("");
-    setBloqueadaPorId("");
     setFechaInicio("");
     setFechaFin("");
     setUsarRango(false);
+    setCategoria("");
   }, [contexto, tipo]);
 
   // Regla: 1 cliente = 1 proyecto (mismo nombre). Auto-seleccionar proyecto al elegir cliente.
@@ -75,47 +75,13 @@ export function CrearModal() {
     ? ENTREGAS_MOCK.filter((e) => e.proyecto_id === proyectoId)
     : ENTREGAS_MOCK;
 
-  // Candidatas para "espera a": tareas de la misma entrega; si no hay entrega elegida, del mismo proyecto/cliente.
-  const candidatasDependencia = React.useMemo(() => {
-    if (tipo !== "tarea") return [];
-    let pool = TAREAS_MOCK;
-    if (entregaId && entregaId !== "__nueva__" && entregaId !== "puntuales") {
-      pool = pool.filter((t) => t.entrega_id === entregaId);
-    } else if (proyectoId) {
-      pool = pool.filter((t) => t.proyecto_id === proyectoId);
-    } else if (clienteId) {
-      pool = pool.filter((t) => t.cliente_id === clienteId);
-    } else {
-      return [];
-    }
-    return pool.filter((t) => t.estado !== "completada");
-  }, [tipo, entregaId, proyectoId, clienteId]);
-
-  const dependencia = bloqueadaPorId
-    ? TAREAS_MOCK.find((t) => t.id === bloqueadaPorId)
-    : null;
-  const minFecha = dependencia?.fecha_fin_max ?? "";
-
-  // Si la dependencia cambia y la fecha actual es anterior, la ajustamos.
-  React.useEffect(() => {
-    if (!minFecha) return;
-    if (fechaInicio && fechaInicio < minFecha) setFechaInicio(minFecha);
-    if (fechaFin && fechaFin < minFecha) setFechaFin(minFecha);
-  }, [minFecha]);
-
   if (!tipo) return null;
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (tipo === "tarea" && minFecha) {
-      if (fechaInicio && fechaInicio < minFecha) {
-        toast.error(`La fecha de inicio no puede ser anterior al ${minFecha} (cierre de la dependencia)`);
-        return;
-      }
-      if (fechaFin && fechaFin < minFecha) {
-        toast.error(`La fecha de fin no puede ser anterior al ${minFecha} (cierre de la dependencia)`);
-        return;
-      }
+    if (tipo === "entrega" && !categoria) {
+      toast.error("Selecciona una categoría para la entrega");
+      return;
     }
     toast.success(`${TITLES[tipo]} creada (mock)`);
     cerrar();
@@ -218,52 +184,8 @@ export function CrearModal() {
               </Field>
               {tipo === "tarea" && (
                 <>
-                  <Field label="Tipo">
-                    <Select value={tipoTarea} onValueChange={setTipoTarea}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="diseno">Diseño</SelectItem>
-                        <SelectItem value="copy">Copy</SelectItem>
-                        <SelectItem value="web">Web</SelectItem>
-                        <SelectItem value="campanas">Campañas</SelectItem>
-                        <SelectItem value="seo">SEO</SelectItem>
-                        <SelectItem value="estrategia">Estrategia</SelectItem>
-                        <SelectItem value="otro">Otro</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </Field>
                   <Field label="Responsable">
                     <PersonaSelect value={responsableId} onChange={setResponsableId} />
-                  </Field>
-                  <Field label="Espera a (depende de)">
-                    <Select
-                      value={bloqueadaPorId || "__none__"}
-                      onValueChange={(v) => setBloqueadaPorId(v === "__none__" ? "" : v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sin dependencia" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">Sin dependencia</SelectItem>
-                        {candidatasDependencia.map((t) => (
-                          <SelectItem key={t.id} value={t.id}>
-                            {t.titulo}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {candidatasDependencia.length === 0 && (
-                      <p className="text-[11px] text-muted-foreground mt-1">
-                        Elige cliente/entrega para ver tareas a las que puede esperar.
-                      </p>
-                    )}
-                    {bloqueadaPorId && (
-                      <p className="text-[11px] text-muted-foreground mt-1">
-                        ⏳ Esta tarea no estará activa hasta que se cierre la dependencia.
-                      </p>
-                    )}
                   </Field>
                   {!usarRango ? (
                     <Field label="Fecha">
@@ -271,7 +193,6 @@ export function CrearModal() {
                         <Input
                           type="date"
                           value={fechaFin}
-                          min={minFecha || undefined}
                           onChange={(e) => {
                             setFechaFin(e.target.value);
                             setFechaInicio(e.target.value);
@@ -297,7 +218,6 @@ export function CrearModal() {
                           <Input
                             type="date"
                             value={fechaInicio}
-                            min={minFecha || undefined}
                             onChange={(e) => setFechaInicio(e.target.value)}
                           />
                         </Field>
@@ -305,7 +225,7 @@ export function CrearModal() {
                           <Input
                             type="date"
                             value={fechaFin}
-                            min={minFecha || fechaInicio || undefined}
+                            min={fechaInicio || undefined}
                             onChange={(e) => setFechaFin(e.target.value)}
                           />
                         </Field>
@@ -321,11 +241,6 @@ export function CrearModal() {
                         − usar una sola fecha
                       </button>
                     </div>
-                  )}
-                  {minFecha && (
-                    <p className="text-[11px] text-amber-700 -mt-2">
-                      ⏳ Las fechas no pueden ser anteriores al {minFecha} (cierre previsto de «{dependencia?.titulo}»).
-                    </p>
                   )}
                   <Field label="Prioridad">
                     <Select defaultValue="media">
@@ -366,14 +281,17 @@ export function CrearModal() {
                 </>
               )}
               {tipo === "entrega" && (
-                <Field label="Plantilla">
-                  <Select>
+                <Field label="Categoría">
+                  <Select value={categoria} onValueChange={(v) => setCategoria(v as CategoriaEntrega)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sin plantilla" />
+                      <SelectValue placeholder="Selecciona categoría" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="rrss">Calendario RRSS mensual</SelectItem>
-                      <SelectItem value="landing">Landing express</SelectItem>
+                      {CATEGORIAS_ENTREGA.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {etiquetaCategoria(c)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </Field>
