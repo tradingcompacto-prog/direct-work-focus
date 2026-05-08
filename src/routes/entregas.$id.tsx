@@ -37,6 +37,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as DayCalendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { useTareasVersion } from "@/lib/tareas-store";
+import { PlanRRSS } from "@/components/PlanRRSS";
 
 export const Route = createFileRoute("/entregas/$id")({
   component: FichaEntrega,
@@ -210,6 +211,9 @@ function FichaEntrega() {
         <TabsList>
           <TabsTrigger value="resumen">Resumen</TabsTrigger>
           <TabsTrigger value="tareas">Tareas ({tareas.length})</TabsTrigger>
+          {e.categoria === "redes_sociales" && (
+            <TabsTrigger value="plan">Plan de contenido</TabsTrigger>
+          )}
           <TabsTrigger value="equipo">Equipo ({equipo.length})</TabsTrigger>
           <TabsTrigger value="archivos">Archivos</TabsTrigger>
           <TabsTrigger value="actividad">Actividad</TabsTrigger>
@@ -265,6 +269,13 @@ function FichaEntrega() {
             </details>
           )}
         </TabsContent>
+
+        {/* Plan de contenido (solo redes_sociales) */}
+        {e.categoria === "redes_sociales" && (
+          <TabsContent value="plan">
+            <PlanRRSS entregaId={e.id} />
+          </TabsContent>
+        )}
 
         {/* Equipo */}
         <TabsContent value="equipo">
