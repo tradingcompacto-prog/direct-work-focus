@@ -109,6 +109,12 @@ function FichaEntrega() {
               <Badge variant={e.estado === "cerrada" ? "secondary" : "default"}>
                 {e.estado === "en_curso" ? "En curso" : "Cerrada"}
               </Badge>
+              {e.categoria && (
+                <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium border", colorCategoria[e.categoria].badge)}>
+                  <span className={cn("h-1.5 w-1.5 rounded-full", colorCategoria[e.categoria].dot)} />
+                  {labelCategoria(e.categoria)}
+                </span>
+              )}
               <span className="inline-flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5" />
                 <EditableDateChip
