@@ -37,12 +37,9 @@ const dotCarga: Record<"verde" | "amarillo" | "rojo", string> = {
   rojo: "bg-red-500",
 };
 
-const dotEstado: Record<"haciendola" | "pausada" | "activa" | "revision" | "completada", { color: string; label: string }> = {
-  haciendola: { color: "bg-emerald-500 animate-pulse", label: "En proceso" },
-  pausada: { color: "bg-amber-500", label: "Pausada" },
-  activa: { color: "bg-zinc-300", label: "Sin empezar" },
-  revision: { color: "bg-blue-500", label: "En revisión" },
-  completada: { color: "bg-emerald-700", label: "Completada" },
+const dotEstado: Partial<Record<Tarea["estado"], { color: string; label: string }>> = {
+  haciendola: { color: "bg-amber-500", label: "En proceso" },
+  pausada: { color: "bg-zinc-400", label: "Pausada" },
 };
 
 export function EquipoCarga() {
@@ -174,10 +171,12 @@ export function EquipoCarga() {
                             cardColor[u],
                           )}
                         >
-                          <span
-                            className={cn("h-1.5 w-1.5 rounded-full shrink-0", dotEstado[t.estado].color)}
-                            title={dotEstado[t.estado].label}
-                          />
+                          {dotEstado[t.estado] && (
+                            <span
+                              className={cn("h-1.5 w-1.5 rounded-full shrink-0", dotEstado[t.estado]!.color)}
+                              title={dotEstado[t.estado]!.label}
+                            />
+                          )}
                           <span className="truncate">{t.titulo}</span>
                         </button>
                       );
