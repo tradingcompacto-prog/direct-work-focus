@@ -23,6 +23,8 @@ import { AccionesMasivasBar } from "@/components/AccionesMasivasBar";
 import { toast } from "sonner";
 import { startOfDay } from "date-fns";
 import { useTareasVersion } from "@/lib/tareas-store";
+import { labelCategoria, colorCategoria } from "@/lib/categorias";
+import { cn } from "@/lib/utils";
 
 export function MisEntregasTabla() {
   useTareasVersion();
@@ -73,6 +75,7 @@ export function MisEntregasTabla() {
             </TableHead>
             <TableHead>Entrega</TableHead>
             <TableHead>Cliente</TableHead>
+            <TableHead>Categoría</TableHead>
             <TableHead>Estado</TableHead>
             <TableHead>Progreso</TableHead>
             <TableHead>Fecha entrega</TableHead>
@@ -109,6 +112,14 @@ export function MisEntregasTabla() {
                 </TableCell>
                 <TableCell>
                   <ClienteLink id={e.cliente_id} />
+                </TableCell>
+                <TableCell>
+                  {e.categoria && (
+                    <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border", colorCategoria[e.categoria].badge)}>
+                      <span className={cn("h-1.5 w-1.5 rounded-full", colorCategoria[e.categoria].dot)} />
+                      {labelCategoria(e.categoria)}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="capitalize text-xs">{e.estado.replace("_", " ")}</TableCell>
                 <TableCell className="min-w-[140px]">
