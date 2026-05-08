@@ -28,6 +28,7 @@ import { urgenciaTarea } from "@/lib/fechas";
 import { usePrefSidebarCollapsed } from "@/lib/preferencias";
 import { useCrearModal } from "@/lib/crear-modal-context";
 import { useRolVista } from "@/lib/rol-vista";
+import { useTareasVersion } from "@/lib/tareas-store";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -126,6 +127,7 @@ function badgesPorRuta(): Record<string, { n: number; tone?: "rojo" | "alerta" }
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = usePrefSidebarCollapsed();
+  useTareasVersion();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { abrir } = useCrearModal();
   const [rolVista] = useRolVista();
