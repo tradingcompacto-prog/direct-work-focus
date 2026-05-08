@@ -4,7 +4,6 @@ import { addDays, differenceInDays, format, isSameDay, parseISO, startOfDay } fr
 import { es } from "date-fns/locale";
 import { useMisTareas } from "@/lib/queries";
 import { useTareaModal } from "@/lib/tarea-modal-context";
-import { entregaPorId } from "@/lib/mock-tareas";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { EstadoVacio } from "@/components/EstadoVacio";
@@ -38,16 +37,14 @@ export function MisTareasTimeline() {
   const hoy = useMemo(() => startOfDay(new Date()), []);
   const dias = useMemo(() => Array.from({ length: N_DIAS }, (_, i) => addDays(hoy, i)), [hoy]);
 
-  const grupos = useMemo(() => {
-    const m = new Map<string, typeof tareas>();
-    for (const t of tareas) {
-      const k = t.entrega_id;
-      const arr = m.get(k) ?? [];
-      arr.push(t);
-      m.set(k, arr);
-    }
-    return Array.from(m.entries());
-  }, [tareas]);
+  const lista = useMemo(
+    () =>
+      [...tareas].sort(
+        (a, b) =>
+          parseISO(a.fecha_fin_min).getTime() - parseISO(b.fecha_fin_min).getTime(),
+      ),
+    [tareas],
+  );
 
   const totalDays = N_DIAS;
 
@@ -92,42 +89,35 @@ export function MisTareasTimeline() {
                 className="absolute top-0 bottom-0 w-px bg-red-500/60 z-10 pointer-events-none"
                 style={{ left: 220 + DAY_W / 2 }}
               />
-              {grupos.map(([entregaId, ts]) => (
-                <div key={entregaId} className="border-b border-border/60">
-                  <div className="px-3 py-1.5 text-[11px] font-medium text-muted-foreground bg-muted/20">
-                    {entregaPorId(entregaId)?.nombre ?? "Sin entrega"}
+              {lista.map((t) => {
+                const ov = getTareaOverride(t.id);
+                const inicio = parseISO(ov?.fin_min ?? t.fecha_fin_min);
+                const fin = parseISO(ov?.fin_max ?? t.fecha_fin_max);
+                const startOffset = Math.max(0, differenceInDays(inicio, hoy));
+                const endOffset = Math.min(N_DIAS - 1, differenceInDays(fin, hoy));
+                if (endOffset < 0) return null;
+                const left = startOffset * DAY_W;
+                const width = Math.max(DAY_W * 0.7, (endOffset - startOffset + 1) * DAY_W - 6);
+                const vencida = fin < hoy;
+                return (
+                  <div key={t.id} className="flex items-center border-b border-border/40" style={{ height: ROW_H }}>
+                    <div className="w-[220px] shrink-0 px-3 text-xs truncate">{t.titulo}</div>
+                    <div className="relative flex-1" style={{ height: ROW_H }}>
+                      <BarraArrastrable
+                        tareaId={t.id}
+                        titulo={t.titulo}
+                        color={colorEstado(t.estado, vencida)}
+                        left={left + 3}
+                        width={width}
+                        inicio={inicio}
+                        fin={fin}
+                        onClick={() => abrir(t.id)}
+                      />
+                    </div>
                   </div>
-                  {ts.map((t) => {
-                    const ov = getTareaOverride(t.id);
-                    const inicio = parseISO(ov?.fin_min ?? t.fecha_fin_min);
-                    const fin = parseISO(ov?.fin_max ?? t.fecha_fin_max);
-                    const startOffset = Math.max(0, differenceInDays(inicio, hoy));
-                    const endOffset = Math.min(N_DIAS - 1, differenceInDays(fin, hoy));
-                    if (endOffset < 0) return null;
-                    const left = startOffset * DAY_W;
-                    const width = Math.max(DAY_W * 0.7, (endOffset - startOffset + 1) * DAY_W - 6);
-                    const vencida = fin < hoy;
-                    return (
-                      <div key={t.id} className="flex items-center" style={{ height: ROW_H }}>
-                        <div className="w-[220px] shrink-0 px-3 text-xs truncate">{t.titulo}</div>
-                        <div className="relative flex-1" style={{ height: ROW_H }}>
-                          <BarraArrastrable
-                            tareaId={t.id}
-                            titulo={t.titulo}
-                            color={colorEstado(t.estado, vencida)}
-                            left={left + 3}
-                            width={width}
-                            inicio={inicio}
-                            fin={fin}
-                            onClick={() => abrir(t.id)}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-              {grupos.length === 0 && (
+                );
+              })}
+              {lista.length === 0 && (
                 <EstadoVacio
                   emoji="🌴"
                   titulo="Catorce días limpios por delante"
