@@ -142,10 +142,20 @@ function FichaEntrega() {
               )}
             </div>
           </div>
-          <Button size="sm" onClick={() => abrir("tarea", { cliente_id: e.cliente_id, proyecto_id: e.proyecto_id, entrega_id: e.id })}>
-            <Plus className="h-4 w-4 mr-1" /> Tarea
-          </Button>
-          {e.estado === "en_curso" ? (
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              size="sm"
+              onClick={() => {
+                if (e.estado === "cerrada") {
+                  reabrirEntrega(e.id);
+                  toast.success("Entrega reabierta automáticamente al añadir tarea");
+                }
+                abrir("tarea", { cliente_id: e.cliente_id, proyecto_id: e.proyecto_id, entrega_id: e.id });
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1" /> Tarea
+            </Button>
+            {e.estado === "en_curso" ? (
             <Button
               size="sm"
               variant="outline"
@@ -156,7 +166,7 @@ function FichaEntrega() {
             >
               <CheckCircle2 className="h-4 w-4 mr-1" /> Cerrar entrega
             </Button>
-          ) : (
+            ) : (
             <Button
               size="sm"
               variant="outline"
@@ -167,7 +177,8 @@ function FichaEntrega() {
             >
               Reabrir
             </Button>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Progreso */}
