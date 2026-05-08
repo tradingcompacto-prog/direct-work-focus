@@ -171,7 +171,9 @@ export function Sidebar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <DropdownMenuItem onSelect={() => abrir("tarea")}>Nueva tarea</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => abrir("entrega")}>Nueva entrega</DropdownMenuItem>
+              {(esPm || esDirector) && (
+                <DropdownMenuItem onSelect={() => abrir("entrega")}>Nueva entrega</DropdownMenuItem>
+              )}
               {(esPm || esDirector) && (
                 <DropdownMenuItem onSelect={() => abrir("proyecto")}>
                   Nuevo proyecto
