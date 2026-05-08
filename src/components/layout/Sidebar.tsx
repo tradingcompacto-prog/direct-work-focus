@@ -64,6 +64,7 @@ const SECCIONES: SectionDef[] = [
   {
     label: "Mis entregas",
     icon: Package,
+    roles: ["director", "pm"],
     items: [
       { to: "/entregas/kanban", label: "Kanban", icon: KanbanSquare, atajo: "G K" },
       { to: "/entregas/gantt", label: "Timeline", icon: CalendarDays },
