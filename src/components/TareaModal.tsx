@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CerrarTareaDialog } from "@/components/CerrarTareaDialog";
 import { estimarTarea } from "@/lib/estimacion";
 import { useTimer, empezar, pausar, formatearMs } from "@/lib/timer-store";
+import { setEstadoTarea } from "@/lib/tareas-store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
@@ -174,6 +175,7 @@ export function TareaModal() {
                   className="gap-1.5"
                   onClick={() => {
                     pausar(tarea.id);
+                    setEstadoTarea(tarea.id, "esperando");
                     toast(`«${tarea.titulo}» en pausa`, {
                       description: `Llevas ${formatearMs(timer.ms)} acumulados`,
                     });
@@ -187,6 +189,7 @@ export function TareaModal() {
                   className="gap-1.5"
                   onClick={() => {
                     empezar(tarea.id);
+                    setEstadoTarea(tarea.id, "haciendola");
                     toast.success(
                       timer.ms > 0
                         ? `«${tarea.titulo}» reanudada`
