@@ -26,6 +26,13 @@ import {
   getEntregaOverride,
   useOverrides,
 } from "@/lib/fechas-override-store";
+import {
+  aplicarOverrides,
+  cerrarEntrega,
+  reabrirEntrega,
+  useEntregasOverridesVersion,
+} from "@/lib/entregas-store";
+import { labelCategoria, colorCategoria } from "@/lib/categorias";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as DayCalendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
@@ -46,7 +53,9 @@ function FichaEntrega() {
   const { id } = Route.useParams();
   useOverrides();
   useTareasVersion();
-  const e = entregaPorId(id);
+  useEntregasOverridesVersion();
+  const eBase = entregaPorId(id);
+  const e = eBase ? aplicarOverrides([eBase])[0] : undefined;
   const { abrir } = useCrearModal();
   const { abrir: abrirTarea } = useTareaModal();
   const [tab, setTab] = React.useState("resumen");
@@ -100,6 +109,12 @@ function FichaEntrega() {
               <Badge variant={e.estado === "cerrada" ? "secondary" : "default"}>
                 {e.estado === "en_curso" ? "En curso" : "Cerrada"}
               </Badge>
+              {e.categoria && (
+                <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium border", colorCategoria[e.categoria].badge)}>
+                  <span className={cn("h-1.5 w-1.5 rounded-full", colorCategoria[e.categoria].dot)} />
+                  {labelCategoria(e.categoria)}
+                </span>
+              )}
               <span className="inline-flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5" />
                 <EditableDateChip
@@ -133,9 +148,43 @@ function FichaEntrega() {
               )}
             </div>
           </div>
-          <Button size="sm" onClick={() => abrir("tarea", { cliente_id: e.cliente_id, proyecto_id: e.proyecto_id, entrega_id: e.id })}>
-            <Plus className="h-4 w-4 mr-1" /> Tarea
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              size="sm"
+              onClick={() => {
+                if (e.estado === "cerrada") {
+                  reabrirEntrega(e.id);
+                  toast.success("Entrega reabierta automáticamente al añadir tarea");
+                }
+                abrir("tarea", { cliente_id: e.cliente_id, proyecto_id: e.proyecto_id, entrega_id: e.id });
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1" /> Tarea
+            </Button>
+            {e.estado === "en_curso" ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                cerrarEntrega(e.id);
+                toast.success("Entrega cerrada");
+              }}
+            >
+              <CheckCircle2 className="h-4 w-4 mr-1" /> Cerrar entrega
+            </Button>
+            ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                reabrirEntrega(e.id);
+                toast.success("Entrega reabierta");
+              }}
+            >
+              Reabrir
+            </Button>
+            )}
+          </div>
         </div>
 
         {/* Progreso */}
