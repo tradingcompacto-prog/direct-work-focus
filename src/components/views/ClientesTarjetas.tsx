@@ -7,10 +7,12 @@ import { bordeIzqCliente } from "@/lib/cliente-colors";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useTareasVersion } from "@/lib/tareas-store";
 
 const saludColor = { verde: "bg-green-500", amarillo: "bg-amber-500", rojo: "bg-red-500" };
 
 export function ClientesTarjetas() {
+  useTareasVersion();
   const { data = [] } = useClientes();
   if (!data.length) {
     return (

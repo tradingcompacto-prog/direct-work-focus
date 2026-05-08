@@ -11,6 +11,7 @@ import { saludoSegunHora, urgenciaTarea, etiquetaFechaRelativa, tiempoRelativo }
 import { colorCliente, bordeIzqCliente } from "@/lib/cliente-colors";
 import { cn } from "@/lib/utils";
 import { useRolVista } from "@/lib/rol-vista";
+import { useTareasVersion } from "@/lib/tareas-store";
 
 const iconoHora = () => {
   const h = new Date().getHours();
@@ -22,6 +23,7 @@ const iconoHora = () => {
 
 export function Home() {
   const [rol] = useRolVista();
+  useTareasVersion();
   return (
     <div className="space-y-4 anim-in">
       {rol === "director" && <HomeDirector />}
