@@ -29,9 +29,7 @@ export function EquipoCalendario() {
 
   const campanas = React.useMemo(
     () =>
-      ENTREGAS_MOCK.filter(
-        (e) => e.categoria === "campanas_activas" || e.categoria === "campana",
-      ),
+      ENTREGAS_MOCK.filter((e) => e.categoria === "campanas_activas"),
     [],
   );
 
