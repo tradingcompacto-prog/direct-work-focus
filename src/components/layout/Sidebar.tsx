@@ -87,15 +87,6 @@ const SECCIONES: SectionDef[] = [
     ],
   },
   {
-    label: "Contenido",
-    icon: PenSquare,
-    items: [
-      { to: "/contenido/calendario", label: "Calendario editorial", icon: CalRange2 },
-      { to: "/contenido/pipeline", label: "Pipeline producción", icon: GalleryHorizontalEnd },
-      { to: "/contenido/performance", label: "Performance", icon: BarChart3 },
-    ],
-  },
-  {
     label: "Brújula",
     icon: Compass,
     roles: ["director"],
