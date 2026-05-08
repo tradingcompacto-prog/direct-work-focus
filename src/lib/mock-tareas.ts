@@ -232,9 +232,9 @@ const HISTORICAS: Tarea[] = (
     ["h-032", "Reunión kickoff", "cli-fim", "ent-003", PAULA, "estrategia"],
     ["h-033", "Reunión kickoff", "cli-nimbo", "ent-007", EDU, "estrategia"],
   ] as const
-).map(([id, titulo, cli, ent, resp, tipo], i) => {
-  const real = horasReales(tipo, id);
-  const estim = Math.round(((HORAS_POR_TIPO[tipo] ?? 2) + (i % 3 === 0 ? 0.5 : 0)) * 2) / 2;
+).map(([id, titulo, cli, ent, resp, kind], i) => {
+  const real = horasReales(kind, id);
+  const estim = Math.round(((HORAS_POR_TIPO[kind] ?? 2) + (i % 3 === 0 ? 0.5 : 0)) * 2) / 2;
   return {
     id,
     titulo,
@@ -245,38 +245,48 @@ const HISTORICAS: Tarea[] = (
     solicitante_id: PAULA,
     estado: "completada",
     prioridad: "media",
-    tipo: tipo as Tarea["tipo"],
     fecha_inicio: dias(-15 - (i % 10)),
     fecha_fin_min: dias(-10 - (i % 10)),
     fecha_fin_max: dias(-10 - (i % 10)),
     horas_estimadas: estim,
     horas_reales: real,
+    cerrado_at: dias(-9 - (i % 10)),
   } satisfies Tarea;
 });
 
 TAREAS_MOCK.push(...HISTORICAS);
 
-// Inyecta horas en cerradas previas + parte de las activas
+// Inyecta horas en cerradas previas + parte de las activas (heurística por título)
+function adivinarKind(titulo: string): keyof typeof HORAS_POR_TIPO {
+  const t = titulo.toLowerCase();
+  if (t.includes("dise") || t.includes("maqueta") || t.includes("banner") || t.includes("plant")) return "diseno";
+  if (t.includes("copy") || t.includes("texto") || t.includes("blog") || t.includes("artícul")) return "copy";
+  if (t.includes("seo") || t.includes("auditor")) return "seo";
+  if (t.includes("setup") || t.includes("ga4") || t.includes("workspace") || t.includes("tag") || t.includes("web") || t.includes("landing")) return "web";
+  if (t.includes("ads") || t.includes("meta") || t.includes("google") || t.includes("anunci") || t.includes("campañ")) return "campanas";
+  return "estrategia";
+}
 for (const t of TAREAS_MOCK) {
   if (t.id.startsWith("h-")) continue;
+  const kind = adivinarKind(t.titulo);
   if (t.estado === "completada" && t.horas_reales == null) {
-    t.horas_reales = horasReales(t.tipo, t.id);
-    t.horas_estimadas = Math.round((HORAS_POR_TIPO[t.tipo] ?? 2) * 2) / 2;
+    t.horas_reales = horasReales(kind, t.id);
+    t.horas_estimadas = Math.round((HORAS_POR_TIPO[kind] ?? 2) * 2) / 2;
   } else if (t.estado !== "completada" && t.horas_estimadas == null) {
     if (ruidoSeed(t.id) <= 0.85) {
-      t.horas_estimadas = Math.round((HORAS_POR_TIPO[t.tipo] ?? 2) * 2) / 2;
+      t.horas_estimadas = Math.round((HORAS_POR_TIPO[kind] ?? 2) * 2) / 2;
     }
   }
 }
 
 // ─── Actividad ────────────────────────────────────────────
 export const ACTIVIDAD_MOCK: Actividad[] = [
-  { id: "a-1", tarea_id: "t-001", actor_id: ANDREA, texto: "Andrea comentó en Revisar plan de medios Q2", fecha: horasAtras(2) },
-  { id: "a-2", tarea_id: "t-027", actor_id: MARTIN, texto: "Martín cerró Setup tag manager", fecha: horasAtras(4) },
-  { id: "a-3", tarea_id: "t-004", actor_id: SANDRA, texto: "Sandra empezó Diseñar key visual campaña verano", fecha: horasAtras(20) },
-  { id: "a-4", tarea_id: "t-010", actor_id: NEREA, texto: "Nerea empezó Brief campaña Black Friday", fecha: horasAtras(8) },
-  { id: "a-5", tarea_id: "t-026", actor_id: PAULA, texto: "Paula creó Maquetar landing v2", fecha: horasAtras(12) },
-  { id: "a-6", tarea_id: "t-025", actor_id: PAULA, texto: "Paula cerró Briefing creativo banners", fecha: horasAtras(30) },
+  { id: "a-1", tarea_id: "t-001", actor_id: ANDREA, tipo: "comentada", texto: "Andrea comentó en Revisar plan de medios Q2", fecha: horasAtras(2) },
+  { id: "a-2", tarea_id: "t-027", actor_id: MARTIN, tipo: "cerrada", texto: "Martín cerró Setup tag manager", fecha: horasAtras(4) },
+  { id: "a-3", tarea_id: "t-004", actor_id: SANDRA, tipo: "empezada", texto: "Sandra empezó Diseñar key visual campaña verano", fecha: horasAtras(20) },
+  { id: "a-4", tarea_id: "t-010", actor_id: NEREA, tipo: "empezada", texto: "Nerea empezó Brief campaña Black Friday", fecha: horasAtras(8) },
+  { id: "a-5", tarea_id: "t-026", actor_id: PAULA, tipo: "creada", texto: "Paula creó Maquetar landing v2", fecha: horasAtras(12) },
+  { id: "a-6", tarea_id: "t-025", actor_id: PAULA, tipo: "cerrada", texto: "Paula cerró Briefing creativo banners", fecha: horasAtras(30) },
 ];
 
 // ─── Notificaciones ───────────────────────────────────────
@@ -347,12 +357,16 @@ for (const [cliId, , , pm] of EXTRA_CLIENTES_DEF) {
   const n = 1 + seed;
   for (let i = 0; i < n; i++) {
     _entContador += 1;
+    const catList: Array<import("@/types/database").CategoriaEntrega> = [
+      "redes_sociales", "web", "campana", "informe_mensual", "seo", "diseno",
+    ];
     ENTREGAS_MOCK.push({
       id: `ent-${_entContador}`,
       nombre: PLANTILLAS_ENTREGA[(i + seed) % PLANTILLAS_ENTREGA.length],
       cliente_id: cliId,
       proyecto_id: cliId.replace("cli-", "pry-"),
       pm_id: pm,
+      categoria: catList[(i + seed) % catList.length],
       estado: "en_curso",
       fecha_inicio: dias(-5 - (i % 5)),
       fecha_fin: dias(5 + ((i * 3) % 12)),
