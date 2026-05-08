@@ -126,7 +126,6 @@ export function CrearModal() {
       ? estimar(
           {
             titulo: titulo || undefined,
-            tipo: (tipoTarea || undefined) as never,
             cliente_id: clienteId || undefined,
             responsable_id: responsableId || undefined,
           },

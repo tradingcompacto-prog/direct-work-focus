@@ -30,7 +30,7 @@ export function EquipoCarga() {
   const [overTarget, setOverTarget] = React.useState<string | null>(null);
 
   const activas = tareas.filter(
-    (t) => t.estado === "activa" || t.estado === "haciendola" || t.estado === "esperando",
+    (t) => t.estado === "activa" || t.estado === "haciendola" || t.estado === "pausada",
   );
 
   const porPersona = new Map<string, Tarea[]>();
