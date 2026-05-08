@@ -26,6 +26,8 @@ import { cn } from "@/lib/utils";
 import { Package } from "lucide-react";
 import { FiltrosBar, useFiltros } from "@/components/FiltrosBar";
 import { useTareasVersion } from "@/lib/tareas-store";
+import { labelCategoria, colorCategoria } from "@/lib/categorias";
+import type { CategoriaEntrega } from "@/types/database";
 
 const calcular = (entrega: Entrega) => {
   const ts = TAREAS_MOCK.filter((t) => t.entrega_id === entrega.id);
@@ -210,6 +212,16 @@ function DiasRestantes({ fecha }: { fecha: string }) {
   return (
     <span className={`px-1.5 py-0.5 rounded font-medium ${cls}`}>
       {format(d, "d MMM", { locale: es })} · {label}
+    </span>
+  );
+}
+
+function CategoriaBadge({ cat }: { cat: CategoriaEntrega }) {
+  const c = colorCategoria[cat];
+  return (
+    <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border mt-1.5", c.badge)}>
+      <span className={cn("h-1 w-1 rounded-full", c.dot)} />
+      {labelCategoria(cat)}
     </span>
   );
 }
