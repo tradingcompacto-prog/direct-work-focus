@@ -6,6 +6,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ENTREGAS_MOCK, clientePorId } from "@/lib/mock-tareas";
 import { cn } from "@/lib/utils";
 import { colorCliente } from "@/lib/cliente-colors";
+import { labelCategoria, colorCategoria } from "@/lib/categorias";
 import { setEntregaFechas, getEntregaOverride, useOverrides } from "@/lib/fechas-override-store";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -80,7 +81,15 @@ export function MisEntregasGantt() {
               const width = (endOffset - startOffset + 1) * DAY_W - 4;
               return (
                 <div key={e.id} className="flex items-center relative" style={{ height: ROW_H }}>
-                  <div className="w-[240px] shrink-0 px-3 text-xs truncate">{e.nombre}</div>
+                  <div className="w-[240px] shrink-0 px-3 text-xs truncate flex items-center gap-2">
+                    {e.categoria && (
+                      <span
+                        className={cn("h-1.5 w-1.5 rounded-full shrink-0", colorCategoria[e.categoria].dot)}
+                        title={labelCategoria(e.categoria)}
+                      />
+                    )}
+                    <span className="truncate">{e.nombre}</span>
+                  </div>
                   <BarraEntrega
                     entregaId={e.id}
                     titulo={e.nombre}
