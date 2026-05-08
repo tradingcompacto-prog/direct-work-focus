@@ -32,6 +32,19 @@ export function moverEntrega(id: string, destino: "en_curso" | "hoy" | "semana" 
   emit();
 }
 
+/** Cierre manual: marca la entrega como cerrada con la fecha actual. */
+export function cerrarEntrega(id: string) {
+  const today = new Date().toISOString().slice(0, 10);
+  overrides.set(id, { estado: "cerrada", fecha_cierre: today });
+  emit();
+}
+
+/** Reapertura automática: si se añade una tarea nueva a una entrega cerrada, vuelve a en curso. */
+export function reabrirEntrega(id: string) {
+  overrides.set(id, { estado: "en_curso", fecha_cierre: null });
+  emit();
+}
+
 export function useEntregasOverridesVersion() {
   const [v, setV] = React.useState(0);
   React.useEffect(() => {
