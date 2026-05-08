@@ -147,7 +147,11 @@ export function CrearModal() {
                   <ComboboxCrear
                     options={[
                       { value: "puntuales", label: "Trabajos puntuales" },
-                      ...entregas.map((e) => ({ value: e.id, label: e.nombre })),
+                      ...entregas.map((e) => ({
+                        value: e.id,
+                        label: e.nombre,
+                        hint: labelCategoria(e.categoria),
+                      })),
                     ]}
                     value={entregaNuevaNombre ? `__nueva__` : entregaId}
                     onChange={(v) => {
