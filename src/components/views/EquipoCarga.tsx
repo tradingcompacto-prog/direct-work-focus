@@ -37,6 +37,14 @@ const dotCarga: Record<"verde" | "amarillo" | "rojo", string> = {
   rojo: "bg-red-500",
 };
 
+const dotEstado: Record<"haciendola" | "pausada" | "activa" | "revision" | "completada", { color: string; label: string }> = {
+  haciendola: { color: "bg-emerald-500 animate-pulse", label: "En proceso" },
+  pausada: { color: "bg-amber-500", label: "Pausada" },
+  activa: { color: "bg-zinc-300", label: "Sin empezar" },
+  revision: { color: "bg-blue-500", label: "En revisión" },
+  completada: { color: "bg-emerald-700", label: "Completada" },
+};
+
 export function EquipoCarga() {
   useOverrides();
   const [modo, setModo] = React.useState<"cards" | "barras">("cards");
@@ -162,11 +170,15 @@ export function EquipoCarga() {
                           }}
                           onClick={() => abrir(t.id)}
                           className={cn(
-                            "block w-full text-left text-xs px-2 py-1.5 rounded border cursor-grab active:cursor-grabbing",
+                            "flex items-center gap-1.5 w-full text-left text-xs px-2 py-1.5 rounded border cursor-grab active:cursor-grabbing",
                             cardColor[u],
                           )}
                         >
-                          {t.titulo}
+                          <span
+                            className={cn("h-1.5 w-1.5 rounded-full shrink-0", dotEstado[t.estado].color)}
+                            title={dotEstado[t.estado].label}
+                          />
+                          <span className="truncate">{t.titulo}</span>
                         </button>
                       );
                     })}
