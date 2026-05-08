@@ -19,6 +19,7 @@ import { Route as TareasTimelineRouteImport } from './routes/tareas.timeline'
 import { Route as TareasTablaRouteImport } from './routes/tareas.tabla'
 import { Route as ProyectosIdRouteImport } from './routes/proyectos.$id'
 import { Route as PersonasIdRouteImport } from './routes/personas.$id'
+import { Route as EquipoFechasRouteImport } from './routes/equipo.fechas'
 import { Route as EquipoCargaRouteImport } from './routes/equipo.carga'
 import { Route as EquipoCalendarioRouteImport } from './routes/equipo.calendario'
 import { Route as EntregasTablaRouteImport } from './routes/entregas.tabla'
@@ -79,6 +80,11 @@ const PersonasIdRoute = PersonasIdRouteImport.update({
   path: '/personas/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EquipoFechasRoute = EquipoFechasRouteImport.update({
+  id: '/equipo/fechas',
+  path: '/equipo/fechas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EquipoCargaRoute = EquipoCargaRouteImport.update({
   id: '/equipo/carga',
   path: '/equipo/carga',
@@ -137,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/entregas/tabla': typeof EntregasTablaRoute
   '/equipo/calendario': typeof EquipoCalendarioRoute
   '/equipo/carga': typeof EquipoCargaRoute
+  '/equipo/fechas': typeof EquipoFechasRoute
   '/personas/$id': typeof PersonasIdRoute
   '/proyectos/$id': typeof ProyectosIdRoute
   '/tareas/tabla': typeof TareasTablaRoute
@@ -158,6 +165,7 @@ export interface FileRoutesByTo {
   '/entregas/tabla': typeof EntregasTablaRoute
   '/equipo/calendario': typeof EquipoCalendarioRoute
   '/equipo/carga': typeof EquipoCargaRoute
+  '/equipo/fechas': typeof EquipoFechasRoute
   '/personas/$id': typeof PersonasIdRoute
   '/proyectos/$id': typeof ProyectosIdRoute
   '/tareas/tabla': typeof TareasTablaRoute
@@ -180,6 +188,7 @@ export interface FileRoutesById {
   '/entregas/tabla': typeof EntregasTablaRoute
   '/equipo/calendario': typeof EquipoCalendarioRoute
   '/equipo/carga': typeof EquipoCargaRoute
+  '/equipo/fechas': typeof EquipoFechasRoute
   '/personas/$id': typeof PersonasIdRoute
   '/proyectos/$id': typeof ProyectosIdRoute
   '/tareas/tabla': typeof TareasTablaRoute
@@ -203,6 +212,7 @@ export interface FileRouteTypes {
     | '/entregas/tabla'
     | '/equipo/calendario'
     | '/equipo/carga'
+    | '/equipo/fechas'
     | '/personas/$id'
     | '/proyectos/$id'
     | '/tareas/tabla'
@@ -224,6 +234,7 @@ export interface FileRouteTypes {
     | '/entregas/tabla'
     | '/equipo/calendario'
     | '/equipo/carga'
+    | '/equipo/fechas'
     | '/personas/$id'
     | '/proyectos/$id'
     | '/tareas/tabla'
@@ -245,6 +256,7 @@ export interface FileRouteTypes {
     | '/entregas/tabla'
     | '/equipo/calendario'
     | '/equipo/carga'
+    | '/equipo/fechas'
     | '/personas/$id'
     | '/proyectos/$id'
     | '/tareas/tabla'
@@ -267,6 +279,7 @@ export interface RootRouteChildren {
   EntregasTablaRoute: typeof EntregasTablaRoute
   EquipoCalendarioRoute: typeof EquipoCalendarioRoute
   EquipoCargaRoute: typeof EquipoCargaRoute
+  EquipoFechasRoute: typeof EquipoFechasRoute
   PersonasIdRoute: typeof PersonasIdRoute
   ProyectosIdRoute: typeof ProyectosIdRoute
   TareasTablaRoute: typeof TareasTablaRoute
@@ -349,6 +362,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PersonasIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/equipo/fechas': {
+      id: '/equipo/fechas'
+      path: '/equipo/fechas'
+      fullPath: '/equipo/fechas'
+      preLoaderRoute: typeof EquipoFechasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/equipo/carga': {
       id: '/equipo/carga'
       path: '/equipo/carga'
@@ -427,6 +447,7 @@ const rootRouteChildren: RootRouteChildren = {
   EntregasTablaRoute: EntregasTablaRoute,
   EquipoCalendarioRoute: EquipoCalendarioRoute,
   EquipoCargaRoute: EquipoCargaRoute,
+  EquipoFechasRoute: EquipoFechasRoute,
   PersonasIdRoute: PersonasIdRoute,
   ProyectosIdRoute: ProyectosIdRoute,
   TareasTablaRoute: TareasTablaRoute,
@@ -439,3 +460,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
