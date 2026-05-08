@@ -12,9 +12,13 @@ export interface Miembro {
   activo: boolean;
 }
 
-export type EstadoTarea = "activa" | "haciendola" | "esperando" | "completada";
+export type EstadoTarea =
+  | "activa"
+  | "haciendola"
+  | "pausada"
+  | "revision"
+  | "completada";
 export type Prioridad = "baja" | "media" | "alta" | "critica";
-export type TipoTarea = "diseno" | "copy" | "web" | "campanas" | "seo" | "estrategia" | "otro";
 
 export interface Tarea {
   id: UUID;
@@ -27,14 +31,37 @@ export interface Tarea {
   solicitante_id: UUID;
   estado: EstadoTarea;
   prioridad: Prioridad;
-  tipo: TipoTarea;
   fecha_inicio: string;
   fecha_fin_min: string;
   fecha_fin_max: string;
-  bloqueada_por_id?: UUID | null;
-  desbloquea_id?: UUID | null;
   horas_estimadas?: number | null;
   horas_reales?: number | null;
+  cerrado_at?: string | null;
+  /** Plan estructurado para entregas de redes sociales. */
+  plan_rrss?: PublicacionRRSS[];
+}
+
+export type CategoriaEntrega =
+  | "redes_sociales"
+  | "web"
+  | "campana"
+  | "informe_mensual"
+  | "seo"
+  | "diseno"
+  | "anuncios"
+  | "fotografia"
+  | "product_brief"
+  | "plan_marketing"
+  | "campanas_activas";
+
+export interface PublicacionRRSS {
+  id: string;
+  fecha: string;
+  tipo: "reel" | "post" | "carrusel" | "story";
+  formato: "solo_copy" | "copy_imagen" | "solo_imagen" | "slide";
+  plataformas: Array<"ig" | "fb" | "tt" | "li">;
+  briefing?: string;
+  slides?: string[];
 }
 
 export type EstadoEntrega = "en_curso" | "cerrada";
@@ -42,9 +69,11 @@ export type EstadoEntrega = "en_curso" | "cerrada";
 export interface Entrega {
   id: UUID;
   nombre: string;
+  descripcion?: string;
   cliente_id: UUID;
   proyecto_id: UUID;
   pm_id: UUID;
+  categoria: CategoriaEntrega;
   estado: EstadoEntrega;
   fecha_inicio: string;
   fecha_fin: string;
@@ -104,4 +133,17 @@ export interface Notificacion {
   ruta?: string;
   icono?: "check" | "play" | "user-plus" | "message" | "alert";
   categoria?: "urgente" | "importante" | "info";
+}
+
+export type TipoEvento = "efemeride" | "vacaciones";
+
+export interface EventoCalendario {
+  id: UUID;
+  tipo: TipoEvento;
+  titulo: string;
+  fecha_inicio: string;
+  fecha_fin: string;
+  persona_id?: UUID;
+  nota?: string;
+  creado_por: UUID;
 }
