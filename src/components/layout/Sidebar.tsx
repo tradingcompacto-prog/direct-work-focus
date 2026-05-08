@@ -7,6 +7,7 @@ import {
   GanttChartSquare,
   Map,
   CalendarRange,
+  Sparkles,
   Building2,
   Compass,
   Plus,
@@ -74,7 +75,8 @@ const SECCIONES: SectionDef[] = [
     icon: Users,
     items: [
       { to: "/equipo/carga", label: "Carga", icon: Map, atajo: "G C" },
-      { to: "/equipo/calendario", label: "Calendario maestro", icon: CalendarRange },
+      { to: "/equipo/calendario", label: "Calendario campañas", icon: CalendarRange },
+      { to: "/equipo/fechas", label: "Fechas importantes", icon: Sparkles },
     ],
   },
   {
