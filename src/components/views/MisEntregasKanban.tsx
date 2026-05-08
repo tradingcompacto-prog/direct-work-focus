@@ -41,6 +41,7 @@ const calcular = (entrega: Entrega) => {
 type ColId = "en_curso" | "hoy" | "semana" | "mes";
 
 export function MisEntregasKanban() {
+  useTareasVersion();
   useEntregasOverridesVersion(); // re-render on changes
   const hoy = startOfDay(new Date());
   const inicioSemana = startOfWeek(hoy, { weekStartsOn: 1 });
