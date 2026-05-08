@@ -373,3 +373,48 @@ for (const [cliId, , , pm] of EXTRA_CLIENTES_DEF) {
     });
   }
 }
+
+// ─── Auto-completar entregas: cada cliente debe tener al menos una entrega por cada categoría ───
+(() => {
+  const TODAS_CATEGORIAS: Array<import("@/types/database").CategoriaEntrega> = [
+    "redes_sociales", "web", "campana", "informe_mensual", "seo", "diseno",
+    "anuncios", "fotografia", "product_brief", "plan_marketing", "campanas_activas",
+  ];
+  const NOMBRE_POR_CAT: Record<string, string> = {
+    redes_sociales: "Plan RRSS",
+    web: "Mantenimiento web",
+    campana: "Campaña estacional",
+    informe_mensual: "Informe mensual",
+    seo: "SEO orgánico",
+    diseno: "Piezas de diseño",
+    anuncios: "Anuncios display",
+    fotografia: "Producción fotográfica",
+    product_brief: "Product brief",
+    plan_marketing: "Plan de marketing",
+    campanas_activas: "Campañas activas",
+  };
+  // Empezar tras los IDs ya generados arriba
+  let contador = 500;
+  for (const cli of CLIENTES_MOCK) {
+    const pry = PROYECTOS_MOCK.find((p) => p.cliente_id === cli.id);
+    if (!pry) continue;
+    const existentes = new Set(
+      ENTREGAS_MOCK.filter((e) => e.cliente_id === cli.id).map((e) => e.categoria),
+    );
+    for (const cat of TODAS_CATEGORIAS) {
+      if (existentes.has(cat)) continue;
+      contador += 1;
+      ENTREGAS_MOCK.push({
+        id: `ent-${contador}`,
+        nombre: `${NOMBRE_POR_CAT[cat]} — ${cli.nombre}`,
+        cliente_id: cli.id,
+        proyecto_id: pry.id,
+        pm_id: cli.pm_id,
+        categoria: cat,
+        estado: "en_curso",
+        fecha_inicio: dias(-5),
+        fecha_fin: dias(15),
+      });
+    }
+  }
+})();
