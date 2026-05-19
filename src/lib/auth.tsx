@@ -69,6 +69,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ]);
     const prof = (p as Profile | null) ?? null;
     const rolesArr = ((r ?? []) as { role: AppRole }[]).map((x) => x.role);
+    // eslint-disable-next-line no-console
+    console.log("[auth] user.id:", user.id, "email:", user.email);
+    // eslint-disable-next-line no-console
+    console.log("[auth] profile.id:", prof?.id, "nombre:", prof?.nombre, "roles:", rolesArr);
     setProfile(prof);
     setRoles(rolesArr);
     // Sincroniza el "usuario actual" global usado por vistas legacy.

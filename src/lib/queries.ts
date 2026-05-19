@@ -96,7 +96,13 @@ export const useClientes = () => {
         .from("clientes")
         .select("id,nombre,sector,pm_principal_id,pm_secundario_id,web,slack,salud,activo")
         .order("nombre");
-      if (error) throw error;
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error("[useClientes] error:", error);
+        throw error;
+      }
+      // eslint-disable-next-line no-console
+      console.log("[useClientes] rows:", data?.length ?? 0);
       return (data ?? []).map(mapCliente);
     },
   });

@@ -12,6 +12,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { AtajosGlobales } from "@/lib/atajos";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { DataSync, useDataVersion } from "@/lib/data-sync";
+import { useEquipo } from "@/lib/queries";
+import { useEquipoVersion } from "@/lib/equipo";
 
 export function AppLayout() {
   return (
@@ -24,6 +26,8 @@ export function AppLayout() {
 function AuthGate() {
   const { loading, user } = useAuth();
   useDataVersion();
+  // Re-render cuando EQUIPO o el usuario actual se hidraten.
+  useEquipoVersion();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const isLogin = path === "/login";
@@ -60,6 +64,7 @@ function AuthGate() {
       <TareaModalProvider>
         <CrearModalProvider>
           <DataSync />
+          <EquipoSync />
           <div className="flex h-screen w-full overflow-hidden bg-background">
             <Sidebar />
             <div className="flex-1 flex flex-col min-w-0">
@@ -78,4 +83,14 @@ function AuthGate() {
       </TareaModalProvider>
     </BusquedaProvider>
   );
+}
+
+/**
+ * Dispara `useEquipo()` (queries.ts) para que EQUIPO se hidrate con los
+ * profiles reales de Supabase nada más loguearse. Sin esto, `usuarioActual()`
+ * recae siempre en el fallback hasta que el usuario visite /equipo/carga.
+ */
+function EquipoSync() {
+  useEquipo();
+  return null;
 }
