@@ -19,9 +19,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCrearModal } from "@/lib/crear-modal-context";
-import { CLIENTES_MOCK, PROYECTOS_MOCK, ENTREGAS_MOCK, TAREAS_MOCK } from "@/lib/mock-tareas";
 import { EQUIPO } from "@/lib/equipo";
 import { estimar } from "@/lib/estimacion";
+import { useClientes, useProyectos, useEntregas, useTareas } from "@/lib/queries";
+import { supabase } from "@/lib/supabase";
+import { invalidateKeys } from "@/lib/qc";
+import { useAuth } from "@/lib/auth";
 import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -38,6 +41,11 @@ const TITLES: Record<string, string> = {
 
 export function CrearModal() {
   const { tipo, contexto, cerrar } = useCrearModal();
+  const { user } = useAuth();
+  const { data: clientesDB = [] } = useClientes();
+  const { data: proyectosDB = [] } = useProyectos();
+  const { data: entregasDB = [] } = useEntregas();
+  const { data: tareasDB = [] } = useTareas();
   const [clienteId, setClienteId] = React.useState("");
   const [proyectoId, setProyectoId] = React.useState("");
   const [entregaId, setEntregaId] = React.useState("");
@@ -48,6 +56,13 @@ export function CrearModal() {
   const [fechaFin, setFechaFin] = React.useState<string>("");
   const [usarRango, setUsarRango] = React.useState(false);
   const [categoria, setCategoria] = React.useState<CategoriaEntrega | "">("");
+  const [nombreCliente, setNombreCliente] = React.useState("");
+  const [sectorCliente, setSectorCliente] = React.useState("");
+  const [pmCliente, setPmCliente] = React.useState("");
+  const [descripcion, setDescripcion] = React.useState("");
+  const [prioridad, setPrioridad] = React.useState<"baja" | "media" | "alta" | "critica">("media");
+  const [numPubs, setNumPubs] = React.useState(4);
+  const [enviando, setEnviando] = React.useState(false);
 
   React.useEffect(() => {
     setClienteId(contexto?.cliente_id ?? "");
@@ -59,32 +74,209 @@ export function CrearModal() {
     setFechaFin("");
     setUsarRango(false);
     setCategoria("");
+    setNombreCliente("");
+    setSectorCliente("");
+    setPmCliente("");
+    setDescripcion("");
+    setPrioridad("media");
+    setNumPubs(4);
+    setEntregaNuevaNombre(null);
   }, [contexto, tipo]);
 
-  // Regla: 1 cliente = 1 proyecto (mismo nombre). Auto-seleccionar proyecto al elegir cliente.
+  // Regla: 1 cliente = 1 proyecto. Auto-seleccionar proyecto al elegir cliente.
   React.useEffect(() => {
     if (clienteId) {
-      const pry = PROYECTOS_MOCK.find((p) => p.cliente_id === clienteId);
+      const pry = proyectosDB.find((p) => p.cliente_id === clienteId);
       if (pry) setProyectoId(pry.id);
     } else {
       setProyectoId("");
     }
-  }, [clienteId]);
+  }, [clienteId, proyectosDB]);
 
   const entregas = proyectoId
-    ? ENTREGAS_MOCK.filter((e) => e.proyecto_id === proyectoId)
-    : ENTREGAS_MOCK;
+    ? entregasDB.filter((e) => e.proyecto_id === proyectoId)
+    : entregasDB;
+
+  // Detectar contexto RRSS: la entrega seleccionada es de categoría redes_sociales.
+  const entregaSel = entregasDB.find((e) => e.id === entregaId);
+  const esRRSS = tipo === "tarea" && entregaSel?.categoria === "redes_sociales";
 
   if (!tipo) return null;
 
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (ev: React.FormEvent) => {
+    ev.preventDefault();
+    if (!user) {
+      toast.error("Sesión no disponible");
+      return;
+    }
     if (tipo === "entrega" && !categoria) {
       toast.error("Selecciona una categoría para la entrega");
       return;
     }
-    toast.success(`${TITLES[tipo]} creada (mock)`);
-    cerrar();
+    setEnviando(true);
+    try {
+      if (tipo === "cliente") {
+        const nombre = nombreCliente.trim();
+        if (!nombre) throw new Error("Nombre obligatorio");
+        const pmId = pmCliente || user.id;
+        const { data: cli, error } = await supabase
+          .from("clientes")
+          .insert({
+            nombre,
+            sector: sectorCliente || null,
+            pm_principal_id: pmId,
+            salud: "verde",
+            activo: true,
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        // Proyecto sombrilla y entrega "Trabajos puntuales" por defecto.
+        const { data: pry } = await supabase
+          .from("proyectos")
+          .insert({
+            nombre,
+            cliente_id: cli!.id,
+            pm_id: pmId,
+            estado: "activo",
+            fecha_inicio: hoyISO(),
+          })
+          .select("id")
+          .single();
+        if (pry) {
+          await supabase.from("entregas").insert({
+            nombre: "Trabajos puntuales",
+            cliente_id: cli!.id,
+            proyecto_id: pry.id,
+            pm_id: pmId,
+            categoria: "diseno",
+            estado: "en_curso",
+            fecha_inicio: hoyISO(),
+            fecha_fin: enDiasISO(30),
+            es_trabajos_puntuales: true,
+          });
+        }
+        invalidateKeys(["clientes"], ["proyectos"], ["entregas"]);
+        toast.success(`Cliente «${nombre}» creado`);
+      } else if (tipo === "proyecto") {
+        if (!clienteId) throw new Error("Selecciona cliente");
+        const { error } = await supabase.from("proyectos").insert({
+          nombre: titulo,
+          cliente_id: clienteId,
+          pm_id: responsableId || user.id,
+          estado: "activo",
+          fecha_inicio: fechaInicio || hoyISO(),
+          fecha_fin: fechaFin || null,
+        });
+        if (error) throw error;
+        invalidateKeys(["proyectos"]);
+        toast.success("Proyecto creado");
+      } else if (tipo === "entrega") {
+        if (!clienteId || !proyectoId) throw new Error("Selecciona cliente y proyecto");
+        const { error } = await supabase.from("entregas").insert({
+          nombre: titulo,
+          cliente_id: clienteId,
+          proyecto_id: proyectoId,
+          pm_id: responsableId || user.id,
+          categoria,
+          estado: "en_curso",
+          fecha_inicio: fechaInicio || hoyISO(),
+          fecha_fin: fechaFin || enDiasISO(14),
+        });
+        if (error) throw error;
+        invalidateKeys(["entregas"]);
+        toast.success("Entrega creada");
+      } else if (tipo === "tarea") {
+        // Resolver entrega: existente, nueva inline, o "trabajos puntuales".
+        let entregaTargetId = entregaId;
+        if (entregaId === "__nueva__" && entregaNuevaNombre && proyectoId) {
+          const { data, error } = await supabase
+            .from("entregas")
+            .insert({
+              nombre: entregaNuevaNombre,
+              cliente_id: clienteId,
+              proyecto_id: proyectoId,
+              pm_id: responsableId || user.id,
+              categoria: "diseno",
+              estado: "en_curso",
+              fecha_inicio: hoyISO(),
+              fecha_fin: fechaFin || enDiasISO(14),
+            })
+            .select("id")
+            .single();
+          if (error) throw error;
+          entregaTargetId = data!.id;
+        } else if (entregaId === "puntuales" || !entregaId) {
+          const punt = entregasDB.find(
+            (e) => e.cliente_id === clienteId && e.es_trabajos_puntuales,
+          );
+          if (!punt) throw new Error("Sin entrega «Trabajos puntuales» para este cliente");
+          entregaTargetId = punt.id;
+        }
+
+        const inicio = fechaInicio || fechaFin || hoyISO();
+        const fin = fechaFin || fechaInicio || hoyISO();
+
+        // --- Rama RRSS: tarea sombrilla + N filas en publicaciones_rrss ---
+        if (esRRSS) {
+          const { data: t, error } = await supabase
+            .from("tareas")
+            .insert({
+              titulo: titulo || `Plan contenido ${nombreMes()}`,
+              descripcion: descripcion || null,
+              cliente_id: clienteId,
+              proyecto_id: proyectoId,
+              entrega_id: entregaTargetId,
+              responsable_id: responsableId || user.id,
+              solicitante_id: user.id,
+              estado: "activa",
+              prioridad,
+              fecha_inicio: inicio,
+              fecha_fin_min: fin,
+              fecha_fin_max: fin,
+            })
+            .select("id")
+            .single();
+          if (error) throw error;
+          const filas = Array.from({ length: Math.max(1, numPubs) }).map((_, i) => ({
+            tarea_id: t!.id,
+            fecha: inicio,
+            tipo: "post",
+            formato: "copy_imagen",
+            plataformas: ["ig"],
+            estado: "borrador",
+            briefing: `Publicación ${i + 1}`,
+          }));
+          const { error: e2 } = await supabase.from("publicaciones_rrss").insert(filas);
+          if (e2) throw e2;
+          invalidateKeys(["tareas"], ["mis-tareas"], ["plan-rrss", t!.id]);
+          toast.success(`Plan creado con ${numPubs} publicaciones`);
+        } else {
+          const { error } = await supabase.from("tareas").insert({
+            titulo,
+            descripcion: descripcion || null,
+            cliente_id: clienteId,
+            proyecto_id: proyectoId,
+            entrega_id: entregaTargetId,
+            responsable_id: responsableId || user.id,
+            solicitante_id: user.id,
+            estado: "activa",
+            prioridad,
+            fecha_inicio: inicio,
+            fecha_fin_min: fin,
+            fecha_fin_max: fin,
+          });
+          if (error) throw error;
+          invalidateKeys(["tareas"], ["mis-tareas"]);
+          toast.success("Tarea creada");
+        }
+      }
+      cerrar();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al guardar");
+    } finally {
+      setEnviando(false);
+    }
   };
 
   const estimacion =
@@ -95,7 +287,7 @@ export function CrearModal() {
             cliente_id: clienteId || undefined,
             responsable_id: responsableId || undefined,
           },
-          TAREAS_MOCK,
+          tareasDB,
         )
       : null;
 
@@ -105,27 +297,38 @@ export function CrearModal() {
         <DialogHeader>
           <DialogTitle>{TITLES[tipo]}</DialogTitle>
           <DialogDescription>
-            Rellena los datos básicos. Datos mock — sin persistencia aún.
+            {esRRSS
+              ? "Plan de contenido RRSS: 1 tarea + N publicaciones."
+              : "Rellena los datos básicos."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4">
           {tipo === "cliente" ? (
             <>
               <Field label="Nombre">
-                <Input required placeholder="Nombre del cliente" />
+                <Input
+                  required
+                  placeholder="Nombre del cliente"
+                  value={nombreCliente}
+                  onChange={(e) => setNombreCliente(e.target.value)}
+                />
               </Field>
               <Field label="Sector">
-                <Input placeholder="Sector" />
+                <Input
+                  placeholder="Sector"
+                  value={sectorCliente}
+                  onChange={(e) => setSectorCliente(e.target.value)}
+                />
               </Field>
               <Field label="PM">
-                <PersonaSelect />
+                <PersonaSelect value={pmCliente} onChange={setPmCliente} />
               </Field>
             </>
           ) : (
             <>
               <Field label="Cliente">
                 <ComboboxCrear
-                  options={CLIENTES_MOCK.map((c) => ({
+                  options={clientesDB.map((c) => ({
                     value: c.id,
                     label: c.nombre,
                     hint: c.sector,
@@ -164,7 +367,7 @@ export function CrearModal() {
                     onCrearNuevo={(nombre) => {
                       setEntregaNuevaNombre(nombre);
                       setEntregaId("__nueva__");
-                      toast.success(`Entrega «${nombre}» se creará al guardar`);
+                      toast.message(`Entrega «${nombre}» se creará al guardar`);
                     }}
                     crearLabel="Crear entrega"
                   />
@@ -178,19 +381,37 @@ export function CrearModal() {
               <Field label="Título">
                 <Input
                   required
-                  placeholder={`Título de la ${tipo}`}
+                  placeholder={esRRSS ? "Plan contenido mayo 2026" : `Título de la ${tipo}`}
                   value={titulo}
                   onChange={(e) => setTitulo(e.target.value)}
                 />
               </Field>
               <Field label="Descripción">
-                <Textarea rows={3} />
+                <Textarea
+                  rows={3}
+                  value={descripcion}
+                  onChange={(e) => setDescripcion(e.target.value)}
+                />
               </Field>
               {tipo === "tarea" && (
                 <>
                   <Field label="Responsable">
                     <PersonaSelect value={responsableId} onChange={setResponsableId} />
                   </Field>
+                  {esRRSS && (
+                    <Field label="Número de publicaciones">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={60}
+                        value={numPubs}
+                        onChange={(e) => setNumPubs(Number(e.target.value) || 1)}
+                      />
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        Se crearán {numPubs} filas en el plan (todas como borrador, fecha base = inicio).
+                      </p>
+                    </Field>
+                  )}
                   {!usarRango ? (
                     <Field label="Fecha">
                       <div className="flex items-center gap-2">
@@ -247,7 +468,7 @@ export function CrearModal() {
                     </div>
                   )}
                   <Field label="Prioridad">
-                    <Select defaultValue="media">
+                    <Select value={prioridad} onValueChange={(v) => setPrioridad(v as typeof prioridad)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -303,10 +524,12 @@ export function CrearModal() {
             </>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={cerrar}>
+            <Button type="button" variant="outline" onClick={cerrar} disabled={enviando}>
               Cancelar
             </Button>
-            <Button type="submit">Crear</Button>
+            <Button type="submit" disabled={enviando}>
+              {enviando ? "Guardando…" : esRRSS ? `Crear plan + ${numPubs} pubs` : "Crear"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -344,4 +567,19 @@ function PersonaSelect({
       </SelectContent>
     </Select>
   );
+}
+
+function hoyISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function enDiasISO(n: number) {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function nombreMes() {
+  return new Date().toLocaleDateString("es-ES", { month: "long", year: "numeric" });
 }
