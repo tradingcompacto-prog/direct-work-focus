@@ -19,6 +19,7 @@ import { tiempoRelativo } from "@/lib/fechas";
 import { useBusquedaGlobal } from "@/lib/busqueda-context";
 import { cn } from "@/lib/utils";
 import type { Notificacion } from "@/types/database";
+import { useAuth } from "@/lib/auth";
 
 interface Crumb {
   label: string;
@@ -217,6 +218,8 @@ export function TopBar() {
 }
 
 function VerComo() {
+  // Solo en DEV: en producción cada usuario ve su rol real.
+  if (!import.meta.env.DEV) return null;
   const [rol] = useRolVista();
   const roles = rolesDisponibles();
   if (roles.length <= 1) return null;
