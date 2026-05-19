@@ -1,8 +1,7 @@
 import type { CSSProperties } from "react";
-import { CLIENTES_MOCK } from "@/lib/mock-tareas";
 
 // Paleta de 12 colores pastel (oklch para coherencia con el design system).
-// Cada cliente recibe uno de forma estable según su orden en CLIENTES_MOCK.
+// Cada cliente recibe uno de forma estable según un hash de su id.
 const PALETA = [
   { bg: "oklch(0.93 0.06 25)", border: "oklch(0.65 0.16 25)", text: "oklch(0.4 0.13 25)" },   // rojo coral
   { bg: "oklch(0.94 0.07 50)", border: "oklch(0.7 0.15 50)", text: "oklch(0.42 0.12 50)" },   // naranja
@@ -18,13 +17,15 @@ const PALETA = [
   { bg: "oklch(0.93 0.05 130)", border: "oklch(0.6 0.12 130)", text: "oklch(0.38 0.1 130)" },  // verde lima
 ];
 
-const indice = new Map<string, number>();
-CLIENTES_MOCK.forEach((c, i) => indice.set(c.id, i % PALETA.length));
+function hash(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
 
 export function colorCliente(clienteId: string) {
-  const i = indice.get(clienteId);
-  if (i === undefined) return PALETA[0];
-  return PALETA[i];
+  if (!clienteId) return PALETA[0];
+  return PALETA[hash(clienteId) % PALETA.length];
 }
 
 /** Estilo en línea para borde izquierdo coloreado de la tarjeta */
