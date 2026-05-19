@@ -7,8 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Link } from "@tanstack/react-router";
-import { useClientes } from "@/lib/queries";
-import { PROYECTOS_MOCK, ENTREGAS_MOCK } from "@/lib/mock-tareas";
+import { useClientes, useProyectos, useEntregas } from "@/lib/queries";
 import { PersonaChip } from "@/components/PersonaChip";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +15,8 @@ const saludColor = { verde: "bg-green-500", amarillo: "bg-amber-500", rojo: "bg-
 
 export function ClientesTabla() {
   const { data = [] } = useClientes();
+  const { data: proyectos = [] } = useProyectos();
+  const { data: entregas = [] } = useEntregas();
   return (
     <div className="card-soft overflow-hidden">
       <Table>
@@ -41,12 +42,12 @@ export function ClientesTabla() {
               <TableCell>
                 <PersonaChip id={c.pm_id} size="xs" />
               </TableCell>
-              <TableCell>{PROYECTOS_MOCK.filter((p) => p.cliente_id === c.id).length}</TableCell>
+              <TableCell>{proyectos.filter((p) => p.cliente_id === c.id).length}</TableCell>
               <TableCell>
-                {ENTREGAS_MOCK.filter((e) => e.cliente_id === c.id && e.estado === "en_curso").length}
+                {entregas.filter((e) => e.cliente_id === c.id && e.estado === "en_curso").length}
               </TableCell>
               <TableCell>
-                <span className={cn("inline-block h-2.5 w-2.5 rounded-full", saludColor[c.salud])} />
+                <span className={cn("inline-block h-2.5 w-2.5 rounded-full", saludColor[c.salud] ?? "bg-zinc-300")} />
               </TableCell>
             </TableRow>
           ))}
