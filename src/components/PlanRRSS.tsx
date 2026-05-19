@@ -51,8 +51,8 @@ const tipoColor: Record<Tipo, string> = {
   story: "bg-amber-100 text-amber-700 border-amber-200",
 };
 
-export function PlanRRSS({ entregaId }: { entregaId: string }) {
-  const plan = usePlanRRSS(entregaId);
+export function PlanRRSS({ tareaId }: { tareaId: string }) {
+  const { data: plan = [] } = usePlanRRSS(tareaId);
   const [editing, setEditing] = React.useState<PublicacionRRSS | null>(null);
   const [creando, setCreando] = React.useState(false);
 
@@ -86,11 +86,11 @@ export function PlanRRSS({ entregaId }: { entregaId: string }) {
               p={p}
               onClick={() => setEditing(p)}
               onDuplicar={() => {
-                duplicarPublicacion(entregaId, p.id);
+                duplicarPublicacion(tareaId, p.id);
                 toast.success("Publicación duplicada");
               }}
               onEliminar={() => {
-                removePublicacion(entregaId, p.id);
+                removePublicacion(tareaId, p.id);
                 toast.success("Publicación eliminada");
               }}
             />
@@ -102,7 +102,7 @@ export function PlanRRSS({ entregaId }: { entregaId: string }) {
         <PublicacionDialog
           onClose={() => setCreando(false)}
           onSubmit={(data) => {
-            addPublicacion(entregaId, data);
+            addPublicacion(tareaId, data);
             setCreando(false);
             toast.success("Publicación añadida");
           }}
@@ -113,7 +113,7 @@ export function PlanRRSS({ entregaId }: { entregaId: string }) {
           inicial={editing}
           onClose={() => setEditing(null)}
           onSubmit={(data) => {
-            updatePublicacion(entregaId, editing.id, data);
+            updatePublicacion(tareaId, editing.id, data);
             setEditing(null);
             toast.success("Publicación actualizada");
           }}
