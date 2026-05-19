@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { setQueryClient } from "@/lib/qc";
 import { setUsuarioActual } from "@/lib/equipo";
+import { resetRolVistaToDefault } from "@/lib/rol-vista";
 
 export type AppRole =
   | "director"
@@ -57,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(null);
       setRoles([]);
       setUsuarioActual("00000000-0000-0000-0000-000000000000");
+      resetRolVistaToDefault();
       return;
     }
     const [{ data: p }, { data: r }] = await Promise.all([
@@ -85,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       activo: prof?.activo ?? true,
       email: prof?.email ?? user.email ?? undefined,
     });
+    resetRolVistaToDefault();
   }, []);
 
   React.useEffect(() => {
