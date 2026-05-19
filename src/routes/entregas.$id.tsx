@@ -38,6 +38,9 @@ import { Calendar as DayCalendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { useTareasVersion } from "@/lib/tareas-store";
 import { PlanRRSS } from "@/components/PlanRRSS";
+import { supabase } from "@/lib/supabase";
+import { invalidateKeys } from "@/lib/qc";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/entregas/$id")({
   component: FichaEntrega,
@@ -273,7 +276,7 @@ function FichaEntrega() {
         {/* Plan de contenido (solo redes_sociales) */}
         {e.categoria === "redes_sociales" && (
           <TabsContent value="plan">
-            <PlanRRSS entregaId={e.id} />
+            <PlanRRSSTab entrega={e} tareas={tareas} />
           </TabsContent>
         )}
 
@@ -416,4 +419,61 @@ function EditableDateChip({ iso, onChange }: { iso: string; onChange: (iso: stri
       </PopoverContent>
     </Popover>
   );
+}
+
+// ----- Plan RRSS: resuelve la tarea sombrilla o ofrece crearla -----
+function PlanRRSSTab({
+  entrega,
+  tareas,
+}: {
+  entrega: { id: string; nombre: string; pm_id: string; fecha_inicio: string; fecha_fin: string };
+  tareas: Array<{ id: string; titulo: string; responsable_id: string }>;
+}) {
+  const { user } = useAuth();
+  // Convención: la tarea sombrilla tiene título que empieza por "Plan ".
+  const sombrilla =
+    tareas.find((t) => /^plan\b/i.test(t.titulo)) ?? tareas[0];
+
+  const [creando, setCreando] = React.useState(false);
+
+  const crearSombrilla = async () => {
+    if (!user) return;
+    setCreando(true);
+    try {
+      const titulo = `Plan de contenido · ${entrega.nombre}`;
+      const { error } = await supabase.from("tareas").insert({
+        titulo,
+        entrega_id: entrega.id,
+        responsable_id: entrega.pm_id ?? user.id,
+        solicitante_id: user.id,
+        estado: "activa",
+        prioridad: "media",
+        fecha_inicio: entrega.fecha_inicio,
+        fecha_fin_min: entrega.fecha_fin,
+        fecha_fin_max: entrega.fecha_fin,
+      });
+      if (error) throw error;
+      invalidateKeys(["tareas"], ["mis-tareas"]);
+      toast.success("Tarea sombrilla creada");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo crear la sombrilla");
+    } finally {
+      setCreando(false);
+    }
+  };
+
+  if (!sombrilla) {
+    return (
+      <div className="card-soft p-6 text-center space-y-3">
+        <div className="text-sm text-muted-foreground">
+          Esta entrega aún no tiene una tarea sombrilla para el plan de contenido.
+        </div>
+        <Button size="sm" onClick={crearSombrilla} disabled={creando}>
+          {creando ? "Creando…" : "Crear plan de contenido"}
+        </Button>
+      </div>
+    );
+  }
+
+  return <PlanRRSS tareaId={sombrilla.id} />;
 }

@@ -1,74 +1,119 @@
-import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { PublicacionRRSS } from "@/types/database";
+import { supabase } from "@/lib/supabase";
+import { invalidateKeys } from "@/lib/qc";
+import { toast } from "sonner";
 
-// Store en memoria (mock de sesión) para el Plan de Contenido RRSS por entrega.
-const planes = new Map<string, PublicacionRRSS[]>();
-const listeners = new Set<() => void>();
-const emit = () => listeners.forEach((l) => l());
+// Plan de Contenido RRSS: la tabla `publicaciones_rrss` cuelga de una
+// TAREA SOMBRILLA (tarea_id). Ver decisión Tanda 6 del replanteo:
+// 1 tarea "Plan contenido <mes>" + N filas en publicaciones_rrss.
 
-const dias = (off: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() + off);
-  return d.toISOString().slice(0, 10);
-};
-
-// Seeds iniciales para que se vea contenido en demo.
-planes.set("ent-006", [
-  { id: "pub-006-1", fecha: dias(1), tipo: "post", formato: "copy_imagen", plataformas: ["ig", "fb"], briefing: "Lanzamiento colección otoño · vibe cálido" },
-  { id: "pub-006-2", fecha: dias(3), tipo: "reel", formato: "solo_imagen", plataformas: ["ig", "tt"], briefing: "Behind the scenes rodaje" },
-  { id: "pub-006-3", fecha: dias(5), tipo: "carrusel", formato: "slide", plataformas: ["ig"], briefing: "Top 5 prendas favoritas", slides: ["Intro", "Prenda 1", "Prenda 2", "Prenda 3", "CTA"] },
-]);
-planes.set("ent-009", [
-  { id: "pub-009-1", fecha: dias(0), tipo: "story", formato: "solo_imagen", plataformas: ["ig"], briefing: "Recordatorio promo" },
-  { id: "pub-009-2", fecha: dias(2), tipo: "post", formato: "copy_imagen", plataformas: ["ig", "li"], briefing: "Caso de éxito cliente" },
-]);
-planes.set("ent-011", [
-  { id: "pub-011-1", fecha: dias(1), tipo: "post", formato: "solo_copy", plataformas: ["li"], briefing: "Reflexión semanal" },
-  { id: "pub-011-2", fecha: dias(4), tipo: "reel", formato: "solo_imagen", plataformas: ["ig", "tt"], briefing: "Tip rápido sector" },
-  { id: "pub-011-3", fecha: dias(7), tipo: "carrusel", formato: "slide", plataformas: ["ig"], briefing: "Resumen del mes", slides: ["Hook", "Dato 1", "Dato 2", "Dato 3", "CTA"] },
-]);
-
-export function getPlan(entregaId: string): PublicacionRRSS[] {
-  return planes.get(entregaId) ?? [];
+function fail(op: string, err: unknown) {
+  const msg = err instanceof Error ? err.message : String(err);
+  console.error(`[plan-rrss:${op}]`, err);
+  toast.error(`No se pudo ${op}: ${msg}`);
 }
 
-export function addPublicacion(entregaId: string, pub: Omit<PublicacionRRSS, "id">) {
-  const list = planes.get(entregaId) ?? [];
-  const id = `pub-${entregaId}-${Date.now()}`;
-  planes.set(entregaId, [...list, { ...pub, id }]);
-  emit();
+function done() {
+  invalidateKeys(["plan-rrss"]);
 }
 
-export function updatePublicacion(entregaId: string, id: string, patch: Partial<PublicacionRRSS>) {
-  const list = planes.get(entregaId);
-  if (!list) return;
-  planes.set(entregaId, list.map((p) => (p.id === id ? { ...p, ...patch } : p)));
-  emit();
+function rowToPub(r: Record<string, unknown>): PublicacionRRSS {
+  return {
+    id: r.id as string,
+    tarea_id: (r.tarea_id as string | undefined) ?? undefined,
+    fecha: (r.fecha as string) ?? "",
+    hora: (r.hora as string | null) ?? null,
+    tipo: r.tipo as PublicacionRRSS["tipo"],
+    formato: r.formato as PublicacionRRSS["formato"],
+    plataformas: (r.plataformas as PublicacionRRSS["plataformas"]) ?? [],
+    briefing: (r.briefing as string | undefined) ?? undefined,
+    slides: (r.slides as string[] | undefined) ?? undefined,
+    estado: (r.estado as PublicacionRRSS["estado"]) ?? "borrador",
+  };
 }
 
-export function removePublicacion(entregaId: string, id: string) {
-  const list = planes.get(entregaId);
-  if (!list) return;
-  planes.set(entregaId, list.filter((p) => p.id !== id));
-  emit();
+/** React Query hook: publicaciones de una tarea sombrilla. */
+export function usePlanRRSS(tareaId?: string) {
+  return useQuery<PublicacionRRSS[]>({
+    queryKey: ["plan-rrss", tareaId],
+    enabled: !!tareaId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("publicaciones_rrss")
+        .select("*")
+        .eq("tarea_id", tareaId!)
+        .order("fecha", { ascending: true });
+      if (error) throw error;
+      return ((data ?? []) as Record<string, unknown>[]).map(rowToPub);
+    },
+  });
 }
 
-export function duplicarPublicacion(entregaId: string, id: string) {
-  const list = planes.get(entregaId);
-  if (!list) return;
-  const orig = list.find((p) => p.id === id);
-  if (!orig) return;
-  const nuevo: PublicacionRRSS = { ...orig, id: `pub-${entregaId}-${Date.now()}` };
-  planes.set(entregaId, [...list, nuevo]);
-  emit();
+export function addPublicacion(tareaId: string, pub: Omit<PublicacionRRSS, "id">) {
+  const row = {
+    tarea_id: tareaId,
+    fecha: pub.fecha,
+    hora: pub.hora ?? null,
+    tipo: pub.tipo,
+    formato: pub.formato,
+    plataformas: pub.plataformas,
+    briefing: pub.briefing ?? null,
+    slides: pub.slides ?? null,
+    estado: pub.estado ?? "borrador",
+  };
+  supabase
+    .from("publicaciones_rrss")
+    .insert(row)
+    .then(({ error }) => (error ? fail("crear publicación", error) : done()));
 }
 
-export function usePlanRRSS(entregaId: string): PublicacionRRSS[] {
-  const [, setV] = React.useState(0);
-  React.useEffect(() => {
-    const l = () => setV((x) => x + 1);
-    listeners.add(l);
-    return () => { listeners.delete(l); };
-  }, []);
-  return getPlan(entregaId);
+export function updatePublicacion(
+  _tareaId: string,
+  id: string,
+  patch: Partial<PublicacionRRSS>,
+) {
+  const row: Record<string, unknown> = { ...patch };
+  delete row.id;
+  delete row.tarea_id;
+  supabase
+    .from("publicaciones_rrss")
+    .update(row)
+    .eq("id", id)
+    .then(({ error }) => (error ? fail("actualizar publicación", error) : done()));
+}
+
+export function removePublicacion(_tareaId: string, id: string) {
+  supabase
+    .from("publicaciones_rrss")
+    .delete()
+    .eq("id", id)
+    .then(({ error }) => (error ? fail("eliminar publicación", error) : done()));
+}
+
+export async function duplicarPublicacion(tareaId: string, id: string) {
+  const { data, error } = await supabase
+    .from("publicaciones_rrss")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data) {
+    fail("duplicar publicación", error ?? new Error("No encontrada"));
+    return;
+  }
+  const orig = data as Record<string, unknown>;
+  const row = {
+    tarea_id: tareaId,
+    fecha: orig.fecha,
+    hora: orig.hora,
+    tipo: orig.tipo,
+    formato: orig.formato,
+    plataformas: orig.plataformas,
+    briefing: orig.briefing,
+    slides: orig.slides,
+    estado: orig.estado ?? "borrador",
+  };
+  const { error: e2 } = await supabase.from("publicaciones_rrss").insert(row);
+  if (e2) fail("duplicar publicación", e2);
+  else done();
 }
