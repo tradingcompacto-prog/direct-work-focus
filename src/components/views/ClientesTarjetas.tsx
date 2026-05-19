@@ -1,20 +1,20 @@
 import { Link } from "@tanstack/react-router";
-import { useClientes } from "@/lib/queries";
-import { PROYECTOS_MOCK, ENTREGAS_MOCK, TAREAS_MOCK } from "@/lib/mock-tareas";
+import { useClientes, useProyectos, useEntregas, useTareas } from "@/lib/queries";
 import { PersonaChip } from "@/components/PersonaChip";
 import { AvatarStack } from "@/components/AvatarStack";
 import { bordeIzqCliente } from "@/lib/cliente-colors";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { useTareasVersion } from "@/lib/tareas-store";
 
 const saludColor = { verde: "bg-green-500", amarillo: "bg-amber-500", rojo: "bg-red-500" };
 
 export function ClientesTarjetas() {
-  useTareasVersion();
-  const { data = [] } = useClientes();
-  if (!data.length) {
+  const { data: clientes = [] } = useClientes();
+  const { data: proyectosAll = [] } = useProyectos();
+  const { data: entregasAll = [] } = useEntregas();
+  const { data: tareasAll = [] } = useTareas();
+  if (!clientes.length) {
     return (
       <div className="card-soft p-12 text-center">
         <div className="text-5xl mb-3">💼</div>
@@ -24,11 +24,11 @@ export function ClientesTarjetas() {
   }
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {data.map((c) => {
-        const proyectos = PROYECTOS_MOCK.filter((p) => p.cliente_id === c.id && p.estado === "activo");
-        const proxima = ENTREGAS_MOCK.filter((e) => e.cliente_id === c.id && e.estado === "en_curso")
+      {clientes.map((c) => {
+        const proyectos = proyectosAll.filter((p) => p.cliente_id === c.id && p.estado === "activo");
+        const proxima = entregasAll.filter((e) => e.cliente_id === c.id && e.estado === "en_curso")
           .sort((a, b) => a.fecha_fin.localeCompare(b.fecha_fin))[0];
-        const ts = TAREAS_MOCK.filter((t) => t.cliente_id === c.id && t.estado !== "completada");
+        const ts = tareasAll.filter((t) => t.cliente_id === c.id && t.estado !== "completada");
         const equipo = Array.from(new Set(ts.map((t) => t.responsable_id)));
         return (
           <Link
@@ -40,10 +40,10 @@ export function ClientesTarjetas() {
           >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2 min-w-0">
-                <span className={cn("h-2 w-2 rounded-full shrink-0", saludColor[c.salud])} />
+                <span className={cn("h-2 w-2 rounded-full shrink-0", saludColor[c.salud] ?? "bg-zinc-300")} />
                 <div className="font-semibold truncate">{c.nombre}</div>
               </div>
-              <span className={cn("h-2.5 w-2.5 rounded-full", saludColor[c.salud])} />
+              <span className={cn("h-2.5 w-2.5 rounded-full", saludColor[c.salud] ?? "bg-zinc-300")} />
             </div>
             <div className="text-xs text-muted-foreground mt-0.5">{c.sector}</div>
             <div className="mt-3 flex items-center justify-between">
