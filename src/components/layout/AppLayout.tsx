@@ -84,3 +84,13 @@ function AuthGate() {
     </BusquedaProvider>
   );
 }
+
+/**
+ * Dispara `useEquipo()` (queries.ts) para que EQUIPO se hidrate con los
+ * profiles reales de Supabase nada más loguearse. Sin esto, `usuarioActual()`
+ * recae siempre en el fallback hasta que el usuario visite /equipo/carga.
+ */
+function EquipoSync() {
+  useEquipo();
+  return null;
+}

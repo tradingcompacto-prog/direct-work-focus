@@ -45,6 +45,21 @@ export function Brujula() {
   const utilizacion = capacidad ? Math.round((horasPlanif / capacidad) * 100) : 0;
   const mostrarHoras = horasPlanif > 0;
 
+  // Cumplimiento real: % de entregas completadas a tiempo en los últimos 30 días.
+  const hace30 = addDays(hoy, -30);
+  const entregasRecientes = ENTREGAS_MOCK.filter((e) => {
+    const f = parseISO(e.fecha_fin);
+    return f >= hace30 && f <= hoy;
+  });
+  const completadas = entregasRecientes.filter((e) => e.estado === "completada");
+  const aTiempo = completadas.filter((e) => {
+    const cierre = e.fecha_cierre_real ? parseISO(e.fecha_cierre_real) : null;
+    return cierre ? cierre <= parseISO(e.fecha_fin) : true;
+  });
+  const cumplimiento = completadas.length > 0
+    ? Math.round((aTiempo.length / completadas.length) * 100)
+    : null;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       <Widget title="Vencidas en el equipo" big>
@@ -102,9 +117,28 @@ export function Brujula() {
           ))}
         </ul>
       </Widget>
-      <Widget title="Cumplimiento esta semana">
-        <div className="text-5xl font-bold text-green-600">86%</div>
-        <p className="text-xs text-muted-foreground mt-2">entregas a tiempo</p>
+      <Widget title="Cumplimiento últimos 30 días">
+        {cumplimiento === null ? (
+          <>
+            <div className="text-2xl font-semibold text-muted-foreground">Sin datos</div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Aún no hay entregas cerradas en los últimos 30 días.
+            </p>
+          </>
+        ) : (
+          <>
+            <div
+              className={`text-5xl font-bold ${
+                cumplimiento >= 85 ? "text-green-600" : cumplimiento >= 60 ? "text-amber-600" : "text-red-600"
+              }`}
+            >
+              {cumplimiento}%
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {aTiempo.length}/{completadas.length} entregas a tiempo
+            </p>
+          </>
+        )}
       </Widget>
       {mostrarHoras && (
         <Widget title="⏱ Capacidad esta semana">
