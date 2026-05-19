@@ -7,11 +7,11 @@ import {
   clientePorId,
   proyectoPorId,
   entregaPorId,
-  COMENTARIOS_MOCK,
   ACTIVIDAD_MOCK,
   TAREAS_MOCK,
   tituloTarea,
 } from "@/lib/mock-tareas";
+import { useComentarios } from "@/lib/queries";
 import { miembroPorId, nombrePorId } from "@/lib/equipo";
 import { tiempoRelativo } from "@/lib/fechas";
 import { Badge } from "@/components/ui/badge";
@@ -89,7 +89,7 @@ export function TareaModal() {
   const entrega = entregaPorId(tarea.entrega_id);
   const responsable = miembroPorId(tarea.responsable_id);
   const solicitante = miembroPorId(tarea.solicitante_id);
-  const comentarios = COMENTARIOS_MOCK.filter((c) => c.tarea_id === tarea.id);
+  const { data: comentarios = [] } = useComentarios(tarea.id);
   const actividad = ACTIVIDAD_MOCK.filter((a) => a.tarea_id === tarea.id);
   const estim = estimarTarea(tarea, TAREAS_MOCK);
   const horasEstim = tarea.horas_estimadas ?? estim?.horas ?? null;
