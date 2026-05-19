@@ -229,3 +229,43 @@ export const useMisEntregas = () => {
     },
   });
 };
+
+// ---------- mega-hook: dataset completo + lookups ----------
+// Sustituye a los antiguos arrays mock importados desde "@/lib/mock-tareas".
+// Cada consumidor llama a useDataset() en su top-level y desestructura.
+
+export interface Dataset {
+  tareas: Tarea[];
+  entregas: Entrega[];
+  proyectos: Proyecto[];
+  clientes: Cliente[];
+  actividad: Actividad[];
+  clientePorId: (id: string) => Cliente | undefined;
+  proyectoPorId: (id: string) => Proyecto | undefined;
+  entregaPorId: (id: string) => Entrega | undefined;
+  tareaPorId: (id: string) => Tarea | undefined;
+  nombreCliente: (id: string) => string;
+  nombreProyecto: (id: string) => string;
+  nombreEntrega: (id: string) => string;
+  tituloTarea: (id: string) => string;
+}
+
+export function useDataset(): Dataset {
+  const { data: tareas = [] } = useTareas();
+  const { data: entregas = [] } = useEntregas();
+  const { data: proyectos = [] } = useProyectos();
+  const { data: clientes = [] } = useClientes();
+  const { data: actividad = [] } = useActividad();
+  const clientePorId = (id: string) => clientes.find((c) => c.id === id);
+  const proyectoPorId = (id: string) => proyectos.find((p) => p.id === id);
+  const entregaPorId = (id: string) => entregas.find((e) => e.id === id);
+  const tareaPorId = (id: string) => tareas.find((t) => t.id === id);
+  return {
+    tareas, entregas, proyectos, clientes, actividad,
+    clientePorId, proyectoPorId, entregaPorId, tareaPorId,
+    nombreCliente: (id) => clientePorId(id)?.nombre ?? "—",
+    nombreProyecto: (id) => proyectoPorId(id)?.nombre ?? "—",
+    nombreEntrega: (id) => entregaPorId(id)?.nombre ?? "—",
+    tituloTarea: (id) => tareaPorId(id)?.titulo ?? "—",
+  };
+}

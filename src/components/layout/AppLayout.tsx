@@ -11,6 +11,7 @@ import { BusquedaGlobal } from "@/components/BusquedaGlobal";
 import { Toaster } from "@/components/ui/sonner";
 import { AtajosGlobales } from "@/lib/atajos";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { DataSync, useDataVersion } from "@/lib/data-sync";
 
 export function AppLayout() {
   return (
@@ -22,6 +23,7 @@ export function AppLayout() {
 
 function AuthGate() {
   const { loading, user } = useAuth();
+  useDataVersion();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const isLogin = path === "/login";
@@ -57,6 +59,7 @@ function AuthGate() {
     <BusquedaProvider>
       <TareaModalProvider>
         <CrearModalProvider>
+          <DataSync />
           <div className="flex h-screen w-full overflow-hidden bg-background">
             <Sidebar />
             <div className="flex-1 flex flex-col min-w-0">
