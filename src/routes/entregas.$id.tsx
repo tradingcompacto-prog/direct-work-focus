@@ -38,6 +38,9 @@ import { Calendar as DayCalendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { useTareasVersion } from "@/lib/tareas-store";
 import { PlanRRSS } from "@/components/PlanRRSS";
+import { supabase } from "@/lib/supabase";
+import { invalidateKeys } from "@/lib/qc";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/entregas/$id")({
   component: FichaEntrega,
@@ -273,7 +276,7 @@ function FichaEntrega() {
         {/* Plan de contenido (solo redes_sociales) */}
         {e.categoria === "redes_sociales" && (
           <TabsContent value="plan">
-            <PlanRRSS entregaId={e.id} />
+            <PlanRRSSTab entrega={e} tareas={tareas} />
           </TabsContent>
         )}
 
