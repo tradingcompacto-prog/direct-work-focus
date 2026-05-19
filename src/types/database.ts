@@ -56,12 +56,23 @@ export type CategoriaEntrega =
 
 export interface PublicacionRRSS {
   id: string;
+  /** Vínculo en BD: en producción cada publicación cuelga de una tarea. */
+  tarea_id?: UUID;
   fecha: string;
+  hora?: string | null;
   tipo: "reel" | "post" | "carrusel" | "story";
   formato: "solo_copy" | "copy_imagen" | "solo_imagen" | "slide";
   plataformas: Array<"ig" | "fb" | "tt" | "li">;
   briefing?: string;
   slides?: string[];
+  estado?:
+    | "borrador"
+    | "diseno"
+    | "copy"
+    | "revision"
+    | "listo"
+    | "programado"
+    | "publicado";
 }
 
 export type EstadoEntrega = "en_curso" | "cerrada";
@@ -78,6 +89,8 @@ export interface Entrega {
   fecha_inicio: string;
   fecha_fin: string;
   fecha_cierre?: string | null;
+  /** Entrega por defecto creada al insertar un cliente. */
+  es_trabajos_puntuales?: boolean;
 }
 
 export type EstadoProyecto = "activo" | "cerrado";
@@ -98,7 +111,10 @@ export interface Cliente {
   id: UUID;
   nombre: string;
   sector: string;
+  /** PM principal (en BD: pm_principal_id). Mapeado a pm_id para retrocompatibilidad. */
   pm_id: UUID;
+  pm_principal_id?: UUID;
+  pm_secundario_id?: UUID | null;
   web?: string;
   slack?: string;
   salud: SaludCliente;
