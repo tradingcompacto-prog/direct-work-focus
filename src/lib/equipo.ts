@@ -1,7 +1,23 @@
 import * as React from "react";
 import type { Miembro, UUID } from "@/types/database";
 
-export const USUARIO_ACTUAL_ID: UUID = "22222222-2222-2222-2222-222222222222";
+// Mutable: lo fija AuthProvider en cuanto sabe quién es el usuario real.
+// Arranca con un UUID imposible para que ningún filtro accidental "matchee"
+// a Paula (su UUID anterior) antes de que el auth resuelva.
+export let USUARIO_ACTUAL_ID: UUID = "00000000-0000-0000-0000-000000000000";
+
+let usuarioActualFallback: Miembro | null = null;
+
+/**
+ * Llamado por AuthProvider tras resolver el profile real. Actualiza el id
+ * global usado por vistas legacy (TopBar, Sidebar, Home, rol-vista) y
+ * fuerza re-render de los consumidores suscritos vía `useEquipoVersion`.
+ */
+export function setUsuarioActual(id: UUID, fallback?: Miembro) {
+  USUARIO_ACTUAL_ID = id;
+  usuarioActualFallback = fallback ?? null;
+  listeners.forEach((l) => l());
+}
 
 /**
  * Lista mutable del equipo. Arranca con los datos mock para que la UI tenga
@@ -42,6 +58,19 @@ export function useEquipoVersion() {
 
 export const miembroPorId = (id: UUID): Miembro | undefined => EQUIPO.find((m) => m.id === id);
 export const nombrePorId = (id: UUID): string => miembroPorId(id)?.nombre ?? "—";
-export const usuarioActual = (): Miembro => miembroPorId(USUARIO_ACTUAL_ID)!;
+export const usuarioActual = (): Miembro => {
+  const m = miembroPorId(USUARIO_ACTUAL_ID);
+  if (m) return m;
+  if (usuarioActualFallback) return usuarioActualFallback;
+  // Último recurso para no romper la UI si auth aún no ha resuelto.
+  return {
+    id: USUARIO_ACTUAL_ID,
+    nombre: "—",
+    iniciales: "··",
+    rol: "",
+    grupos: [],
+    activo: true,
+  };
+};
 export const tienePermiso = (rol: "director" | "pm"): boolean =>
   usuarioActual().grupos.includes(rol);
