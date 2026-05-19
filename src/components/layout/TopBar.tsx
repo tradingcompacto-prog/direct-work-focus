@@ -218,10 +218,10 @@ export function TopBar() {
 }
 
 function VerComo() {
-  // Solo en DEV: en producción cada usuario ve su rol real.
-  if (!import.meta.env.DEV) return null;
   const [rol] = useRolVista();
   const roles = rolesDisponibles();
+  // Solo en DEV: en producción cada usuario ve su rol real.
+  if (!import.meta.env.DEV) return null;
   if (roles.length <= 1) return null;
   return (
     <>
