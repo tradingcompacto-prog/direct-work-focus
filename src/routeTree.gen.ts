@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as BrujulaRouteImport } from './routes/brujula'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TareasIndexRouteImport } from './routes/tareas.index'
@@ -30,6 +31,11 @@ import { Route as ClientesTarjetasRouteImport } from './routes/clientes.tarjetas
 import { Route as ClientesTablaRouteImport } from './routes/clientes.tabla'
 import { Route as ClientesIdRouteImport } from './routes/clientes.$id'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BrujulaRoute = BrujulaRouteImport.update({
   id: '/brujula',
   path: '/brujula',
@@ -134,6 +140,7 @@ const ClientesIdRoute = ClientesIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/brujula': typeof BrujulaRoute
+  '/login': typeof LoginRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
@@ -156,6 +163,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/brujula': typeof BrujulaRoute
+  '/login': typeof LoginRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/brujula': typeof BrujulaRoute
+  '/login': typeof LoginRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
@@ -203,6 +212,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/brujula'
+    | '/login'
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
@@ -225,6 +235,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/brujula'
+    | '/login'
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
@@ -247,6 +258,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/brujula'
+    | '/login'
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
@@ -270,6 +282,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BrujulaRoute: typeof BrujulaRoute
+  LoginRoute: typeof LoginRoute
   ClientesIdRoute: typeof ClientesIdRoute
   ClientesTablaRoute: typeof ClientesTablaRoute
   ClientesTarjetasRoute: typeof ClientesTarjetasRoute
@@ -292,6 +305,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/brujula': {
       id: '/brujula'
       path: '/brujula'
@@ -438,6 +458,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BrujulaRoute: BrujulaRoute,
+  LoginRoute: LoginRoute,
   ClientesIdRoute: ClientesIdRoute,
   ClientesTablaRoute: ClientesTablaRoute,
   ClientesTarjetasRoute: ClientesTarjetasRoute,
