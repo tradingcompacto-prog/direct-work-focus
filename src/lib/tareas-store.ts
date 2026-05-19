@@ -1,31 +1,41 @@
 import * as React from "react";
-import { TAREAS_MOCK } from "./mock-tareas";
 import type { Tarea } from "@/types/database";
+import { supabase } from "@/lib/supabase";
+import { invalidateKeys } from "@/lib/qc";
+import { toast } from "sonner";
 
-// Store reactivo para mutaciones en memoria de TAREAS_MOCK.
-// Las vistas que muestran tareas pueden suscribirse con useTareasVersion()
-// para re-renderizar cuando cambia el estado / horas de una tarea.
+// Store de mutaciones de tareas contra Supabase.
+// Las firmas siguen siendo síncronas (fire-and-forget) para no romper
+// los onClick existentes. La reactividad llega vía React Query +
+// Realtime (canal "hub-realtime" en AuthProvider).
+// useTareasVersion() se mantiene como shim local — si algún componente
+// no consume useTareas() directamente, igual emitimos un tick local.
 
 const listeners = new Set<() => void>();
 let version = 0;
 const emit = () => {
   version++;
   listeners.forEach((l) => l());
+  invalidateKeys(["tareas"], ["mis-tareas"], ["entregas"]);
 };
 
+function fail(op: string, err: unknown) {
+  const msg = err instanceof Error ? err.message : String(err);
+  console.error(`[tareas:${op}]`, err);
+  toast.error(`No se pudo ${op}: ${msg}`);
+}
+
+async function updateTarea(id: string, patch: Record<string, unknown>) {
+  const { error } = await supabase.from("tareas").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
 export function setEstadoTarea(id: string, estado: Tarea["estado"]) {
-  const t = TAREAS_MOCK.find((x) => x.id === id);
-  if (!t) return;
-  if (t.estado === estado) return;
-  t.estado = estado;
-  emit();
+  updateTarea(id, { estado }).then(emit).catch((e) => fail("cambiar estado", e));
 }
 
 export function setHorasReales(id: string, horas: number | null) {
-  const t = TAREAS_MOCK.find((x) => x.id === id);
-  if (!t) return;
-  t.horas_reales = horas ?? undefined;
-  emit();
+  updateTarea(id, { horas_reales: horas }).then(emit).catch((e) => fail("guardar horas", e));
 }
 
 export function marcarParaRevisar(id: string) {
@@ -33,13 +43,10 @@ export function marcarParaRevisar(id: string) {
 }
 
 export function devolverAResponsable(id: string) {
-  const t = TAREAS_MOCK.find((x) => x.id === id);
-  if (!t) return;
   const hoy = new Date().toISOString().slice(0, 10);
-  t.fecha_fin_min = hoy;
-  t.fecha_fin_max = hoy;
-  t.estado = "haciendola";
-  emit();
+  updateTarea(id, { fecha_fin_min: hoy, fecha_fin_max: hoy, estado: "haciendola" })
+    .then(emit)
+    .catch((e) => fail("devolver a responsable", e));
 }
 
 export function reasignarTarea(
@@ -47,23 +54,22 @@ export function reasignarTarea(
   nuevoResponsable: string,
   fechaFin: string,
 ) {
-  const t = TAREAS_MOCK.find((x) => x.id === id);
-  if (!t) return;
   const hoy = new Date().toISOString().slice(0, 10);
-  t.responsable_id = nuevoResponsable;
-  t.fecha_inicio = hoy;
-  t.fecha_fin_min = fechaFin;
-  t.fecha_fin_max = fechaFin;
-  t.estado = "activa";
-  emit();
+  updateTarea(id, {
+    responsable_id: nuevoResponsable,
+    fecha_inicio: hoy,
+    fecha_fin_min: fechaFin,
+    fecha_fin_max: fechaFin,
+    estado: "activa",
+  })
+    .then(emit)
+    .catch((e) => fail("reasignar tarea", e));
 }
 
 export function completarTarea(id: string) {
-  const t = TAREAS_MOCK.find((x) => x.id === id);
-  if (!t) return;
-  t.estado = "completada";
-  t.cerrado_at = new Date().toISOString();
-  emit();
+  updateTarea(id, { estado: "completada", cerrado_at: new Date().toISOString() })
+    .then(emit)
+    .catch((e) => fail("completar tarea", e));
 }
 
 export function notifyTareasChanged() {

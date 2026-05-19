@@ -2,6 +2,7 @@ import * as React from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
+import { setQueryClient } from "@/lib/qc";
 
 export type AppRole =
   | "director"
@@ -44,6 +45,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [roles, setRoles] = React.useState<AppRole[]>([]);
   const qc = useQueryClient();
+
+  // Registramos el QueryClient para que los stores de mutación puedan invalidar.
+  React.useEffect(() => {
+    setQueryClient(qc);
+  }, [qc]);
 
   const cargarPerfilYRoles = React.useCallback(async (user: User | null) => {
     if (!user) {
@@ -91,6 +97,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, [cargarPerfilYRoles, qc]);
+
+  // Realtime: invalidar caches cuando otro usuario (o el propio) cambia datos.
+  React.useEffect(() => {
+    if (!session?.user) return;
+    const ch = supabase
+      .channel("hub-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "tareas" }, () => {
+        qc.invalidateQueries({ queryKey: ["tareas"] });
+        qc.invalidateQueries({ queryKey: ["mis-tareas"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "entregas" }, () => {
+        qc.invalidateQueries({ queryKey: ["entregas"] });
+        qc.invalidateQueries({ queryKey: ["mis-entregas"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "notificaciones" }, () => {
+        qc.invalidateQueries({ queryKey: ["notificaciones"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "publicaciones_rrss" }, () => {
+        qc.invalidateQueries({ queryKey: ["plan-rrss"] });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [session?.user, qc]);
 
   const value = React.useMemo<AuthCtx>(() => {
     const tieneRol = (r: AppRole) => roles.includes(r);

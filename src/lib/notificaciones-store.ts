@@ -1,42 +1,70 @@
-import * as React from "react";
-import { NOTIFICACIONES_MOCK } from "./mock-tareas";
 import type { Notificacion } from "@/types/database";
+import { supabase } from "@/lib/supabase";
+import { invalidateKeys, getQueryClient } from "@/lib/qc";
+import { useNotificaciones as useNotificacionesQuery } from "@/lib/queries";
+import { toast } from "sonner";
 
-// Sesión: copia mutable de los mocks. Permite marcar leídas y añadir nuevas.
-let lista: Notificacion[] = NOTIFICACIONES_MOCK.map((n) => ({ ...n }));
-const listeners = new Set<() => void>();
-const emit = () => listeners.forEach((l) => l());
+// Notificaciones: lectura via React Query (useNotificaciones), mutaciones
+// directas a Supabase + invalidación. Compatibilidad con el TopBar.
 
-export function getNotificaciones(): Notificacion[] {
-  return lista;
+function fail(op: string, err: unknown) {
+  const msg = err instanceof Error ? err.message : String(err);
+  console.error(`[notificaciones:${op}]`, err);
+  toast.error(`No se pudo ${op}: ${msg}`);
 }
+
 export function marcarLeida(id: string) {
-  lista = lista.map((n) => (n.id === id ? { ...n, leida: true } : n));
-  emit();
-}
-export function marcarTodasLeidas() {
-  lista = lista.map((n) => ({ ...n, leida: true }));
-  emit();
-}
-export function agregarNotificacion(n: Omit<Notificacion, "id" | "fecha" | "leida"> & Partial<Pick<Notificacion, "leida" | "fecha">>) {
-  lista = [
-    {
-      id: `n-${Date.now()}`,
-      fecha: n.fecha ?? new Date().toISOString(),
-      leida: n.leida ?? false,
-      ...n,
-    } as Notificacion,
-    ...lista,
-  ];
-  emit();
+  supabase
+    .from("notificaciones")
+    .update({ leida: true })
+    .eq("id", id)
+    .then(({ error }) => {
+      if (error) fail("marcar leída", error);
+      else invalidateKeys(["notificaciones"]);
+    });
 }
 
+export function marcarTodasLeidas() {
+  // Solo las propias no leídas.
+  supabase
+    .from("notificaciones")
+    .update({ leida: true })
+    .eq("leida", false)
+    .then(({ error }) => {
+      if (error) fail("marcar todas leídas", error);
+      else invalidateKeys(["notificaciones"]);
+    });
+}
+
+export function agregarNotificacion(
+  n: Omit<Notificacion, "id" | "fecha" | "leida"> &
+    Partial<Pick<Notificacion, "leida" | "fecha">>,
+) {
+  const row = {
+    texto: n.texto,
+    ruta: n.ruta ?? null,
+    icono: n.icono ?? null,
+    categoria: n.categoria ?? null,
+    fecha: n.fecha ?? new Date().toISOString(),
+    leida: n.leida ?? false,
+  };
+  supabase
+    .from("notificaciones")
+    .insert(row)
+    .then(({ error }) => {
+      if (error) fail("crear notificación", error);
+      else invalidateKeys(["notificaciones"]);
+    });
+}
+
+/** Devuelve los datos actuales de la cache (síncrono) para callers no-hook. */
+export function getNotificaciones(): Notificacion[] {
+  const qc = getQueryClient();
+  return (qc?.getQueryData<Notificacion[]>(["notificaciones"]) ?? []);
+}
+
+/** Compat con el TopBar: ahora delega en useNotificaciones() (React Query). */
 export function useNotificacionesStore() {
-  const [v, setV] = React.useState(0);
-  React.useEffect(() => {
-    const l = () => setV((x) => x + 1);
-    listeners.add(l);
-    return () => { listeners.delete(l); };
-  }, []);
-  return { notificaciones: lista, version: v };
+  const q = useNotificacionesQuery();
+  return { notificaciones: q.data ?? [], version: q.dataUpdatedAt };
 }

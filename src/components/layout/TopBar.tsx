@@ -19,6 +19,7 @@ import { tiempoRelativo } from "@/lib/fechas";
 import { useBusquedaGlobal } from "@/lib/busqueda-context";
 import { cn } from "@/lib/utils";
 import type { Notificacion } from "@/types/database";
+import { useAuth } from "@/lib/auth";
 
 interface Crumb {
   label: string;
@@ -49,6 +50,7 @@ export function TopBar() {
   const noLeidas = notifs.filter((n) => !n.leida).length;
   const busqueda = useBusquedaGlobal();
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [filtro, setFiltro] = React.useState<"todas" | "urgente" | "importante" | "info">("todas");
 
   const filtradas = filtro === "todas" ? notifs : notifs.filter((n) => (n.categoria ?? "info") === filtro);
@@ -209,7 +211,15 @@ export function TopBar() {
           <DensidadMenu />
           <DropdownMenuItem disabled>Configuración</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem disabled>Salir</DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={async (e) => {
+              e.preventDefault();
+              await signOut();
+              navigate({ to: "/login" });
+            }}
+          >
+            Salir
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>
@@ -219,6 +229,8 @@ export function TopBar() {
 function VerComo() {
   const [rol] = useRolVista();
   const roles = rolesDisponibles();
+  // Solo en DEV: en producción cada usuario ve su rol real.
+  if (!import.meta.env.DEV) return null;
   if (roles.length <= 1) return null;
   return (
     <>
