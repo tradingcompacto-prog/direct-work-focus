@@ -1,5 +1,5 @@
 import * as React from "react";
-import { usuarioActual } from "@/lib/equipo";
+import { usuarioActual, useEquipoVersion } from "@/lib/equipo";
 
 export type RolVista = "director" | "pm" | "ejecutor";
 const KEY = "sa.home.rolVista";
@@ -17,8 +17,7 @@ function leer(): RolVista {
     cache = v;
     return v;
   }
-  cache = defaultRol();
-  return cache;
+  return defaultRol();
 }
 
 function defaultRol(): RolVista {
@@ -43,7 +42,14 @@ export function setRolVista(r: RolVista) {
   emit();
 }
 
+export function resetRolVistaToDefault() {
+  cache = null;
+  try { localStorage.removeItem(KEY); } catch {}
+  emit();
+}
+
 export function useRolVista(): [RolVista, (r: RolVista) => void] {
+  useEquipoVersion();
   const [, force] = React.useReducer((x: number) => x + 1, 0);
   React.useEffect(() => {
     listeners.add(force);
