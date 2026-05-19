@@ -51,13 +51,13 @@ export function Brujula() {
     const f = parseISO(e.fecha_fin);
     return f >= hace30 && f <= hoy;
   });
-  const completadas = entregasRecientes.filter((e) => e.estado === "completada");
-  const aTiempo = completadas.filter((e) => {
-    const cierre = e.fecha_cierre_real ? parseISO(e.fecha_cierre_real) : null;
+  const cerradas = entregasRecientes.filter((e) => e.estado === "cerrada");
+  const aTiempo = cerradas.filter((e) => {
+    const cierre = e.fecha_cierre ? parseISO(e.fecha_cierre) : null;
     return cierre ? cierre <= parseISO(e.fecha_fin) : true;
   });
-  const cumplimiento = completadas.length > 0
-    ? Math.round((aTiempo.length / completadas.length) * 100)
+  const cumplimiento = cerradas.length > 0
+    ? Math.round((aTiempo.length / cerradas.length) * 100)
     : null;
 
   return (
@@ -135,7 +135,7 @@ export function Brujula() {
               {cumplimiento}%
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              {aTiempo.length}/{completadas.length} entregas a tiempo
+              {aTiempo.length}/{cerradas.length} entregas a tiempo
             </p>
           </>
         )}
