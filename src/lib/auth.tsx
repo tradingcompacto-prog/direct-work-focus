@@ -3,6 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { setQueryClient } from "@/lib/qc";
+import { setUsuarioActual } from "@/lib/equipo";
 
 export type AppRole =
   | "director"
@@ -55,6 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) {
       setProfile(null);
       setRoles([]);
+      setUsuarioActual("00000000-0000-0000-0000-000000000000");
       return;
     }
     const [{ data: p }, { data: r }] = await Promise.all([
@@ -65,8 +67,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", user.id),
     ]);
-    setProfile((p as Profile | null) ?? null);
-    setRoles(((r ?? []) as { role: AppRole }[]).map((x) => x.role));
+    const prof = (p as Profile | null) ?? null;
+    const rolesArr = ((r ?? []) as { role: AppRole }[]).map((x) => x.role);
+    setProfile(prof);
+    setRoles(rolesArr);
+    // Sincroniza el "usuario actual" global usado por vistas legacy.
+    setUsuarioActual(user.id, {
+      id: user.id,
+      nombre: prof?.nombre ?? prof?.email ?? user.email ?? "Tú",
+      iniciales: (prof?.iniciales ?? (prof?.nombre ?? user.email ?? "?").slice(0, 2)).toUpperCase(),
+      rol: rolesArr.includes("director") ? "Director" : rolesArr.includes("pm") ? "PM" : "Equipo",
+      grupos: rolesArr.filter((x) => x !== "ejecutor") as never,
+      activo: prof?.activo ?? true,
+      email: prof?.email ?? user.email ?? undefined,
+    });
   }, []);
 
   React.useEffect(() => {
