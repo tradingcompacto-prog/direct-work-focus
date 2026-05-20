@@ -260,10 +260,12 @@ export function CrearModal() {
       ? estimar(
           {
             titulo: titulo || undefined,
+            categoria: (categoriaTarea || undefined) as CategoriaEntrega | undefined,
             cliente_id: clienteId || undefined,
             responsable_id: responsableId || undefined,
           },
           tareasDB,
+          categoriaPorTarea,
         )
       : null;
 
