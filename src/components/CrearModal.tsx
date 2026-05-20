@@ -426,18 +426,15 @@ export function CrearModal() {
                     <PersonaSelect value={responsableId} onChange={setResponsableId} />
                   </Field>
                   {esRRSS && (
-                    <Field label="Número de publicaciones">
-                      <Input
-                        type="number"
-                        min={1}
-                        max={60}
-                        value={numPubs}
-                        onChange={(e) => setNumPubs(Number(e.target.value) || 1)}
-                      />
-                      <p className="text-[11px] text-muted-foreground mt-1">
-                        Se crearán {numPubs} filas en el plan (todas como borrador, fecha base = inicio).
-                      </p>
-                    </Field>
+                    <RRSSDefaultsBloque
+                      numPubs={numPubs} setNumPubs={setNumPubs}
+                      distrib={distrib} setDistrib={setDistrib}
+                      tipoDefault={tipoDefault} setTipoDefault={setTipoDefault}
+                      formatoDefault={formatoDefault} setFormatoDefault={setFormatoDefault}
+                      plataformasDefault={plataformasDefault} setPlataformasDefault={setPlataformasDefault}
+                      disenoDefault={disenoDefault} setDisenoDefault={setDisenoDefault}
+                      copyDefault={copyDefault} setCopyDefault={setCopyDefault}
+                    />
                   )}
                   {!usarRango ? (
                     <Field label="Fecha">
