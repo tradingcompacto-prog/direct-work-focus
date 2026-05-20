@@ -11,8 +11,12 @@ import {
   TAREAS_MOCK,
   tituloTarea,
 } from "@/lib/mock-tareas";
-import { useComentarios } from "@/lib/queries";
+import { useComentarios, useColaboradores, useEnlaces } from "@/lib/queries";
 import { miembroPorId, nombrePorId } from "@/lib/equipo";
+import { PersonaPicker } from "@/components/PersonaPicker";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { tiempoRelativo } from "@/lib/fechas";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,10 +30,18 @@ import {
   devolverAResponsable,
   completarTarea,
   reasignarTarea,
+  setHorasEstimadas,
+  setDescripcion,
+  setResponsable,
+  setSolicitante,
+  addColaborador,
+  removeColaborador,
 } from "@/lib/tareas-store";
+import { addEnlace, removeEnlace } from "@/lib/enlaces-store";
 import { useRolVista } from "@/lib/rol-vista";
 import { ReasignarTareaDialog } from "@/components/ReasignarTareaDialog";
 import { Send, UserCog, CheckCircle2 } from "lucide-react";
+import { Trash2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
