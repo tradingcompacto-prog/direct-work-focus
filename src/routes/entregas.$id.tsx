@@ -426,7 +426,7 @@ function PlanRRSSTab({
   entrega,
   tareas,
 }: {
-  entrega: { id: string; nombre: string; pm_id: string; fecha_inicio: string; fecha_fin: string };
+  entrega: { id: string; nombre: string; cliente_id: string; pm_id: string; fecha_inicio: string; fecha_fin: string };
   tareas: Array<{ id: string; titulo: string; responsable_id: string }>;
 }) {
   const { user } = useAuth();
@@ -475,5 +475,5 @@ function PlanRRSSTab({
     );
   }
 
-  return <PlanRRSS tareaId={sombrilla.id} />;
+  return <PlanRRSS tareaId={sombrilla.id} entregaId={entrega.id} clienteId={entrega.cliente_id} />;
 }

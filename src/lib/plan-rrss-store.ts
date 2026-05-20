@@ -50,9 +50,14 @@ export function usePlanRRSS(tareaId?: string) {
   });
 }
 
-export function addPublicacion(tareaId: string, pub: Omit<PublicacionRRSS, "id">) {
+export function addPublicacion(
+  ctx: { tareaId: string; entregaId: string; clienteId: string },
+  pub: Omit<PublicacionRRSS, "id">,
+) {
   const row = {
-    tarea_id: tareaId,
+    tarea_id: ctx.tareaId,
+    entrega_id: ctx.entregaId,
+    cliente_id: ctx.clienteId,
     fecha: pub.fecha,
     hora: pub.hora ?? null,
     tipo: pub.tipo,
@@ -91,7 +96,10 @@ export function removePublicacion(_tareaId: string, id: string) {
     .then(({ error }) => (error ? fail("eliminar publicación", error) : done()));
 }
 
-export async function duplicarPublicacion(tareaId: string, id: string) {
+export async function duplicarPublicacion(
+  ctx: { tareaId: string; entregaId: string; clienteId: string },
+  id: string,
+) {
   const { data, error } = await supabase
     .from("publicaciones_rrss")
     .select("*")
@@ -103,7 +111,9 @@ export async function duplicarPublicacion(tareaId: string, id: string) {
   }
   const orig = data as Record<string, unknown>;
   const row = {
-    tarea_id: tareaId,
+    tarea_id: ctx.tareaId,
+    entrega_id: (orig.entrega_id as string | null) ?? ctx.entregaId,
+    cliente_id: (orig.cliente_id as string | null) ?? ctx.clienteId,
     fecha: orig.fecha,
     hora: orig.hora,
     tipo: orig.tipo,

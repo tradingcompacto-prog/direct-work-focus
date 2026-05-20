@@ -48,8 +48,11 @@ function AuthGate() {
     <BusquedaProvider>
       <TareaModalProvider>
         <CrearModalProvider>
-          {user && !isLogin && <DataSync />}
-          {user && !isLogin && <EquipoSync />}
+          {/* Montados siempre: sus hooks internos tienen `enabled: !!user`,
+              así no fetchean sin sesión. Montaje condicional cambiaría el
+              árbol de hooks entre renders y dispara React #310. */}
+          <DataSync />
+          <EquipoSync />
 
           {loading ? (
             <div className="flex h-screen items-center justify-center bg-background">
