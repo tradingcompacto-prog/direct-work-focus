@@ -51,10 +51,19 @@ const tipoColor: Record<Tipo, string> = {
   story: "bg-amber-100 text-amber-700 border-amber-200",
 };
 
-export function PlanRRSS({ tareaId }: { tareaId: string }) {
+export function PlanRRSS({
+  tareaId,
+  entregaId,
+  clienteId,
+}: {
+  tareaId: string;
+  entregaId: string;
+  clienteId: string;
+}) {
   const { data: plan = [] } = usePlanRRSS(tareaId);
   const [editing, setEditing] = React.useState<PublicacionRRSS | null>(null);
   const [creando, setCreando] = React.useState(false);
+  const ctx = { tareaId, entregaId, clienteId };
 
   const ordenado = [...plan].sort((a, b) => a.fecha.localeCompare(b.fecha));
 
@@ -86,7 +95,7 @@ export function PlanRRSS({ tareaId }: { tareaId: string }) {
               p={p}
               onClick={() => setEditing(p)}
               onDuplicar={() => {
-                duplicarPublicacion(tareaId, p.id);
+                duplicarPublicacion(ctx, p.id);
                 toast.success("Publicación duplicada");
               }}
               onEliminar={() => {
@@ -102,7 +111,7 @@ export function PlanRRSS({ tareaId }: { tareaId: string }) {
         <PublicacionDialog
           onClose={() => setCreando(false)}
           onSubmit={(data) => {
-            addPublicacion(tareaId, data);
+            addPublicacion(ctx, data);
             setCreando(false);
             toast.success("Publicación añadida");
           }}
