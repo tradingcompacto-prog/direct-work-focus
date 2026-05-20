@@ -158,9 +158,9 @@ export const useComentarios = (tareaId?: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tarea_comentarios")
-        .select("*")
+        .select("id,tarea_id,autor_id,texto,fecha:created_at")
         .eq("tarea_id", tareaId!)
-        .order("fecha", { ascending: true });
+        .order("created_at", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Comentario[];
     },
@@ -175,8 +175,8 @@ export const useActividad = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("actividad")
-        .select("*")
-        .order("fecha", { ascending: false })
+        .select("id,tarea_id,entrega_id,actor_id,tipo,texto:descripcion,fecha:created_at")
+        .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;
       return (data ?? []) as Actividad[];
@@ -192,8 +192,8 @@ export const useNotificaciones = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("notificaciones")
-        .select("*")
-        .order("fecha", { ascending: false })
+        .select("id,texto,leida,ruta,icono,categoria,fecha:created_at")
+        .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
       return (data ?? []) as Notificacion[];
