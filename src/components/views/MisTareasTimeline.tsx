@@ -30,8 +30,9 @@ const colorEstado = (estado: string, vencida: boolean) => {
     case "haciendola":
       return "bg-amber-500";
     case "pausada":
-    case "revision":
       return "bg-zinc-400";
+    case "revision":
+      return "bg-purple-500";
     case "completada":
       return "bg-green-500/50";
     default:
@@ -50,8 +51,12 @@ export function MisTareasTimeline() {
   const { data: revisionesPM = [] } = useMisRevisiones();
 
   const base = useMemo(() => {
-    if (alcance === "solo-mias") return misTareas;
-    return filtrarPorAlcance(todasTareas, alcance, user?.id, caps.clientesPM);
+    const raw =
+      alcance === "solo-mias"
+        ? misTareas
+        : filtrarPorAlcance(todasTareas, alcance, user?.id, caps.clientesPM);
+    // Las vistas de trabajo activo no muestran tareas completadas.
+    return raw.filter((t) => t.estado !== "completada");
   }, [alcance, misTareas, todasTareas, user?.id, caps.clientesPM]);
 
   const tareas = useMemo(() => {
@@ -197,6 +202,7 @@ export function MisTareasTimeline() {
           <Legend color="bg-blue-500" label="Activa" />
           <Legend color="bg-amber-500" label="Haciéndola" />
           <Legend color="bg-zinc-400" label="Esperando" />
+          <Legend color="bg-purple-500" label="Revisión" />
           <Legend color="bg-green-500/50" label="Completada" />
           <Legend color="bg-red-500" label="Vencida" />
         </div>
@@ -264,9 +270,16 @@ function BarraArrastrable({
     const shift = (date: Date, n: number) =>
       format(addDays(date, n), "yyyy-MM-dd");
     if (drag.mode === "move") {
-      setTareaFechas(tareaId, { fin_min: shift(inicio, d), fin_max: shift(fin, d) });
+      const newInicio = shift(inicio, d);
+      const newFinMax = shift(fin, d);
+      setTareaFechas(tareaId, {
+        inicio: newInicio,
+        fin_min: newInicio,
+        fin_max: newFinMax,
+      });
     } else if (drag.mode === "left") {
-      setTareaFechas(tareaId, { fin_min: shift(inicio, d) });
+      const newInicio = shift(inicio, d);
+      setTareaFechas(tareaId, { inicio: newInicio, fin_min: newInicio });
     } else {
       setTareaFechas(tareaId, { fin_max: shift(fin, d) });
     }

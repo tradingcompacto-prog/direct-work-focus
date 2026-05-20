@@ -64,9 +64,7 @@ export function filtrarPorAlcance<T extends FiltrableTarea>(
 ): T[] {
   if (alcance === "todo") return tareas;
   if (alcance === "solo-mias") {
-    return tareas.filter(
-      (t) => t.responsable_id === userId || t.solicitante_id === userId,
-    );
+    return tareas.filter((t) => t.responsable_id === userId);
   }
   // mis-proyectos
   const set = new Set(clientesPM);

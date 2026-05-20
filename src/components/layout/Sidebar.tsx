@@ -134,6 +134,7 @@ export function Sidebar() {
   const { data: todasT = [] } = useTareas();
   const badges: Record<string, { n: number; tone?: "rojo" | "alerta" }> = React.useMemo(() => {
     const misActivas = misT.filter((t) => t.estado !== "completada");
+    const misEActivas = misE.filter((e) => e.estado === "en_curso");
     const cargaAlertas = misActivas.filter(
       (t) => urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) === "rojo",
     ).length;
@@ -143,9 +144,9 @@ export function Sidebar() {
     return {
       "/tareas/timeline": { n: misActivas.length },
       "/tareas/tabla": { n: misActivas.length },
-      "/entregas/kanban": { n: misE.length },
-      "/entregas/gantt": { n: misE.length },
-      "/entregas/tabla": { n: misE.length },
+      "/entregas/kanban": { n: misEActivas.length },
+      "/entregas/gantt": { n: misEActivas.length },
+      "/entregas/tabla": { n: misEActivas.length },
       "/equipo/carga": { n: cargaAlertas, tone: cargaAlertas > 0 ? "alerta" : undefined },
       "/mis-devoluciones": {
         n: caps.devolucionesCount,

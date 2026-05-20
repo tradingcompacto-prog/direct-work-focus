@@ -18,7 +18,7 @@ import {
   filtrarPorAlcance,
   useAlcancePersistido,
 } from "@/components/AlcanceFilter";
-import { useMisRevisiones, useRevisionGlobal } from "@/lib/queries";
+import { useMisRevisiones } from "@/lib/queries";
 import { useUserCaps } from "@/lib/user-caps";
 import { useAuth } from "@/lib/auth";
 import { useTareaModal } from "@/lib/tarea-modal-context";
@@ -42,8 +42,7 @@ function MisRevisionesPage() {
     defaultAlcance({ isDirector: false, isPM: caps.isPM }),
   );
   const { data: misRev = [] } = useMisRevisiones();
-  const { data: globalRev = [] } = useRevisionGlobal();
-  const base = caps.isDirector && alcance === "todo" ? globalRev : misRev;
+  const base = misRev;
   const tareas = React.useMemo(
     () => filtrarPorAlcance(base, alcance, user?.id, caps.clientesPM),
     [base, alcance, user?.id, caps.clientesPM],
@@ -76,7 +75,7 @@ function MisRevisionesPage() {
             Tareas en revisión en tus proyectos. Apruébalas o devuélvelas al responsable.
           </p>
         </div>
-        <AlcanceFilter value={alcance} onChange={setAlcance} hideTodo={!caps.isDirector} />
+        <AlcanceFilter value={alcance} onChange={setAlcance} hideTodo={true} />
       </header>
       <div className="card-soft overflow-hidden">
         <Table>
