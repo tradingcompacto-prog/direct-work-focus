@@ -580,16 +580,29 @@ function EditableDate({
   label,
   valueIso,
   onChange,
+  tooltip,
 }: {
   label: string;
   valueIso: string;
   onChange: (iso: string) => void;
+  tooltip?: string;
 }) {
   const [open, setOpen] = React.useState(false);
   const date = parseISO(valueIso);
   return (
     <div className="text-sm flex gap-2 items-center">
-      <span className="text-muted-foreground w-20">{label}:</span>
+      {tooltip ? (
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-muted-foreground w-20 cursor-help">{label}:</span>
+            </TooltipTrigger>
+            <TooltipContent>{tooltip}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        <span className="text-muted-foreground w-20">{label}:</span>
+      )}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-muted text-sm">
@@ -612,6 +625,127 @@ function EditableDate({
           />
         </PopoverContent>
       </Popover>
+    </div>
+  );
+}
+
+function HorasInput({
+  value,
+  onCommit,
+}: {
+  value: number | null;
+  onCommit: (h: number | null) => void;
+}) {
+  const [text, setText] = React.useState(value != null ? String(value) : "");
+  React.useEffect(() => {
+    setText(value != null ? String(value) : "");
+  }, [value]);
+  const commit = () => {
+    const t = text.trim().replace(",", ".");
+    if (t === "") {
+      if (value != null) onCommit(null);
+      return;
+    }
+    const n = Number(t);
+    if (!Number.isFinite(n) || n < 0) {
+      setText(value != null ? String(value) : "");
+      return;
+    }
+    if (n !== value) onCommit(n);
+  };
+  return (
+    <Input
+      type="number"
+      step="0.5"
+      min="0"
+      value={text}
+      placeholder="—"
+      onChange={(e) => setText(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+      }}
+      className="h-7 w-20 text-sm"
+    />
+  );
+}
+
+function DescripcionEditor({
+  value,
+  onCommit,
+}: {
+  value: string;
+  onCommit: (v: string | null) => void;
+}) {
+  const [text, setText] = React.useState(value);
+  React.useEffect(() => {
+    setText(value);
+  }, [value]);
+  return (
+    <Textarea
+      value={text}
+      placeholder="Describe la tarea, contexto, objetivos…"
+      onChange={(e) => setText(e.target.value)}
+      onBlur={() => {
+        if (text === value) return;
+        onCommit(text.trim() ? text : null);
+      }}
+      className="min-h-[80px] text-sm"
+    />
+  );
+}
+
+function EnlaceForm({
+  onSubmit,
+}: {
+  onSubmit: (url: string, descripcion?: string) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [url, setUrl] = React.useState("");
+  const [desc, setDesc] = React.useState("");
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-2 text-xs text-muted-foreground hover:text-foreground"
+      >
+        + Añadir enlace
+      </button>
+    );
+  }
+  const submit = () => {
+    const u = url.trim();
+    if (!/^https?:\/\//i.test(u)) {
+      toast.error("La URL debe empezar por http:// o https://");
+      return;
+    }
+    onSubmit(u, desc.trim() || undefined);
+    setUrl("");
+    setDesc("");
+    setOpen(false);
+  };
+  return (
+    <div className="mt-2 space-y-1.5 rounded-md border border-border p-2 bg-muted/30">
+      <Input
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder="https://…"
+        className="h-8 text-sm"
+        autoFocus
+      />
+      <Input
+        value={desc}
+        onChange={(e) => setDesc(e.target.value)}
+        placeholder="Brief, referencia, ejemplo…"
+        className="h-8 text-sm"
+      />
+      <div className="flex gap-2 justify-end">
+        <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setUrl(""); setDesc(""); }}>
+          Cancelar
+        </Button>
+        <Button size="sm" onClick={submit}>Guardar</Button>
+      </div>
     </div>
   );
 }
