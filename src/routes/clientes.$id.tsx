@@ -318,3 +318,67 @@ function NotasCliente({ clienteId }: { clienteId: string }) {
     </div>
   );
 }
+
+function CategoriasHabilitadasSection({ clienteId }: { clienteId: string }) {
+  const { data: habilitadas = [], isLoading } = useCategoriasHabilitadas(clienteId);
+  const entregasCli = ENTREGAS_MOCK.filter((e) => e.cliente_id === clienteId);
+  const tareasCli = TAREAS_MOCK.filter((t) => t.cliente_id === clienteId);
+  const setHab = new Set(habilitadas);
+
+  const toggle = async (cat: CategoriaEntrega, on: boolean) => {
+    if (on) {
+      const { error } = await supabase
+        .from("cliente_categorias")
+        .insert({ cliente_id: clienteId, categoria: cat });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success(`«${labelCategoria(cat)}» habilitada`);
+    } else {
+      // Sólo permitir desactivar si la entrega no tiene tareas.
+      const ent = entregasCli.find((e) => e.categoria === cat);
+      if (ent) {
+        const conTareas = tareasCli.some((t) => t.entrega_id === ent.id);
+        if (conTareas) {
+          toast.error("No se puede desactivar: la entrega tiene tareas");
+          return;
+        }
+      }
+      const { error } = await supabase
+        .from("cliente_categorias")
+        .delete()
+        .eq("cliente_id", clienteId)
+        .eq("categoria", cat);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success(`«${labelCategoria(cat)}» desactivada`);
+    }
+    invalidateKeys(["cliente_categorias", clienteId], ["entregas"]);
+  };
+
+  if (isLoading) {
+    return <div className="text-sm text-muted-foreground">Cargando…</div>;
+  }
+  return (
+    <div className="card-soft p-4">
+      <p className="text-xs text-muted-foreground mb-3">
+        Activa las categorías de trabajo para este cliente. Cada categoría activa
+        crea una entrega permanente donde colgar las tareas.
+      </p>
+      <ul className="divide-y divide-border">
+        {CATEGORIAS_ENTREGA.map((c) => {
+          const on = setHab.has(c.value);
+          return (
+            <li key={c.value} className="flex items-center justify-between py-2.5">
+              <span className="text-sm">{labelCategoria(c.value)}</span>
+              <Switch checked={on} onCheckedChange={(v) => toggle(c.value, !!v)} />
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
