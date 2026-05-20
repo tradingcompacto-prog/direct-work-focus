@@ -527,6 +527,12 @@ export function TareaModal() {
         tarea={tarea}
         onDone={() => cerrar()}
       />
+      <DevolverTareaDialog
+        open={devolverOpen}
+        onOpenChange={setDevolverOpen}
+        tareaIds={[tarea.id]}
+        onSuccess={() => cerrar()}
+      />
     </div>
   );
 }
