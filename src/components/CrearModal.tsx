@@ -292,6 +292,34 @@ export function CrearModal() {
               <Field label="PM">
                 <PersonaSelect value={pmCliente} onChange={setPmCliente} />
               </Field>
+              <Field label="Categorías habilitadas">
+                <div className="grid grid-cols-2 gap-2 rounded-md border border-border p-3 max-h-56 overflow-auto">
+                  {CATEGORIAS_ENTREGA.map((c) => {
+                    const checked = catsCliente.includes(c.value);
+                    return (
+                      <label
+                        key={c.value}
+                        className="flex items-center gap-2 text-sm cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) =>
+                            setCatsCliente((prev) =>
+                              v
+                                ? Array.from(new Set([...prev, c.value]))
+                                : prev.filter((x) => x !== c.value),
+                            )
+                          }
+                        />
+                        <span>{labelCategoria(c.value)}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Se creará una entrega permanente por cada categoría marcada.
+                </p>
+              </Field>
             </>
           ) : (
             <>
@@ -315,36 +343,32 @@ export function CrearModal() {
                 />
               </Field>
               {tipo === "tarea" && (
-                <Field label="Entrega">
-                  <ComboboxCrear
-                    options={[
-                      { value: "puntuales", label: "Trabajos puntuales" },
-                      ...entregas.map((e) => ({
-                        value: e.id,
-                        label: e.nombre,
-                        hint: labelCategoria(e.categoria),
-                      })),
-                    ]}
-                    value={entregaNuevaNombre ? `__nueva__` : entregaId}
-                    onChange={(v) => {
-                      setEntregaId(v);
-                      setEntregaNuevaNombre(null);
-                    }}
-                    placeholder="Trabajos puntuales"
-                    searchPlaceholder="Buscar entrega…"
-                    emptyText="Sin entregas"
-                    onCrearNuevo={(nombre) => {
-                      setEntregaNuevaNombre(nombre);
-                      setEntregaId("__nueva__");
-                      toast.message(`Entrega «${nombre}» se creará al guardar`);
-                    }}
-                    crearLabel="Crear entrega"
-                  />
-                  {entregaNuevaNombre && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Nueva entrega: <span className="font-medium">{entregaNuevaNombre}</span>
-                    </p>
-                  )}
+                <Field label="Categoría">
+                  <Select
+                    value={categoriaTarea}
+                    onValueChange={(v) => setCategoriaTarea(v as CategoriaEntrega)}
+                    disabled={!clienteId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          clienteId ? "Selecciona categoría" : "Elige cliente primero"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categoriasCliente.length === 0 && (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                          Sin categorías habilitadas
+                        </div>
+                      )}
+                      {categoriasCliente.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {labelCategoria(c)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </Field>
               )}
               <Field label="Título">
