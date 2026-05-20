@@ -51,7 +51,7 @@ export function Brujula() {
     const f = parseISO(e.fecha_fin);
     return f >= hace30 && f <= hoy;
   });
-  const cerradas = entregasRecientes.filter((e) => e.estado === "cerrada");
+  const cerradas = entregasRecientes.filter((e) => e.estado === "completada");
   const aTiempo = cerradas.filter((e) => {
     const cierre = e.fecha_cierre ? parseISO(e.fecha_cierre) : null;
     return cierre ? cierre <= parseISO(e.fecha_fin) : true;

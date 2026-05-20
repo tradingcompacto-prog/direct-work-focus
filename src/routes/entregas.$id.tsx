@@ -110,7 +110,7 @@ function FichaEntrega() {
             </div>
             <h1 className="text-2xl font-semibold tracking-tight">{e.nombre}</h1>
             <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground flex-wrap">
-              <Badge variant={e.estado === "cerrada" ? "secondary" : "default"}>
+              <Badge variant={e.estado === "completada" ? "secondary" : "default"}>
                 {e.estado === "en_curso" ? "En curso" : "Cerrada"}
               </Badge>
               {e.categoria && (
@@ -156,7 +156,7 @@ function FichaEntrega() {
             <Button
               size="sm"
               onClick={() => {
-                if (e.estado === "cerrada") {
+                if (e.estado === "completada") {
                   reabrirEntrega(e.id);
                   toast.success("Entrega reabierta automáticamente al añadir tarea");
                 }

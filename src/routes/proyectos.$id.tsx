@@ -13,7 +13,7 @@ function FichaProyecto() {
   const cli = clientePorId(p.cliente_id);
   const entregas = ENTREGAS_MOCK.filter((e) => e.proyecto_id === p.id);
   const activas = entregas.filter((e) => e.estado === "en_curso");
-  const cerradas = entregas.filter((e) => e.estado === "cerrada");
+  const cerradas = entregas.filter((e) => e.estado === "completada");
 
   return (
     <div className="p-6 space-y-6">
