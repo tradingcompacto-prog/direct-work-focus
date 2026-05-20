@@ -466,3 +466,23 @@ export function useDataset(): Dataset {
     tituloTarea: (id) => tareaPorId(id)?.titulo ?? "—",
   };
 }
+
+// ---------- helpers derivados ----------
+
+/**
+ * Map<tareaId, CategoriaEntrega>. La categoría se hereda de la entrega
+ * a la que pertenece la tarea. Se usa para `estimar`/`estimarTarea` y
+ * para colorear vistas por tipo de trabajo.
+ */
+export function useCategoriaPorTarea(): Map<string, CategoriaEntrega> {
+  const { data: tareas = [] } = useTareas();
+  const { data: entregas = [] } = useEntregas();
+  const entregaCat = new Map<string, CategoriaEntrega>();
+  for (const e of entregas) entregaCat.set(e.id, e.categoria);
+  const m = new Map<string, CategoriaEntrega>();
+  for (const t of tareas) {
+    const c = entregaCat.get(t.entrega_id);
+    if (c) m.set(t.id, c);
+  }
+  return m;
+}
