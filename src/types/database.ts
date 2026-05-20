@@ -37,6 +37,10 @@ export interface Tarea {
   horas_estimadas?: number | null;
   horas_reales?: number | null;
   cerrado_at?: string | null;
+  /** Timestamp ISO de la última devolución del PM al responsable. */
+  devuelta_at?: string | null;
+  /** Motivo escrito por el PM al devolver la tarea. */
+  motivo_devolucion?: string | null;
   /** Plan estructurado para entregas de redes sociales. */
   plan_rrss?: PublicacionRRSS[];
 }
