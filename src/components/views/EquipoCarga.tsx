@@ -1,11 +1,10 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { useTareas, useEquipo } from "@/lib/queries";
+import { useTareas, useEquipo, useCategoriaPorTarea } from "@/lib/queries";
 import { useTareaModal } from "@/lib/tarea-modal-context";
 import { urgenciaTarea } from "@/lib/fechas";
 import { PersonaChip } from "@/components/PersonaChip";
 import { estimarTarea } from "@/lib/estimacion";
-import { TAREAS_MOCK } from "@/lib/mock-tareas";
 import { setResponsable, getResponsable, useOverrides } from "@/lib/fechas-override-store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -48,6 +47,7 @@ export function EquipoCarga() {
   const [unidad, setUnidad] = React.useState<"tareas" | "horas">("tareas");
   const { data: tareas = [] } = useTareas();
   const { data: equipo = [] } = useEquipo();
+  const categoriaPorTarea = useCategoriaPorTarea();
   const { abrir } = useTareaModal();
   const [overTarget, setOverTarget] = React.useState<string | null>(null);
 
@@ -64,7 +64,7 @@ export function EquipoCarga() {
 
   const horasDe = (t: Tarea) => {
     if (typeof t.horas_estimadas === "number") return t.horas_estimadas;
-    const e = estimarTarea(t, TAREAS_MOCK);
+    const e = estimarTarea(t, tareas, categoriaPorTarea);
     return e?.horas ?? 1;
   };
   const totalPersona = (lista: Tarea[]) =>
