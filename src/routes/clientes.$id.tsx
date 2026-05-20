@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { clientePorId, PROYECTOS_MOCK, ENTREGAS_MOCK, TAREAS_MOCK, ACTIVIDAD_MOCK } from "@/lib/mock-tareas";
 import { Key, Users2, Lightbulb, BookOpen } from "lucide-react";
 import { PersonaChip } from "@/components/PersonaChip";
@@ -16,7 +16,7 @@ import { etiquetaFechaRelativa, urgenciaTarea, tiempoRelativo } from "@/lib/fech
 import { cn } from "@/lib/utils";
 import { useTareasVersion } from "@/lib/tareas-store";
 import { CATEGORIAS_ENTREGA, labelCategoria } from "@/lib/categorias";
-import { useCategoriasHabilitadas } from "@/lib/queries";
+import { useCategoriasHabilitadas, useColaboradoresPorTareas } from "@/lib/queries";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabase";
 import { invalidateKeys } from "@/lib/qc";
@@ -47,7 +47,18 @@ function FichaCliente() {
   const tareasActivas = tareas.filter((t) => t.estado !== "completada");
   const tareasCerradas = tareas.filter((t) => t.estado === "completada");
   const entregasAbiertas = entregas.filter((e) => e.estado === "en_curso");
-  const equipoIds = Array.from(new Set(tareas.map((t) => t.responsable_id)));
+  const tareaIds = useMemo(() => tareas.map((t) => t.id), [tareas]);
+  const { data: colabMap = new Map<string, string[]>() } =
+    useColaboradoresPorTareas(tareaIds);
+  const equipoIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const t of tareas) {
+      if (t.responsable_id) ids.add(t.responsable_id);
+      if (t.solicitante_id) ids.add(t.solicitante_id);
+      for (const cid of colabMap.get(t.id) ?? []) ids.add(cid);
+    }
+    return Array.from(ids);
+  }, [tareas, colabMap]);
   const actividad = ACTIVIDAD_MOCK.filter((a) => {
     const t = tareas.find((x) => x.id === a.tarea_id);
     return !!t;
@@ -205,10 +216,19 @@ function FichaCliente() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {equipoIds.map((uid) => {
               const n = tareas.filter((t) => t.responsable_id === uid && t.estado !== "completada").length;
+              const nColab = tareas.filter(
+                (t) =>
+                  t.estado !== "completada" &&
+                  t.responsable_id !== uid &&
+                  (colabMap.get(t.id) ?? []).includes(uid),
+              ).length;
               return (
                 <div key={uid} className="card-soft p-3 flex items-center gap-2">
                   <PersonaChip id={uid} size="sm" />
-                  <span className="ml-auto text-xs text-muted-foreground">{n} activas</span>
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    {n} activas
+                    {nColab > 0 ? ` · ${nColab} colab` : ""}
+                  </span>
                 </div>
               );
             })}

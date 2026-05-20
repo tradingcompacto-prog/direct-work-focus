@@ -243,6 +243,29 @@ export const useColaboradores = (tareaId?: string) => {
   });
 };
 
+export const useColaboradoresPorTareas = (tareaIds: string[]) => {
+  const { user } = useAuth();
+  const key = [...tareaIds].sort().join(",");
+  return useQuery<Map<string, string[]>>({
+    queryKey: ["colaboradores-por-tareas", key],
+    enabled: !!user && tareaIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tarea_colaboradores")
+        .select("tarea_id, user_id")
+        .in("tarea_id", tareaIds);
+      if (error) throw error;
+      const map = new Map<string, string[]>();
+      for (const r of (data ?? []) as { tarea_id: string; user_id: string }[]) {
+        const arr = map.get(r.tarea_id) ?? [];
+        arr.push(r.user_id);
+        map.set(r.tarea_id, arr);
+      }
+      return map;
+    },
+  });
+};
+
 export const useEnlaces = (tareaId?: string) => {
   const { user } = useAuth();
   return useQuery<TareaEnlace[]>({
