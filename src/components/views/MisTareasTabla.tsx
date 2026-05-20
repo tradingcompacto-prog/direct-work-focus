@@ -18,6 +18,7 @@ import { es } from "date-fns/locale";
 import { Download } from "lucide-react";
 import { EstadoVacio } from "@/components/EstadoVacio";
 import { FiltrosBar, useFiltros } from "@/components/FiltrosBar";
+import { eliminarTareas } from "@/lib/tareas-store";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AccionesMasivasBar } from "@/components/AccionesMasivasBar";
 import { toast } from "sonner";
