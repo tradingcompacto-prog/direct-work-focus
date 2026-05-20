@@ -17,6 +17,26 @@ export const CATEGORIAS_ENTREGA: { value: CategoriaEntrega; label: string }[] = 
 export const labelCategoria = (c: CategoriaEntrega): string =>
   CATEGORIAS_ENTREGA.find((x) => x.value === c)?.label ?? c;
 
+// Nombre legible canónico por categoría. Coincide con la función
+// `nombre_legible_categoria(cat)` de BD usada por el trigger T3 para
+// generar el nombre de la entrega permanente.
+export function nombreLegibleCategoria(cat: CategoriaEntrega): string {
+  const mapa: Record<CategoriaEntrega, string> = {
+    redes_sociales: "Redes Sociales",
+    web: "Web",
+    campana: "Campañas",
+    informe_mensual: "Informe Mensual",
+    seo: "SEO",
+    diseno: "Diseño",
+    anuncios: "Anuncios",
+    fotografia: "Fotografía",
+    product_brief: "Product Brief",
+    plan_marketing: "Plan de Marketing",
+    campanas_activas: "Campañas Activas",
+  };
+  return mapa[cat];
+}
+
 // Colores sutiles por categoría: clases tailwind para badge/border.
 export const colorCategoria: Record<
   CategoriaEntrega,

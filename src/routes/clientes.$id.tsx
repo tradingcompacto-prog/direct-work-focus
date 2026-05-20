@@ -8,13 +8,20 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useCrearModal } from "@/lib/crear-modal-context";
 import { useTareaModal } from "@/lib/tarea-modal-context";
-import { Plus, Globe, Hash, Activity, FileText, FolderKanban, Package, ListChecks, Users, History, StickyNote } from "lucide-react";
+import { Plus, Globe, Hash, Activity, FolderKanban, Package, ListChecks, Users, History, StickyNote, Layers } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { colorCliente, bordeIzqCliente } from "@/lib/cliente-colors";
 import { etiquetaFechaRelativa, urgenciaTarea, tiempoRelativo } from "@/lib/fechas";
 import { cn } from "@/lib/utils";
 import { useTareasVersion } from "@/lib/tareas-store";
+import { CATEGORIAS_ENTREGA, labelCategoria } from "@/lib/categorias";
+import { useCategoriasHabilitadas } from "@/lib/queries";
+import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/lib/supabase";
+import { invalidateKeys } from "@/lib/qc";
+import { toast } from "sonner";
+import type { CategoriaEntrega } from "@/types/database";
 
 export const Route = createFileRoute("/clientes/$id")({
   component: FichaCliente,
@@ -79,9 +86,6 @@ function FichaCliente() {
             <Button size="sm" onClick={() => abrir("proyecto", { cliente_id: c.id })}>
               <Plus className="h-4 w-4 mr-1" /> Proyecto
             </Button>
-            <Button size="sm" variant="outline" onClick={() => abrir("entrega", { cliente_id: c.id })}>
-              <Plus className="h-4 w-4 mr-1" /> Entrega
-            </Button>
           </div>
         </div>
 
@@ -100,6 +104,7 @@ function FichaCliente() {
           <TabsTrigger value="resumen"><Activity className="h-3.5 w-3.5 mr-1" /> Resumen</TabsTrigger>
           <TabsTrigger value="proyectos"><FolderKanban className="h-3.5 w-3.5 mr-1" /> Proyectos</TabsTrigger>
           <TabsTrigger value="entregas"><Package className="h-3.5 w-3.5 mr-1" /> Entregas</TabsTrigger>
+          <TabsTrigger value="categorias"><Layers className="h-3.5 w-3.5 mr-1" /> Categorías</TabsTrigger>
           <TabsTrigger value="tareas"><ListChecks className="h-3.5 w-3.5 mr-1" /> Tareas</TabsTrigger>
           <TabsTrigger value="equipo"><Users className="h-3.5 w-3.5 mr-1" /> Equipo</TabsTrigger>
           <TabsTrigger value="actividad"><History className="h-3.5 w-3.5 mr-1" /> Actividad</TabsTrigger>
@@ -163,6 +168,11 @@ function FichaCliente() {
               <span className="text-xs text-muted-foreground shrink-0">{format(parseISO(e.fecha_fin), "d MMM", { locale: es })}</span>
             </Link>
           ))}
+        </TabsContent>
+
+        {/* Categorías habilitadas */}
+        <TabsContent value="categorias" className="mt-4">
+          <CategoriasHabilitadasSection clienteId={c.id} />
         </TabsContent>
 
         {/* Tareas */}
@@ -305,6 +315,70 @@ function NotasCliente({ clienteId }: { clienteId: string }) {
       <p className="md:col-span-2 text-[11px] text-muted-foreground text-center mt-1">
         Las notas son visibles para todo el equipo. Edición próximamente.
       </p>
+    </div>
+  );
+}
+
+function CategoriasHabilitadasSection({ clienteId }: { clienteId: string }) {
+  const { data: habilitadas = [], isLoading } = useCategoriasHabilitadas(clienteId);
+  const entregasCli = ENTREGAS_MOCK.filter((e) => e.cliente_id === clienteId);
+  const tareasCli = TAREAS_MOCK.filter((t) => t.cliente_id === clienteId);
+  const setHab = new Set(habilitadas);
+
+  const toggle = async (cat: CategoriaEntrega, on: boolean) => {
+    if (on) {
+      const { error } = await supabase
+        .from("cliente_categorias")
+        .insert({ cliente_id: clienteId, categoria: cat });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success(`«${labelCategoria(cat)}» habilitada`);
+    } else {
+      // Sólo permitir desactivar si la entrega no tiene tareas.
+      const ent = entregasCli.find((e) => e.categoria === cat);
+      if (ent) {
+        const conTareas = tareasCli.some((t) => t.entrega_id === ent.id);
+        if (conTareas) {
+          toast.error("No se puede desactivar: la entrega tiene tareas");
+          return;
+        }
+      }
+      const { error } = await supabase
+        .from("cliente_categorias")
+        .delete()
+        .eq("cliente_id", clienteId)
+        .eq("categoria", cat);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success(`«${labelCategoria(cat)}» desactivada`);
+    }
+    invalidateKeys(["cliente_categorias", clienteId], ["entregas"]);
+  };
+
+  if (isLoading) {
+    return <div className="text-sm text-muted-foreground">Cargando…</div>;
+  }
+  return (
+    <div className="card-soft p-4">
+      <p className="text-xs text-muted-foreground mb-3">
+        Activa las categorías de trabajo para este cliente. Cada categoría activa
+        crea una entrega permanente donde colgar las tareas.
+      </p>
+      <ul className="divide-y divide-border">
+        {CATEGORIAS_ENTREGA.map((c) => {
+          const on = setHab.has(c.value);
+          return (
+            <li key={c.value} className="flex items-center justify-between py-2.5">
+              <span className="text-sm">{labelCategoria(c.value)}</span>
+              <Switch checked={on} onCheckedChange={(v) => toggle(c.value, !!v)} />
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

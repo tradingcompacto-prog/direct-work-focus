@@ -1,9 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { proyectoPorId, ENTREGAS_MOCK, clientePorId } from "@/lib/mock-tareas";
 import { PersonaChip } from "@/components/PersonaChip";
-import { Button } from "@/components/ui/button";
-import { useCrearModal } from "@/lib/crear-modal-context";
-import { Plus } from "lucide-react";
 
 export const Route = createFileRoute("/proyectos/$id")({
   component: FichaProyecto,
@@ -12,7 +9,6 @@ export const Route = createFileRoute("/proyectos/$id")({
 function FichaProyecto() {
   const { id } = Route.useParams();
   const p = proyectoPorId(id);
-  const { abrir } = useCrearModal();
   if (!p) return <div className="p-6">Proyecto no encontrado</div>;
   const cli = clientePorId(p.cliente_id);
   const entregas = ENTREGAS_MOCK.filter((e) => e.proyecto_id === p.id);
@@ -31,9 +27,6 @@ function FichaProyecto() {
             <span>· {p.estado}</span>
           </div>
         </div>
-        <Button size="sm" onClick={() => abrir("entrega", { cliente_id: p.cliente_id, proyecto_id: p.id })}>
-          <Plus className="h-4 w-4 mr-1" /> Entrega
-        </Button>
       </header>
 
       <section>

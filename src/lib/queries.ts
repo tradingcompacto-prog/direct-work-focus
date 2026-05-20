@@ -11,6 +11,7 @@ import type {
   Actividad,
   Notificacion,
   Miembro,
+  CategoriaEntrega,
 } from "@/types/database";
 
 // ---------- helpers de mapeo BD -> interfaces internas ----------
@@ -94,7 +95,7 @@ export const useClientes = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clientes")
-        .select("id,nombre,sector,pm_principal_id,pm_secundario_id,web,slack,salud,activo")
+        .select("id,nombre,sector,pm_principal_id,pm_secundario_id,web:sitio_web,slack:canal_slack,salud,activo")
         .order("nombre");
       if (error) {
         // eslint-disable-next-line no-console
@@ -156,7 +157,7 @@ export const useComentarios = (tareaId?: string) => {
     enabled: !!user && !!tareaId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("comentarios")
+        .from("tarea_comentarios")
         .select("*")
         .eq("tarea_id", tareaId!)
         .order("fecha", { ascending: true });
@@ -196,6 +197,26 @@ export const useNotificaciones = () => {
         .limit(50);
       if (error) throw error;
       return (data ?? []) as Notificacion[];
+    },
+  });
+};
+
+// Categorías habilitadas para un cliente. Devuelve las categorías disponibles
+// para el selector de "+ Tarea" y para la sección "Categorías habilitadas"
+// de la ficha del cliente.
+export const useCategoriasHabilitadas = (clienteId: string | null | undefined) => {
+  const { user } = useAuth();
+  return useQuery<CategoriaEntrega[]>({
+    queryKey: ["cliente_categorias", clienteId],
+    enabled: !!user && !!clienteId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cliente_categorias")
+        .select("categoria")
+        .eq("cliente_id", clienteId!)
+        .order("categoria");
+      if (error) throw error;
+      return (data ?? []).map((d) => d.categoria as CategoriaEntrega);
     },
   });
 };

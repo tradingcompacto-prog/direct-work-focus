@@ -89,8 +89,14 @@ export interface Entrega {
   fecha_inicio: string;
   fecha_fin: string;
   fecha_cierre?: string | null;
-  /** Entrega por defecto creada al insertar un cliente. */
-  es_trabajos_puntuales?: boolean;
+}
+
+export interface ClienteCategoria {
+  cliente_id: UUID;
+  categoria: CategoriaEntrega;
+  habilitada_at: string;
+  habilitada_por?: UUID;
+  notas?: string;
 }
 
 export type EstadoProyecto = "activo" | "cerrado";

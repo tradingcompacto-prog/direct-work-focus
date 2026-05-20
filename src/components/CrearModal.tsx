@@ -30,11 +30,11 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ComboboxCrear } from "@/components/ComboboxCrear";
 import { CATEGORIAS_ENTREGA, labelCategoria } from "@/lib/categorias";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { CategoriaEntrega } from "@/types/database";
 
 const TITLES: Record<string, string> = {
   tarea: "Nueva tarea",
-  entrega: "Nueva entrega",
   proyecto: "Nuevo proyecto",
   cliente: "Nuevo cliente",
 };
@@ -48,17 +48,18 @@ export function CrearModal() {
   const { data: tareasDB = [] } = useTareas();
   const [clienteId, setClienteId] = React.useState("");
   const [proyectoId, setProyectoId] = React.useState("");
-  const [entregaId, setEntregaId] = React.useState("");
+  const [categoriaTarea, setCategoriaTarea] = React.useState<CategoriaEntrega | "">("");
   const [titulo, setTitulo] = React.useState("");
   const [responsableId, setResponsableId] = React.useState("");
-  const [entregaNuevaNombre, setEntregaNuevaNombre] = React.useState<string | null>(null);
   const [fechaInicio, setFechaInicio] = React.useState<string>("");
   const [fechaFin, setFechaFin] = React.useState<string>("");
   const [usarRango, setUsarRango] = React.useState(false);
-  const [categoria, setCategoria] = React.useState<CategoriaEntrega | "">("");
   const [nombreCliente, setNombreCliente] = React.useState("");
   const [sectorCliente, setSectorCliente] = React.useState("");
   const [pmCliente, setPmCliente] = React.useState("");
+  const [catsCliente, setCatsCliente] = React.useState<CategoriaEntrega[]>(
+    CATEGORIAS_ENTREGA.map((c) => c.value),
+  );
   const [descripcion, setDescripcion] = React.useState("");
   const [prioridad, setPrioridad] = React.useState<"baja" | "media" | "alta" | "critica">("media");
   const [numPubs, setNumPubs] = React.useState(4);
@@ -67,20 +68,19 @@ export function CrearModal() {
   React.useEffect(() => {
     setClienteId(contexto?.cliente_id ?? "");
     setProyectoId(contexto?.proyecto_id ?? "");
-    setEntregaId(contexto?.entrega_id ?? "");
+    setCategoriaTarea("");
     setTitulo("");
     setResponsableId("");
     setFechaInicio("");
     setFechaFin("");
     setUsarRango(false);
-    setCategoria("");
     setNombreCliente("");
     setSectorCliente("");
     setPmCliente("");
+    setCatsCliente(CATEGORIAS_ENTREGA.map((c) => c.value));
     setDescripcion("");
     setPrioridad("media");
     setNumPubs(4);
-    setEntregaNuevaNombre(null);
   }, [contexto, tipo]);
 
   // Regla: 1 cliente = 1 proyecto. Auto-seleccionar proyecto al elegir cliente.
@@ -93,13 +93,20 @@ export function CrearModal() {
     }
   }, [clienteId, proyectosDB]);
 
-  const entregas = proyectoId
-    ? entregasDB.filter((e) => e.proyecto_id === proyectoId)
-    : entregasDB;
+  // Categorías habilitadas del cliente (entregas permanentes existentes).
+  const categoriasCliente = React.useMemo<CategoriaEntrega[]>(() => {
+    if (!clienteId) return [];
+    return Array.from(
+      new Set(
+        entregasDB
+          .filter((e) => e.cliente_id === clienteId)
+          .map((e) => e.categoria as CategoriaEntrega),
+      ),
+    );
+  }, [clienteId, entregasDB]);
 
-  // Detectar contexto RRSS: la entrega seleccionada es de categoría redes_sociales.
-  const entregaSel = entregasDB.find((e) => e.id === entregaId);
-  const esRRSS = tipo === "tarea" && entregaSel?.categoria === "redes_sociales";
+  // Detectar contexto RRSS: la categoría elegida es redes_sociales.
+  const esRRSS = tipo === "tarea" && categoriaTarea === "redes_sociales";
 
   if (!tipo) return null;
 
@@ -107,10 +114,6 @@ export function CrearModal() {
     ev.preventDefault();
     if (!user) {
       toast.error("Sesión no disponible");
-      return;
-    }
-    if (tipo === "entrega" && !categoria) {
-      toast.error("Selecciona una categoría para la entrega");
       return;
     }
     setEnviando(true);
@@ -131,32 +134,26 @@ export function CrearModal() {
           .select("id")
           .single();
         if (error) throw error;
-        // Proyecto sombrilla y entrega "Trabajos puntuales" por defecto.
-        const { data: pry } = await supabase
-          .from("proyectos")
-          .insert({
-            nombre,
+        // Proyecto sombrilla (las entregas las crea el trigger T3 al
+        // insertar las filas de cliente_categorias).
+        await supabase.from("proyectos").insert({
+          nombre,
+          cliente_id: cli!.id,
+          pm_id: pmId,
+          estado: "activo",
+          fecha_inicio: hoyISO(),
+        });
+        // Habilitar categorías seleccionadas → BD crea las entregas.
+        if (catsCliente.length) {
+          const filas = catsCliente.map((c) => ({
             cliente_id: cli!.id,
-            pm_id: pmId,
-            estado: "activo",
-            fecha_inicio: hoyISO(),
-          })
-          .select("id")
-          .single();
-        if (pry) {
-          await supabase.from("entregas").insert({
-            nombre: "Trabajos puntuales",
-            cliente_id: cli!.id,
-            proyecto_id: pry.id,
-            pm_id: pmId,
-            categoria: "diseno",
-            estado: "en_curso",
-            fecha_inicio: hoyISO(),
-            fecha_fin: enDiasISO(30),
-            es_trabajos_puntuales: true,
-          });
+            categoria: c,
+            habilitada_por: user.id,
+          }));
+          const { error: ec } = await supabase.from("cliente_categorias").insert(filas);
+          if (ec) throw ec;
         }
-        invalidateKeys(["clientes"], ["proyectos"], ["entregas"]);
+        invalidateKeys(["clientes"], ["proyectos"], ["entregas"], ["cliente_categorias", cli!.id]);
         toast.success(`Cliente «${nombre}» creado`);
       } else if (tipo === "proyecto") {
         if (!clienteId) throw new Error("Selecciona cliente");
@@ -171,48 +168,20 @@ export function CrearModal() {
         if (error) throw error;
         invalidateKeys(["proyectos"]);
         toast.success("Proyecto creado");
-      } else if (tipo === "entrega") {
-        if (!clienteId || !proyectoId) throw new Error("Selecciona cliente y proyecto");
-        const { error } = await supabase.from("entregas").insert({
-          nombre: titulo,
-          cliente_id: clienteId,
-          proyecto_id: proyectoId,
-          pm_id: responsableId || user.id,
-          categoria,
-          estado: "en_curso",
-          fecha_inicio: fechaInicio || hoyISO(),
-          fecha_fin: fechaFin || enDiasISO(14),
-        });
-        if (error) throw error;
-        invalidateKeys(["entregas"]);
-        toast.success("Entrega creada");
       } else if (tipo === "tarea") {
-        // Resolver entrega: existente, nueva inline, o "trabajos puntuales".
-        let entregaTargetId = entregaId;
-        if (entregaId === "__nueva__" && entregaNuevaNombre && proyectoId) {
-          const { data, error } = await supabase
-            .from("entregas")
-            .insert({
-              nombre: entregaNuevaNombre,
-              cliente_id: clienteId,
-              proyecto_id: proyectoId,
-              pm_id: responsableId || user.id,
-              categoria: "diseno",
-              estado: "en_curso",
-              fecha_inicio: hoyISO(),
-              fecha_fin: fechaFin || enDiasISO(14),
-            })
-            .select("id")
-            .single();
-          if (error) throw error;
-          entregaTargetId = data!.id;
-        } else if (entregaId === "puntuales" || !entregaId) {
-          const punt = entregasDB.find(
-            (e) => e.cliente_id === clienteId && e.es_trabajos_puntuales,
-          );
-          if (!punt) throw new Error("Sin entrega «Trabajos puntuales» para este cliente");
-          entregaTargetId = punt.id;
-        }
+        if (!clienteId) throw new Error("Selecciona cliente");
+        if (!categoriaTarea) throw new Error("Selecciona categoría");
+        // Resolver entrega permanente por (cliente, categoría).
+        const { data: ent, error: eEnt } = await supabase
+          .from("entregas")
+          .select("id, proyecto_id")
+          .eq("cliente_id", clienteId)
+          .eq("categoria", categoriaTarea)
+          .maybeSingle();
+        if (eEnt) throw eEnt;
+        if (!ent) throw new Error("La categoría no está habilitada para este cliente");
+        const entregaTargetId = ent.id as string;
+        const proyectoTargetId = (ent.proyecto_id as string) || proyectoId;
 
         const inicio = fechaInicio || fechaFin || hoyISO();
         const fin = fechaFin || fechaInicio || hoyISO();
@@ -225,7 +194,7 @@ export function CrearModal() {
               titulo: titulo || `Plan contenido ${nombreMes()}`,
               descripcion: descripcion || null,
               cliente_id: clienteId,
-              proyecto_id: proyectoId,
+              proyecto_id: proyectoTargetId,
               entrega_id: entregaTargetId,
               responsable_id: responsableId || user.id,
               solicitante_id: user.id,
@@ -256,7 +225,7 @@ export function CrearModal() {
             titulo,
             descripcion: descripcion || null,
             cliente_id: clienteId,
-            proyecto_id: proyectoId,
+            proyecto_id: proyectoTargetId,
             entrega_id: entregaTargetId,
             responsable_id: responsableId || user.id,
             solicitante_id: user.id,
@@ -323,6 +292,34 @@ export function CrearModal() {
               <Field label="PM">
                 <PersonaSelect value={pmCliente} onChange={setPmCliente} />
               </Field>
+              <Field label="Categorías habilitadas">
+                <div className="grid grid-cols-2 gap-2 rounded-md border border-border p-3 max-h-56 overflow-auto">
+                  {CATEGORIAS_ENTREGA.map((c) => {
+                    const checked = catsCliente.includes(c.value);
+                    return (
+                      <label
+                        key={c.value}
+                        className="flex items-center gap-2 text-sm cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) =>
+                            setCatsCliente((prev) =>
+                              v
+                                ? Array.from(new Set([...prev, c.value]))
+                                : prev.filter((x) => x !== c.value),
+                            )
+                          }
+                        />
+                        <span>{labelCategoria(c.value)}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Se creará una entrega permanente por cada categoría marcada.
+                </p>
+              </Field>
             </>
           ) : (
             <>
@@ -346,36 +343,32 @@ export function CrearModal() {
                 />
               </Field>
               {tipo === "tarea" && (
-                <Field label="Entrega">
-                  <ComboboxCrear
-                    options={[
-                      { value: "puntuales", label: "Trabajos puntuales" },
-                      ...entregas.map((e) => ({
-                        value: e.id,
-                        label: e.nombre,
-                        hint: labelCategoria(e.categoria),
-                      })),
-                    ]}
-                    value={entregaNuevaNombre ? `__nueva__` : entregaId}
-                    onChange={(v) => {
-                      setEntregaId(v);
-                      setEntregaNuevaNombre(null);
-                    }}
-                    placeholder="Trabajos puntuales"
-                    searchPlaceholder="Buscar entrega…"
-                    emptyText="Sin entregas"
-                    onCrearNuevo={(nombre) => {
-                      setEntregaNuevaNombre(nombre);
-                      setEntregaId("__nueva__");
-                      toast.message(`Entrega «${nombre}» se creará al guardar`);
-                    }}
-                    crearLabel="Crear entrega"
-                  />
-                  {entregaNuevaNombre && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Nueva entrega: <span className="font-medium">{entregaNuevaNombre}</span>
-                    </p>
-                  )}
+                <Field label="Categoría">
+                  <Select
+                    value={categoriaTarea}
+                    onValueChange={(v) => setCategoriaTarea(v as CategoriaEntrega)}
+                    disabled={!clienteId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          clienteId ? "Selecciona categoría" : "Elige cliente primero"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categoriasCliente.length === 0 && (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                          Sin categorías habilitadas
+                        </div>
+                      )}
+                      {categoriasCliente.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {labelCategoria(c)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </Field>
               )}
               <Field label="Título">
@@ -504,22 +497,6 @@ export function CrearModal() {
                     )}
                   </div>
                 </>
-              )}
-              {tipo === "entrega" && (
-                <Field label="Categoría">
-                  <Select value={categoria} onValueChange={(v) => setCategoria(v as CategoriaEntrega)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona categoría" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CATEGORIAS_ENTREGA.map((c) => (
-                        <SelectItem key={c.value} value={c.value}>
-                          {labelCategoria(c.value)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
               )}
             </>
           )}
