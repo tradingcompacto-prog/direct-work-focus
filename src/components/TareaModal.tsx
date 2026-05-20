@@ -635,47 +635,6 @@ function EditableDate({
   );
 }
 
-function HorasInput({
-  value,
-  onCommit,
-}: {
-  value: number | null;
-  onCommit: (h: number | null) => void;
-}) {
-  const [text, setText] = React.useState(value != null ? String(value) : "");
-  React.useEffect(() => {
-    setText(value != null ? String(value) : "");
-  }, [value]);
-  const commit = () => {
-    const t = text.trim().replace(",", ".");
-    if (t === "") {
-      if (value != null) onCommit(null);
-      return;
-    }
-    const n = Number(t);
-    if (!Number.isFinite(n) || n < 0) {
-      setText(value != null ? String(value) : "");
-      return;
-    }
-    if (n !== value) onCommit(n);
-  };
-  return (
-    <Input
-      type="number"
-      step="0.5"
-      min="0"
-      value={text}
-      placeholder="—"
-      onChange={(e) => setText(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-      }}
-      className="h-7 w-20 text-sm"
-    />
-  );
-}
-
 function DescripcionEditor({
   value,
   onCommit,
