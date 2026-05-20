@@ -41,6 +41,8 @@ import {
   removeColaborador,
 } from "@/lib/tareas-store";
 import { addEnlace, removeEnlace } from "@/lib/enlaces-store";
+import { MiniPublicacionesGrid } from "@/components/rrss/MiniPublicacionesGrid";
+import { usePlanRRSS } from "@/lib/plan-rrss-store";
 import { useRolVista } from "@/lib/rol-vista";
 import { ReasignarTareaDialog } from "@/components/ReasignarTareaDialog";
 import { DevolverTareaDialog } from "@/components/DevolverTareaDialog";
@@ -89,6 +91,7 @@ export function TareaModal() {
   const { data: enlaces = [] } = useEnlaces(tareaId ?? undefined);
   const { data: todasTareas = [] } = useTareas();
   const categoriaPorTarea = useCategoriaPorTarea();
+  const { data: publicaciones = [] } = usePlanRRSS(tareaId ?? undefined);
 
   React.useEffect(() => {
     if (!tareaId) return;
@@ -472,6 +475,16 @@ export function TareaModal() {
               </ul>
               <EnlaceForm onSubmit={(url, desc) => addEnlace(tarea.id, url, desc)} />
             </Section>
+
+            {publicaciones.length > 0 && (
+              <Section title={`Publicaciones (${publicaciones.length})`}>
+                <MiniPublicacionesGrid
+                  tareaId={tarea.id}
+                  entregaId={tarea.entrega_id}
+                  onNavigate={cerrar}
+                />
+              </Section>
+            )}
 
             <Section title="Archivos (Drive)" icon={<Paperclip className="h-3.5 w-3.5" />}>
               <div className="grid grid-cols-3 gap-2">
