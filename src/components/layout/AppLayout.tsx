@@ -50,12 +50,23 @@ function AuthGate() {
   }
 
   // Pantalla pública /login sin layout interno.
-  if (isLogin || !user) {
+  if (isLogin) {
     return (
       <>
         <Outlet />
         <Toaster />
       </>
+    );
+  }
+
+  // No autenticado en una ruta privada: el useEffect de arriba redirige a /login.
+  // Mientras tanto, NO montamos <Outlet/> porque las vistas privadas (Home, etc.)
+  // usan hooks como useTareaModal que requieren sus providers.
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-foreground/20 border-t-foreground" />
+      </div>
     );
   }
 
