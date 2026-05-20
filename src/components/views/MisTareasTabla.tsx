@@ -9,7 +9,20 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useMisTareas } from "@/lib/queries";
+import {
+  useMisTareas,
+  useTareas,
+  useMisRevisiones,
+} from "@/lib/queries";
+import { useAuth } from "@/lib/auth";
+import { useUserCaps } from "@/lib/user-caps";
+import {
+  AlcanceFilter,
+  defaultAlcance,
+  filtrarPorAlcance,
+  useAlcancePersistido,
+  useIncluirRevisionesPersistido,
+} from "@/components/AlcanceFilter";
 import { useTareaModal } from "@/lib/tarea-modal-context";
 import { ClienteLink, EntregaLink } from "@/components/EntidadLinks";
 import { PersonaChip } from "@/components/PersonaChip";
@@ -23,6 +36,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AccionesMasivasBar } from "@/components/AccionesMasivasBar";
 import { toast } from "sonner";
 import { urgenciaTarea } from "@/lib/fechas";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 const estadoBadge: Record<string, string> = {
   activa: "bg-blue-100 text-blue-800",
@@ -33,7 +48,30 @@ const estadoBadge: Record<string, string> = {
 };
 
 export function MisTareasTabla() {
-  const { data: tareas = [] } = useMisTareas();
+  const { user } = useAuth();
+  const caps = useUserCaps();
+  const [alcance, setAlcance] = useAlcancePersistido("tareas/tabla", defaultAlcance(caps));
+  const [incluirRevisiones, setIncluirRevisiones] = useIncluirRevisionesPersistido("tareas/tabla");
+
+  const { data: misTareas = [] } = useMisTareas();
+  const { data: todasTareas = [] } = useTareas();
+  const { data: revisionesPM = [] } = useMisRevisiones();
+
+  const baseTareas = React.useMemo(() => {
+    if (alcance === "solo-mias") return misTareas;
+    return filtrarPorAlcance(todasTareas, alcance, user?.id, caps.clientesPM);
+  }, [alcance, misTareas, todasTareas, user?.id, caps.clientesPM]);
+
+  const tareas = React.useMemo(() => {
+    if (!incluirRevisiones || !caps.isPM) return baseTareas;
+    const ids = new Set(baseTareas.map((t) => t.id));
+    const extras = revisionesPM.filter((t) => !ids.has(t.id));
+    return [...baseTareas, ...extras];
+  }, [baseTareas, incluirRevisiones, caps.isPM, revisionesPM]);
+  const revisionPMIds = React.useMemo(
+    () => new Set(revisionesPM.map((t) => t.id)),
+    [revisionesPM],
+  );
   const { abrir } = useTareaModal();
   const [f, setF, resetF] = useFiltros("sa.filtros.misTareas");
   const [sel, setSel] = React.useState<Set<string>>(new Set());
@@ -57,8 +95,19 @@ export function MisTareasTabla() {
   const allSelected = filtered.length > 0 && filtered.every((t) => sel.has(t.id));
 
   return (
+    <TooltipProvider delayDuration={150}>
     <div className="space-y-3">
       <div className="flex items-center gap-2 flex-wrap">
+        <AlcanceFilter value={alcance} onChange={setAlcance} />
+        {caps.isPM && (
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+            <Checkbox
+              checked={incluirRevisiones}
+              onCheckedChange={(v) => setIncluirRevisiones(!!v)}
+            />
+            Incluir revisiones pendientes
+          </label>
+        )}
         <FiltrosBar
           state={f}
           onChange={setF}
@@ -111,12 +160,39 @@ export function MisTareasTabla() {
                   if ((e.target as HTMLElement).closest("[data-noopen]")) return;
                   abrir(t.id);
                 }}
-                className={`cursor-pointer hover:bg-muted/40 transition-colors ${sel.has(t.id) ? "bg-blue-50/50" : ""}`}
+                className={cn(
+                  "cursor-pointer hover:bg-muted/40 transition-colors",
+                  sel.has(t.id) && "bg-blue-50/50",
+                  t.devuelta_at && "bg-orange-50/60 border-l-4 border-orange-500",
+                  incluirRevisiones && caps.isPM && revisionPMIds.has(t.id) &&
+                    "bg-blue-50/40 border-l-4 border-blue-500",
+                )}
               >
                 <TableCell data-noopen onClick={(e) => e.stopPropagation()}>
                   <Checkbox checked={sel.has(t.id)} onCheckedChange={() => toggle(t.id)} />
                 </TableCell>
-                <TableCell className="font-medium">{t.titulo}</TableCell>
+                <TableCell className="font-medium">
+                  <span className="inline-flex items-center gap-1.5">
+                    {t.titulo}
+                    {t.devuelta_at && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex items-center gap-0.5 rounded bg-orange-100 text-orange-800 px-1.5 py-0.5 text-[10px] font-semibold">
+                            ↩ Devuelta
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          {t.motivo_devolucion ?? "Sin motivo"}
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                    {incluirRevisiones && caps.isPM && revisionPMIds.has(t.id) && (
+                      <span className="inline-flex items-center gap-0.5 rounded bg-blue-100 text-blue-800 px-1.5 py-0.5 text-[10px] font-semibold">
+                        👁 Por revisar
+                      </span>
+                    )}
+                  </span>
+                </TableCell>
                 <TableCell>
                   <Badge variant="secondary" className={estadoBadge[t.estado]}>
                     {t.estado}
@@ -159,5 +235,6 @@ export function MisTareasTabla() {
         onEliminar={() => { eliminarTareas(Array.from(sel)); setSel(new Set()); }}
       />
     </div>
+    </TooltipProvider>
   );
 }
