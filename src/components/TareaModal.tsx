@@ -8,7 +8,6 @@ import {
   proyectoPorId,
   entregaPorId,
   ACTIVIDAD_MOCK,
-  TAREAS_MOCK,
   tituloTarea,
 } from "@/lib/mock-tareas";
 import {
