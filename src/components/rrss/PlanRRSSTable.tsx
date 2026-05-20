@@ -9,6 +9,8 @@ import {
   Music2,
   CalendarIcon,
   Layers,
+  ClipboardList,
+  PanelRightOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +60,7 @@ import {
 } from "@/types/database";
 import { SlidesEditor } from "./SlidesEditor";
 import { PublicacionAvanceRapido } from "./PublicacionAvanceRapido";
+import { PublicacionPanel } from "./PublicacionPanel";
 
 type Estado = NonNullable<PublicacionRRSS["estado"]>;
 type Plat = PublicacionRRSS["plataformas"][number];
@@ -111,14 +114,16 @@ export function PlanRRSSTable({
   const [filtro, setFiltro] = React.useState<"todas" | "revision" | "diseno" | "programado">("todas");
   const [slidesPub, setSlidesPub] = React.useState<PublicacionRRSS | null>(null);
   const [highlightId, setHighlightId] = React.useState<string | null>(null);
+  const [panelId, setPanelId] = React.useState<string | null>(null);
 
-  // ?pub=<id> → scroll + highlight
+  // ?pub=<id> → scroll + highlight + abrir panel automáticamente
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const pub = url.searchParams.get("pub");
     if (!pub || !ordenado.some((p) => p.id === pub)) return;
     setHighlightId(pub);
+    setPanelId(pub);
     setTimeout(() => {
       const el = document.querySelector(`[data-pub-id="${pub}"]`);
       el?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -270,6 +275,7 @@ export function PlanRRSSTable({
                 seleccionado={selected.has(p.id)}
                 onToggle={() => toggle(p.id)}
                 onOpenSlides={() => setSlidesPub(p)}
+                onOpenPanel={() => setPanelId(p.id)}
                 ctx={ctx}
                 highlight={highlightId === p.id}
               />
@@ -287,6 +293,12 @@ export function PlanRRSSTable({
           onOpenChange={(o) => !o && setSlidesPub(null)}
         />
       )}
+
+      <PublicacionPanel
+        publicacionId={panelId}
+        onOpenChange={(o) => !o && setPanelId(null)}
+        onChangeId={(id) => setPanelId(id)}
+      />
     </div>
   );
 }
@@ -297,6 +309,7 @@ function FilaPub({
   seleccionado,
   onToggle,
   onOpenSlides,
+  onOpenPanel,
   ctx,
   highlight,
 }: {
@@ -305,15 +318,21 @@ function FilaPub({
   seleccionado: boolean;
   onToggle: () => void;
   onOpenSlides: () => void;
+  onOpenPanel: () => void;
   ctx: { tareaId: string; entregaId: string; clienteId: string };
   highlight: boolean;
 }) {
   const estado = (p.estado ?? "borrador") as Estado;
   const tieneSlides = aplicaSlides(p);
+  const tieneContenido =
+    !!(p.briefing && p.briefing.trim()) ||
+    !!(p.copy_final && p.copy_final.trim()) ||
+    !!(p.recursos_visuales && p.recursos_visuales.length > 0);
 
   return (
     <tr
       data-pub-id={p.id}
+      onDoubleClick={onOpenPanel}
       className={cn(
         "border-t border-border transition-colors",
         ESTADO_PUB_COLOR[estado].replace("text-", "").replace(/\bbg-(\w+)-100\b/, "bg-$1-50/40"),
@@ -321,7 +340,17 @@ function FilaPub({
       )}
     >
       <td className="px-2 py-1.5"><Checkbox checked={seleccionado} onCheckedChange={onToggle} /></td>
-      <td className="px-2 py-1.5 text-xs text-muted-foreground tabular-nums">#{idx}</td>
+      <td className="px-2 py-1.5 text-xs text-muted-foreground tabular-nums">
+        <div className="flex items-center gap-1">
+          <span>#{idx}</span>
+          {tieneContenido && (
+            <ClipboardList
+              className="h-3 w-3 text-emerald-600"
+              aria-label="Tiene contenido detallado"
+            />
+          )}
+        </div>
+      </td>
 
       <td className="px-2 py-1.5"><FechaCell p={p} /></td>
 
@@ -416,7 +445,19 @@ function FilaPub({
         )}
       </td>
       <td className="px-2 py-1.5 text-right">
-        <PublicacionAvanceRapido pub={p} ctx={ctx} />
+        <div className="inline-flex items-center gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-xs"
+            onClick={onOpenPanel}
+            title="Abrir panel detallado"
+          >
+            <PanelRightOpen className="h-3.5 w-3.5 mr-1" />
+            Abrir
+          </Button>
+          <PublicacionAvanceRapido pub={p} ctx={ctx} />
+        </div>
       </td>
     </tr>
   );
