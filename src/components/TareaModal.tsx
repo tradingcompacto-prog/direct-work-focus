@@ -80,6 +80,8 @@ export function TareaModal() {
   const [rolVista] = useRolVista();
   const esPmODirector = rolVista === "pm" || rolVista === "director";
   const { data: comentarios = [] } = useComentarios(tareaId ?? undefined);
+  const { data: colaboradores = [] } = useColaboradores(tareaId ?? undefined);
+  const { data: enlaces = [] } = useEnlaces(tareaId ?? undefined);
 
   React.useEffect(() => {
     if (!tareaId) return;
@@ -306,8 +308,54 @@ export function TareaModal() {
             </div>}
 
             <Section title="Asignación">
-              <Persona label="Responsable" id={responsable?.id} />
-              <Persona label="Solicitante" id={solicitante?.id} />
+              <div className="text-sm flex gap-2 items-center">
+                <span className="text-muted-foreground w-20">Responsable:</span>
+                <PersonaPicker
+                  value={tarea.responsable_id}
+                  onChange={(id) => setResponsable(tarea.id, id)}
+                />
+              </div>
+              <div className="text-sm flex gap-2 items-center">
+                <span className="text-muted-foreground w-20">Solicitante:</span>
+                <PersonaPicker
+                  value={tarea.solicitante_id}
+                  onChange={(id) => setSolicitante(tarea.id, id)}
+                />
+              </div>
+            </Section>
+
+            <Section title="Colaboradores">
+              <div className="flex flex-wrap items-center gap-2">
+                {colaboradores.length === 0 && (
+                  <span className="text-sm text-muted-foreground">Sin colaboradores</span>
+                )}
+                {colaboradores.map((cid) => {
+                  const m = miembroPorId(cid);
+                  if (!m) return null;
+                  return (
+                    <button
+                      key={cid}
+                      type="button"
+                      onClick={() => removeColaborador(tarea.id, cid)}
+                      className="group inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full border border-border bg-muted/40 text-xs hover:bg-red-50 hover:border-red-200"
+                      title="Quitar colaborador"
+                    >
+                      <Avatar className="h-5 w-5">
+                        <AvatarFallback className="text-[9px] bg-secondary">
+                          {m.iniciales}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>{m.nombre}</span>
+                      <X className="h-3 w-3 opacity-0 group-hover:opacity-100 text-red-600" />
+                    </button>
+                  );
+                })}
+                <PersonaPicker
+                  triggerVariant="add"
+                  excludeIds={[tarea.responsable_id, ...colaboradores]}
+                  onChange={(id) => addColaborador(tarea.id, id)}
+                />
+              </div>
             </Section>
 
             <Section title="Fechas">
@@ -320,55 +368,99 @@ export function TareaModal() {
                 }}
               />
               <EditableDate
-                label="Entrega"
-                valueIso={fFinMax}
+                label="Entrega mín"
+                valueIso={fFinMin}
+                tooltip="Fecha más temprana razonable"
                 onChange={(iso) => {
-                  setTareaFechas(tarea.id, { fin_max: iso });
-                  toast.success("Fecha de entrega actualizada");
+                  const patch: { fin_min: string; fin_max?: string } = { fin_min: iso };
+                  if (iso > fFinMax) patch.fin_max = iso;
+                  setTareaFechas(tarea.id, patch);
+                  toast.success("Entrega mín actualizada");
+                }}
+              />
+              <EditableDate
+                label="Entrega máx"
+                valueIso={fFinMax}
+                tooltip="Fecha límite absoluta"
+                onChange={(iso) => {
+                  const patch: { fin_max: string; fin_min?: string } = { fin_max: iso };
+                  if (iso < fFinMin) patch.fin_min = iso;
+                  setTareaFechas(tarea.id, patch);
+                  toast.success("Entrega máx actualizada");
                 }}
               />
             </Section>
 
-            {(horasEstim != null || tarea.horas_reales != null) && (
-              <Section title="Tiempo" icon={<Clock className="h-3.5 w-3.5" />}>
-                <div className="flex gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Estimado:</span>{" "}
-                    {horasEstim != null ? (
-                      <span className="font-medium">{horasEstim}h</span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                    {estim && tarea.horas_estimadas == null && (
-                      <span
-                        className={cn(
-                          "ml-1.5 text-[10px] px-1.5 py-0.5 rounded",
-                          estim.confianza === "alta"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-amber-100 text-amber-700",
-                        )}
-                      >
-                        auto · {estim.muestras} ref.
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Real:</span>{" "}
-                    {tarea.horas_reales != null ? (
-                      <span className="font-medium">{tarea.horas_reales}h</span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </div>
+            <Section title="Tiempo" icon={<Clock className="h-3.5 w-3.5" />}>
+              <div className="flex gap-4 text-sm items-center flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">Estimado:</span>
+                  <HorasInput
+                    value={tarea.horas_estimadas ?? null}
+                    onCommit={(h) => setHorasEstimadas(tarea.id, h)}
+                  />
+                  <span className="text-muted-foreground">h</span>
+                  {estim && tarea.horas_estimadas == null && (
+                    <span
+                      className={cn(
+                        "ml-1 text-[10px] px-1.5 py-0.5 rounded",
+                        estim.confianza === "alta"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-amber-100 text-amber-700",
+                      )}
+                    >
+                      auto · {estim.muestras} ref.
+                    </span>
+                  )}
                 </div>
-              </Section>
-            )}
+                <div>
+                  <span className="text-muted-foreground">Real:</span>{" "}
+                  {tarea.horas_reales != null ? (
+                    <span className="font-medium">{tarea.horas_reales}h</span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </div>
+              </div>
+            </Section>
 
-            {tarea.descripcion && (
-              <Section title="Descripción">
-                <p className="text-sm text-foreground whitespace-pre-wrap">{tarea.descripcion}</p>
-              </Section>
-            )}
+            <Section title="Descripción">
+              <DescripcionEditor
+                value={tarea.descripcion ?? ""}
+                onCommit={(v) => setDescripcion(tarea.id, v)}
+              />
+            </Section>
+
+            <Section title="Enlaces">
+              {enlaces.length === 0 && (
+                <p className="text-sm text-muted-foreground">Sin enlaces</p>
+              )}
+              <ul className="space-y-1.5">
+                {enlaces.map((e) => (
+                  <li key={e.id} className="flex items-center gap-2 text-sm group">
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <a
+                      href={e.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex-1 truncate hover:underline"
+                      title={e.url}
+                    >
+                      {e.descripcion || e.url}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => removeEnlace(e.id, tarea.id)}
+                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-600"
+                      aria-label="Eliminar enlace"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <EnlaceForm onSubmit={(url, desc) => addEnlace(tarea.id, url, desc)} />
+            </Section>
 
             <Section title="Archivos (Drive)" icon={<Paperclip className="h-3.5 w-3.5" />}>
               <div className="grid grid-cols-3 gap-2">
