@@ -22,14 +22,20 @@ function rowToPub(r: Record<string, unknown>): PublicacionRRSS {
   return {
     id: r.id as string,
     tarea_id: (r.tarea_id as string | undefined) ?? undefined,
+    entrega_id: (r.entrega_id as string | undefined) ?? undefined,
+    cliente_id: (r.cliente_id as string | undefined) ?? undefined,
     fecha: (r.fecha as string) ?? "",
     hora: (r.hora as string | null) ?? null,
     tipo: r.tipo as PublicacionRRSS["tipo"],
     formato: r.formato as PublicacionRRSS["formato"],
     plataformas: (r.plataformas as PublicacionRRSS["plataformas"]) ?? [],
-    briefing: (r.briefing as string | undefined) ?? undefined,
-    slides: (r.slides as string[] | undefined) ?? undefined,
+    briefing: (r.briefing as string | null | undefined) ?? null,
+    slides: (r.slides as Array<{ texto?: string; imagen_url?: string }> | undefined) ?? undefined,
     estado: (r.estado as PublicacionRRSS["estado"]) ?? "borrador",
+    responsable_diseno_id: (r.responsable_diseno_id as string | null | undefined) ?? null,
+    responsable_copy_id: (r.responsable_copy_id as string | null | undefined) ?? null,
+    created_at: (r.created_at as string | undefined) ?? undefined,
+    updated_at: (r.updated_at as string | undefined) ?? undefined,
   };
 }
 
@@ -66,6 +72,8 @@ export function addPublicacion(
     briefing: pub.briefing ?? null,
     slides: pub.slides ?? null,
     estado: pub.estado ?? "borrador",
+    responsable_diseno_id: pub.responsable_diseno_id ?? null,
+    responsable_copy_id: pub.responsable_copy_id ?? null,
   };
   supabase
     .from("publicaciones_rrss")
@@ -121,9 +129,72 @@ export async function duplicarPublicacion(
     plataformas: orig.plataformas,
     briefing: orig.briefing,
     slides: orig.slides,
-    estado: orig.estado ?? "borrador",
+    estado: "borrador",
+    responsable_diseno_id: (orig.responsable_diseno_id as string | null) ?? null,
+    responsable_copy_id: (orig.responsable_copy_id as string | null) ?? null,
   };
   const { error: e2 } = await supabase.from("publicaciones_rrss").insert(row);
   if (e2) fail("duplicar publicación", e2);
   else done();
+}
+
+export function setPublicacionEstado(id: string, estado: NonNullable<PublicacionRRSS["estado"]>) {
+  supabase
+    .from("publicaciones_rrss")
+    .update({ estado })
+    .eq("id", id)
+    .then(({ error }) => (error ? fail("cambiar estado", error) : done()));
+}
+
+export function setPublicacionResponsable(
+  id: string,
+  tipo: "diseno" | "copy",
+  userId: string | null,
+) {
+  const patch =
+    tipo === "diseno"
+      ? { responsable_diseno_id: userId }
+      : { responsable_copy_id: userId };
+  supabase
+    .from("publicaciones_rrss")
+    .update(patch)
+    .eq("id", id)
+    .then(({ error }) => (error ? fail("asignar responsable", error) : done()));
+}
+
+export async function bulkUpdatePublicaciones(
+  ids: string[],
+  patch: Partial<PublicacionRRSS>,
+) {
+  if (ids.length === 0) return;
+  const row: Record<string, unknown> = { ...patch };
+  delete row.id;
+  delete row.tarea_id;
+  const { error } = await supabase
+    .from("publicaciones_rrss")
+    .update(row)
+    .in("id", ids);
+  if (error) fail("actualizar publicaciones", error);
+  else done();
+}
+
+export async function bulkShiftFechas(ids: string[], dias: number) {
+  if (ids.length === 0 || dias === 0) return;
+  const { data, error } = await supabase
+    .from("publicaciones_rrss")
+    .select("id, fecha")
+    .in("id", ids);
+  if (error || !data) {
+    fail("desplazar fechas", error);
+    return;
+  }
+  await Promise.all(
+    data.map(async (r: { id: string; fecha: string }) => {
+      const d = new Date(r.fecha);
+      d.setDate(d.getDate() + dias);
+      const iso = d.toISOString().slice(0, 10);
+      await supabase.from("publicaciones_rrss").update({ fecha: iso }).eq("id", r.id);
+    }),
+  );
+  done();
 }
