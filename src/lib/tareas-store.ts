@@ -116,15 +116,53 @@ export async function removeColaborador(tareaId: string, userId: string) {
   toast.success("Colaborador quitado");
 }
 
-export function marcarParaRevisar(id: string) {
-  setEstadoTarea(id, "revision");
+export async function marcarParaRevisar(id: string) {
+  const { error } = await supabase
+    .from("tareas")
+    .update({
+      estado: "revision",
+      devuelta_at: null,
+      motivo_devolucion: null,
+    })
+    .eq("id", id);
+  if (error) {
+    fail("mandar a revisar", error);
+    return;
+  }
+  invalidateKeys(["tareas"], ["mis-tareas"], ["mis-revisiones"], ["revision-global"]);
+  emit();
+  toast.success("Tarea enviada a revisión");
 }
 
-export function devolverAResponsable(id: string) {
+/**
+ * El PM/director devuelve la tarea al responsable.
+ * Reseteo TOTAL de fechas a hoy + estado=haciendola + registra motivo.
+ */
+export async function devolverAResponsable(id: string, motivo: string) {
   const hoy = new Date().toISOString().slice(0, 10);
-  updateTarea(id, { fecha_fin_min: hoy, fecha_fin_max: hoy, estado: "haciendola" })
-    .then(emit)
-    .catch((e) => fail("devolver a responsable", e));
+  const { error } = await supabase
+    .from("tareas")
+    .update({
+      estado: "haciendola",
+      fecha_inicio: hoy,
+      fecha_fin_min: hoy,
+      fecha_fin_max: hoy,
+      devuelta_at: new Date().toISOString(),
+      motivo_devolucion: motivo,
+    })
+    .eq("id", id);
+  if (error) {
+    fail("devolver a responsable", error);
+    return;
+  }
+  invalidateKeys(
+    ["tareas"],
+    ["mis-tareas"],
+    ["mis-revisiones"],
+    ["revision-global"],
+    ["mis-devoluciones"],
+  );
+  emit();
 }
 
 export function reasignarTarea(
