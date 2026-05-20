@@ -135,7 +135,38 @@ export interface Comentario {
   fecha: string; // ISO datetime
 }
 
-export type TipoActividad = "creada" | "empezada" | "cerrada" | "reabierta" | "asignada" | "comentada";
+export type TipoActividad =
+  | "creada"
+  | "empezada"
+  | "pausada"
+  | "reanudada"
+  | "mandada_revision"
+  | "devuelta_revision"
+  | "reasignada"
+  | "completada"
+  | "reabierta"
+  | "comentada";
+
+export const nombreActividad: Record<TipoActividad, string> = {
+  creada: "creó la tarea",
+  empezada: "empezó la tarea",
+  pausada: "pausó la tarea",
+  reanudada: "reanudó la tarea",
+  mandada_revision: "mandó a revisión",
+  devuelta_revision: "devolvió de revisión",
+  reasignada: "reasignó la tarea",
+  completada: "completó la tarea",
+  reabierta: "reabrió la tarea",
+  comentada: "comentó la tarea",
+};
+
+export interface TareaEnlace {
+  id: UUID;
+  tarea_id: UUID;
+  url: string;
+  descripcion?: string | null;
+  created_at: string;
+}
 
 export interface Actividad {
   id: UUID;
