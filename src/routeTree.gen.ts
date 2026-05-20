@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as MisDevolucionesRouteImport } from './routes/mis-devoluciones'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as BrujulaRouteImport } from './routes/brujula'
 import { Route as IndexRouteImport } from './routes/index'
@@ -31,6 +32,11 @@ import { Route as ClientesTarjetasRouteImport } from './routes/clientes.tarjetas
 import { Route as ClientesTablaRouteImport } from './routes/clientes.tabla'
 import { Route as ClientesIdRouteImport } from './routes/clientes.$id'
 
+const MisDevolucionesRoute = MisDevolucionesRouteImport.update({
+  id: '/mis-devoluciones',
+  path: '/mis-devoluciones',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -141,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/brujula': typeof BrujulaRoute
   '/login': typeof LoginRoute
+  '/mis-devoluciones': typeof MisDevolucionesRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/brujula': typeof BrujulaRoute
   '/login': typeof LoginRoute
+  '/mis-devoluciones': typeof MisDevolucionesRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/brujula': typeof BrujulaRoute
   '/login': typeof LoginRoute
+  '/mis-devoluciones': typeof MisDevolucionesRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
@@ -213,6 +222,7 @@ export interface FileRouteTypes {
     | '/'
     | '/brujula'
     | '/login'
+    | '/mis-devoluciones'
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/'
     | '/brujula'
     | '/login'
+    | '/mis-devoluciones'
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/'
     | '/brujula'
     | '/login'
+    | '/mis-devoluciones'
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
@@ -283,6 +295,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BrujulaRoute: typeof BrujulaRoute
   LoginRoute: typeof LoginRoute
+  MisDevolucionesRoute: typeof MisDevolucionesRoute
   ClientesIdRoute: typeof ClientesIdRoute
   ClientesTablaRoute: typeof ClientesTablaRoute
   ClientesTarjetasRoute: typeof ClientesTarjetasRoute
@@ -305,6 +318,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/mis-devoluciones': {
+      id: '/mis-devoluciones'
+      path: '/mis-devoluciones'
+      fullPath: '/mis-devoluciones'
+      preLoaderRoute: typeof MisDevolucionesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -459,6 +479,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BrujulaRoute: BrujulaRoute,
   LoginRoute: LoginRoute,
+  MisDevolucionesRoute: MisDevolucionesRoute,
   ClientesIdRoute: ClientesIdRoute,
   ClientesTablaRoute: ClientesTablaRoute,
   ClientesTarjetasRoute: ClientesTarjetasRoute,
@@ -481,3 +502,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
