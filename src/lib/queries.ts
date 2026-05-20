@@ -11,6 +11,7 @@ import type {
   Actividad,
   Notificacion,
   Miembro,
+  CategoriaEntrega,
 } from "@/types/database";
 
 // ---------- helpers de mapeo BD -> interfaces internas ----------
