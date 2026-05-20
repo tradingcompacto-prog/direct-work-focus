@@ -38,6 +38,84 @@ export function setHorasReales(id: string, horas: number | null) {
   updateTarea(id, { horas_reales: horas }).then(emit).catch((e) => fail("guardar horas", e));
 }
 
+export async function setHorasEstimadas(id: string, horas: number | null) {
+  const { error } = await supabase
+    .from("tareas")
+    .update({ horas_estimadas: horas })
+    .eq("id", id);
+  if (error) {
+    fail("guardar horas estimadas", error);
+    return;
+  }
+  emit();
+  toast.success("Horas estimadas actualizadas");
+}
+
+export async function setDescripcion(id: string, descripcion: string | null) {
+  const value = descripcion?.trim() ? descripcion.trim() : null;
+  const { error } = await supabase
+    .from("tareas")
+    .update({ descripcion: value })
+    .eq("id", id);
+  if (error) {
+    fail("guardar descripción", error);
+    return;
+  }
+  emit();
+}
+
+export async function setResponsable(id: string, responsableId: string) {
+  const { error } = await supabase
+    .from("tareas")
+    .update({ responsable_id: responsableId })
+    .eq("id", id);
+  if (error) {
+    fail("cambiar responsable", error);
+    return;
+  }
+  emit();
+  toast.success("Responsable actualizado");
+}
+
+export async function setSolicitante(id: string, solicitanteId: string) {
+  const { error } = await supabase
+    .from("tareas")
+    .update({ solicitante_id: solicitanteId })
+    .eq("id", id);
+  if (error) {
+    fail("cambiar solicitante", error);
+    return;
+  }
+  emit();
+  toast.success("Solicitante actualizado");
+}
+
+export async function addColaborador(tareaId: string, userId: string) {
+  const { error } = await supabase
+    .from("tarea_colaboradores")
+    .insert({ tarea_id: tareaId, user_id: userId });
+  if (error) {
+    fail("añadir colaborador", error);
+    return;
+  }
+  invalidateKeys(["colaboradores", tareaId], ["colaboradores"], ["tareas"]);
+  toast.success("Colaborador añadido");
+}
+
+export async function removeColaborador(tareaId: string, userId: string) {
+  const { error } = await supabase
+    .from("tarea_colaboradores")
+    .delete()
+    .eq("tarea_id", tareaId)
+    .eq("user_id", userId);
+  if (error) {
+    fail("quitar colaborador", error);
+    return;
+  }
+  invalidateKeys(["colaboradores", tareaId], ["colaboradores"], ["tareas"]);
+  toast.success("Colaborador quitado");
+}
+
 export function marcarParaRevisar(id: string) {
   setEstadoTarea(id, "revision");
 }
