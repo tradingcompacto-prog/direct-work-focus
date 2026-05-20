@@ -94,7 +94,7 @@ export const useClientes = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clientes")
-        .select("id,nombre,sector,pm_principal_id,pm_secundario_id,web,slack,salud,activo")
+        .select("id,nombre,sector,pm_principal_id,pm_secundario_id,web:sitio_web,slack:canal_slack,salud,activo")
         .order("nombre");
       if (error) {
         // eslint-disable-next-line no-console
@@ -156,7 +156,7 @@ export const useComentarios = (tareaId?: string) => {
     enabled: !!user && !!tareaId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("comentarios")
+        .from("tarea_comentarios")
         .select("*")
         .eq("tarea_id", tareaId!)
         .order("fecha", { ascending: true });
