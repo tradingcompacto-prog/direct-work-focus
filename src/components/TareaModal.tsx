@@ -363,7 +363,7 @@ export function TareaModal() {
                 label="Inicio"
                 valueIso={fInicio}
                 onChange={(iso) => {
-                  setTareaFechas(tarea.id, { fin_min: iso });
+                  setTareaFechas(tarea.id, { inicio: iso });
                   toast.success("Fecha de inicio actualizada");
                 }}
               />
