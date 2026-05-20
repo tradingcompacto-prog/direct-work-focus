@@ -591,3 +591,115 @@ function enDiasISO(n: number) {
 function nombreMes() {
   return new Date().toLocaleDateString("es-ES", { month: "long", year: "numeric" });
 }
+
+function distribuirFechas(
+  inicio: string,
+  fin: string,
+  n: number,
+  modo: "uniforme" | "mismo-dia" | "personalizada",
+): string[] {
+  if (modo === "mismo-dia" || modo === "personalizada" || !fin || inicio === fin) {
+    return Array.from({ length: n }, () => inicio);
+  }
+  const inicioMs = new Date(inicio).getTime();
+  const finMs = new Date(fin).getTime();
+  if (n === 1) return [inicio];
+  const step = (finMs - inicioMs) / (n - 1);
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(inicioMs + step * i);
+    return d.toISOString().slice(0, 10);
+  });
+}
+
+const PLAT_META: Array<{ value: PublicacionRRSS["plataformas"][number]; label: string; Icon: React.ComponentType<{ className?: string }> }> = [
+  { value: "ig", label: "Instagram", Icon: Instagram },
+  { value: "fb", label: "Facebook", Icon: Facebook },
+  { value: "li", label: "LinkedIn", Icon: Linkedin },
+  { value: "tt", label: "TikTok", Icon: Music2 },
+];
+
+function RRSSDefaultsBloque(props: {
+  numPubs: number; setNumPubs: (n: number) => void;
+  distrib: "uniforme" | "mismo-dia" | "personalizada"; setDistrib: (v: "uniforme" | "mismo-dia" | "personalizada") => void;
+  tipoDefault: PublicacionRRSS["tipo"]; setTipoDefault: (v: PublicacionRRSS["tipo"]) => void;
+  formatoDefault: PublicacionRRSS["formato"]; setFormatoDefault: (v: PublicacionRRSS["formato"]) => void;
+  plataformasDefault: PublicacionRRSS["plataformas"]; setPlataformasDefault: (v: PublicacionRRSS["plataformas"]) => void;
+  disenoDefault: string; setDisenoDefault: (v: string) => void;
+  copyDefault: string; setCopyDefault: (v: string) => void;
+}) {
+  const togglePlat = (v: PublicacionRRSS["plataformas"][number]) => {
+    const set = new Set(props.plataformasDefault);
+    if (set.has(v)) set.delete(v); else set.add(v);
+    props.setPlataformasDefault(Array.from(set) as PublicacionRRSS["plataformas"]);
+  };
+  return (
+    <div className="space-y-3 rounded-md border border-border p-3 bg-muted/20">
+      <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        Defaults del plan
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Número de publicaciones">
+          <Input type="number" min={1} max={60} value={props.numPubs}
+            onChange={(e) => props.setNumPubs(Number(e.target.value) || 1)} />
+        </Field>
+        <Field label="Distribución">
+          <Select value={props.distrib} onValueChange={(v) => props.setDistrib(v as typeof props.distrib)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="uniforme">Uniforme en el rango</SelectItem>
+              <SelectItem value="mismo-dia">Todas el mismo día</SelectItem>
+              <SelectItem value="personalizada">Personalizada (editar después)</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Tipo por defecto">
+          <Select value={props.tipoDefault} onValueChange={(v) => props.setTipoDefault(v as PublicacionRRSS["tipo"])}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(["post", "reel", "carrusel", "story"] as const).map((t) => (
+                <SelectItem key={t} value={t}>{TIPO_LABEL[t]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field label="Formato por defecto">
+          <Select value={props.formatoDefault} onValueChange={(v) => props.setFormatoDefault(v as PublicacionRRSS["formato"])}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(["solo_copy", "copy_imagen", "solo_imagen", "slide"] as const).map((f) => (
+                <SelectItem key={f} value={f}>{FORMATO_LABEL[f]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+      </div>
+      <Field label="Plataformas por defecto">
+        <div className="flex flex-wrap gap-1.5">
+          {PLAT_META.map(({ value, label, Icon }) => {
+            const on = props.plataformasDefault.includes(value);
+            return (
+              <button key={value} type="button" onClick={() => togglePlat(value)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-medium transition",
+                  on ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border hover:bg-muted",
+                )}
+              >
+                <Icon className="h-3 w-3" /> {label}
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Responsable diseño (opcional)">
+          <PersonaPicker value={props.disenoDefault || undefined} onChange={props.setDisenoDefault} placeholder="—" />
+        </Field>
+        <Field label="Responsable copy (opcional)">
+          <PersonaPicker value={props.copyDefault || undefined} onChange={props.setCopyDefault} placeholder="—" />
+        </Field>
+      </div>
+    </div>
+  );
+}
