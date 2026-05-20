@@ -2,7 +2,17 @@ import * as React from "react";
 import { useMemo } from "react";
 import { addDays, differenceInDays, format, isSameDay, parseISO, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { useMisTareas } from "@/lib/queries";
+import { useMisTareas, useTareas, useMisRevisiones } from "@/lib/queries";
+import { useAuth } from "@/lib/auth";
+import { useUserCaps } from "@/lib/user-caps";
+import {
+  AlcanceFilter,
+  defaultAlcance,
+  filtrarPorAlcance,
+  useAlcancePersistido,
+  useIncluirRevisionesPersistido,
+} from "@/components/AlcanceFilter";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useTareaModal } from "@/lib/tarea-modal-context";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -31,7 +41,28 @@ const colorEstado = (estado: string, vencida: boolean) => {
 
 export function MisTareasTimeline() {
   useOverrides();
-  const { data: tareas = [] } = useMisTareas();
+  const { user } = useAuth();
+  const caps = useUserCaps();
+  const [alcance, setAlcance] = useAlcancePersistido("tareas/timeline", defaultAlcance(caps));
+  const [incluirRevisiones, setIncluirRevisiones] = useIncluirRevisionesPersistido("tareas/timeline");
+  const { data: misTareas = [] } = useMisTareas();
+  const { data: todasTareas = [] } = useTareas();
+  const { data: revisionesPM = [] } = useMisRevisiones();
+
+  const base = useMemo(() => {
+    if (alcance === "solo-mias") return misTareas;
+    return filtrarPorAlcance(todasTareas, alcance, user?.id, caps.clientesPM);
+  }, [alcance, misTareas, todasTareas, user?.id, caps.clientesPM]);
+
+  const tareas = useMemo(() => {
+    if (!incluirRevisiones || !caps.isPM) return base;
+    const ids = new Set(base.map((t) => t.id));
+    return [...base, ...revisionesPM.filter((t) => !ids.has(t.id))];
+  }, [base, incluirRevisiones, caps.isPM, revisionesPM]);
+  const revisionPMIds = useMemo(
+    () => new Set(revisionesPM.map((t) => t.id)),
+    [revisionesPM],
+  );
   const { abrir } = useTareaModal();
 
   const hoy = useMemo(() => startOfDay(new Date()), []);
@@ -50,6 +81,19 @@ export function MisTareasTimeline() {
 
   return (
     <TooltipProvider delayDuration={200}>
+      <div className="space-y-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        <AlcanceFilter value={alcance} onChange={setAlcance} />
+        {caps.isPM && (
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+            <Checkbox
+              checked={incluirRevisiones}
+              onCheckedChange={(v) => setIncluirRevisiones(!!v)}
+            />
+            Incluir revisiones pendientes
+          </label>
+        )}
+      </div>
       <div className="card-soft overflow-hidden">
         <div className="overflow-x-auto">
           <div style={{ width: totalDays * DAY_W + 220 }}>
@@ -99,9 +143,31 @@ export function MisTareasTimeline() {
                 const left = startOffset * DAY_W;
                 const width = Math.max(DAY_W * 0.7, (endOffset - startOffset + 1) * DAY_W - 6);
                 const vencida = fin < hoy;
+                const esDevuelta = !!t.devuelta_at;
+                const esPorRevisar = incluirRevisiones && caps.isPM && revisionPMIds.has(t.id);
                 return (
-                  <div key={t.id} className="flex items-center border-b border-border/40" style={{ height: ROW_H }}>
-                    <div className="w-[220px] shrink-0 px-3 text-xs truncate">{t.titulo}</div>
+                  <div
+                    key={t.id}
+                    className={cn(
+                      "flex items-center border-b border-border/40",
+                      esDevuelta && "bg-orange-50/60 border-l-4 border-l-orange-500",
+                      esPorRevisar && !esDevuelta && "bg-blue-50/40 border-l-4 border-l-blue-500",
+                    )}
+                    style={{ height: ROW_H }}
+                  >
+                    <div className="w-[220px] shrink-0 px-3 text-xs truncate inline-flex items-center gap-1">
+                      {esDevuelta && (
+                        <span className="rounded bg-orange-100 text-orange-800 px-1 py-px text-[9px] font-semibold">
+                          ↩
+                        </span>
+                      )}
+                      {esPorRevisar && !esDevuelta && (
+                        <span className="rounded bg-blue-100 text-blue-800 px-1 py-px text-[9px] font-semibold">
+                          👁
+                        </span>
+                      )}
+                      <span className="truncate">{t.titulo}</span>
+                    </div>
                     <div className="relative flex-1" style={{ height: ROW_H }}>
                       <BarraArrastrable
                         tareaId={t.id}
@@ -134,6 +200,7 @@ export function MisTareasTimeline() {
           <Legend color="bg-green-500/50" label="Completada" />
           <Legend color="bg-red-500" label="Vencida" />
         </div>
+      </div>
       </div>
     </TooltipProvider>
   );

@@ -1,57 +1,81 @@
-import { TAREAS_MOCK, ENTREGAS_MOCK, ACTIVIDAD_MOCK, clientePorId } from "@/lib/mock-tareas";
-import { EQUIPO } from "@/lib/equipo";
+import {
+  useTareas,
+  useEntregas,
+  useActividad,
+  useClientes,
+  useEquipo,
+  useCategoriaPorTarea,
+} from "@/lib/queries";
 import { urgenciaTarea, tiempoRelativo } from "@/lib/fechas";
 import { estimarTarea } from "@/lib/estimacion";
 import { Link } from "@tanstack/react-router";
 import { format, parseISO, addDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { useTareasVersion } from "@/lib/tareas-store";
 
 export function Brujula() {
-  useTareasVersion();
+  const { data: tareas = [] } = useTareas();
+  const { data: entregas = [] } = useEntregas();
+  const { data: actividad = [] } = useActividad();
+  const { data: clientes = [] } = useClientes();
+  const { data: equipo = [] } = useEquipo();
+  const categoriaPorTarea = useCategoriaPorTarea();
+  const clienteNombre = (id: string) => clientes.find((c) => c.id === id)?.nombre ?? "—";
+  const miembroNombre = (id: string) => equipo.find((m) => m.id === id)?.nombre ?? "—";
+
   const hoy = startOfDay(new Date());
-  const vencidas = TAREAS_MOCK.filter(
+  const vencidas = tareas.filter(
     (t) => t.estado !== "completada" && urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) === "rojo",
   );
   const porCliente = new Map<string, number>();
   for (const t of vencidas) porCliente.set(t.cliente_id, (porCliente.get(t.cliente_id) ?? 0) + 1);
   const topClientes = Array.from(porCliente.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
+  // "Top clientes por carga" = clientes con más tareas activas en curso (no solo vencidas).
+  const cargaCliente = new Map<string, number>();
+  for (const t of tareas) {
+    if (t.estado === "completada") continue;
+    cargaCliente.set(t.cliente_id, (cargaCliente.get(t.cliente_id) ?? 0) + 1);
+  }
+  const topClientesCarga = Array.from(cargaCliente.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
   const carga = new Map<string, number>();
-  for (const t of TAREAS_MOCK) {
+  for (const t of tareas) {
     if (t.estado !== "completada") carga.set(t.responsable_id, (carga.get(t.responsable_id) ?? 0) + 1);
   }
   const topPersonas = Array.from(carga.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
-  const proximas = ENTREGAS_MOCK.filter(
+  const proximas = entregas.filter(
     (e) => e.estado === "en_curso" && parseISO(e.fecha_fin) <= addDays(hoy, 7),
   )
     .sort((a, b) => a.fecha_fin.localeCompare(b.fecha_fin))
     .slice(0, 5);
 
   // Capacidad semanal (horas)
-  const enSemana = TAREAS_MOCK.filter((t) => {
+  const enSemana = tareas.filter((t) => {
     if (t.estado === "completada") return false;
     const f = parseISO(t.fecha_fin_max);
     return f >= hoy && f <= addDays(hoy, 7);
   });
   let horasPlanif = 0;
   for (const t of enSemana) {
-    const h = t.horas_estimadas ?? estimarTarea(t, TAREAS_MOCK)?.horas;
+    const h = t.horas_estimadas ?? estimarTarea(t, tareas, categoriaPorTarea)?.horas;
     if (h) horasPlanif += h;
   }
   horasPlanif = Math.round(horasPlanif);
-  const capacidad = EQUIPO.filter((m) => m.activo).length * 32; // ~32h útiles por persona/semana
+  const capacidad = equipo.filter((m) => m.activo).length * 32; // ~32h útiles por persona/semana
   const utilizacion = capacidad ? Math.round((horasPlanif / capacidad) * 100) : 0;
   const mostrarHoras = horasPlanif > 0;
 
-  // Cumplimiento real: % de entregas completadas a tiempo en los últimos 30 días.
+  // Cumplimiento real: % de entregas cerradas a tiempo en los últimos 30 días,
+  // contando solo las que efectivamente se cerraron (fecha_cierre no nula).
   const hace30 = addDays(hoy, -30);
-  const entregasRecientes = ENTREGAS_MOCK.filter((e) => {
-    const f = parseISO(e.fecha_fin);
-    return f >= hace30 && f <= hoy;
+  const cerradas = entregas.filter((e) => {
+    if (e.estado !== "completada" || !e.fecha_cierre) return false;
+    const c = parseISO(e.fecha_cierre);
+    return c >= hace30 && c <= hoy;
   });
-  const cerradas = entregasRecientes.filter((e) => e.estado === "completada");
   const aTiempo = cerradas.filter((e) => {
     const cierre = e.fecha_cierre ? parseISO(e.fecha_cierre) : null;
     return cierre ? cierre <= parseISO(e.fecha_fin) : true;
@@ -71,7 +95,7 @@ export function Brujula() {
           {topClientes.map(([id, n]) => (
             <li key={id} className="flex justify-between">
               <Link to="/clientes/$id" params={{ id }} className="hover:underline">
-                {clientePorId(id)?.nombre}
+                {clienteNombre(id)}
               </Link>
               <span className="text-red-600 font-semibold">{n}</span>
             </li>
@@ -79,19 +103,31 @@ export function Brujula() {
           {topClientes.length === 0 && <li className="text-muted-foreground">Sin alertas</li>}
         </ul>
       </Widget>
+      <Widget title="Top clientes por carga">
+        <ul className="space-y-2 text-sm">
+          {topClientesCarga.map(([id, n]) => (
+            <li key={id} className="flex justify-between">
+              <Link to="/clientes/$id" params={{ id }} className="hover:underline">
+                {clienteNombre(id)}
+              </Link>
+              <span className="font-semibold tabular-nums">{n}</span>
+            </li>
+          ))}
+          {topClientesCarga.length === 0 && (
+            <li className="text-muted-foreground">Sin carga activa</li>
+          )}
+        </ul>
+      </Widget>
       <Widget title="Personas más cargadas">
         <ul className="space-y-2 text-sm">
-          {topPersonas.map(([id, n]) => {
-            const m = EQUIPO.find((p) => p.id === id);
-            return (
-              <li key={id} className="flex justify-between">
-                <Link to="/personas/$id" params={{ id }} className="hover:underline">
-                  {m?.nombre}
-                </Link>
-                <span className="font-semibold">{n}</span>
-              </li>
-            );
-          })}
+          {topPersonas.map(([id, n]) => (
+            <li key={id} className="flex justify-between">
+              <Link to="/personas/$id" params={{ id }} className="hover:underline">
+                {miembroNombre(id)}
+              </Link>
+              <span className="font-semibold">{n}</span>
+            </li>
+          ))}
         </ul>
       </Widget>
       <Widget title="Próximas 5 entregas">
@@ -99,22 +135,28 @@ export function Brujula() {
           {proximas.map((e) => (
             <li key={e.id} className="flex justify-between gap-2">
               <Link to="/entregas/$id" params={{ id: e.id }} className="truncate hover:underline">
-                {clientePorId(e.cliente_id)?.nombre}: {e.nombre}
+                {clienteNombre(e.cliente_id)}: {e.nombre}
               </Link>
               <span className="text-xs text-muted-foreground shrink-0">
                 {format(parseISO(e.fecha_fin), "d MMM", { locale: es })}
               </span>
             </li>
           ))}
+          {proximas.length === 0 && (
+            <li className="text-muted-foreground">Sin entregas próximas</li>
+          )}
         </ul>
       </Widget>
       <Widget title="Actividad últimas 24h">
         <ul className="space-y-1.5 text-sm">
-          {ACTIVIDAD_MOCK.slice(0, 6).map((a) => (
+          {actividad.slice(0, 6).map((a) => (
             <li key={a.id} className="text-muted-foreground">
               {a.texto} · {tiempoRelativo(a.fecha)}
             </li>
           ))}
+          {actividad.length === 0 && (
+            <li className="text-muted-foreground">Sin actividad reciente</li>
+          )}
         </ul>
       </Widget>
       <Widget title="Cumplimiento últimos 30 días">

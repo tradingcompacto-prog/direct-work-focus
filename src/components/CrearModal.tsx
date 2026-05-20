@@ -21,7 +21,13 @@ import {
 import { useCrearModal } from "@/lib/crear-modal-context";
 import { EQUIPO } from "@/lib/equipo";
 import { estimar } from "@/lib/estimacion";
-import { useClientes, useProyectos, useEntregas, useTareas } from "@/lib/queries";
+import {
+  useClientes,
+  useProyectos,
+  useEntregas,
+  useTareas,
+  useCategoriaPorTarea,
+} from "@/lib/queries";
 import { supabase } from "@/lib/supabase";
 import { invalidateKeys } from "@/lib/qc";
 import { useAuth } from "@/lib/auth";
@@ -46,6 +52,7 @@ export function CrearModal() {
   const { data: proyectosDB = [] } = useProyectos();
   const { data: entregasDB = [] } = useEntregas();
   const { data: tareasDB = [] } = useTareas();
+  const categoriaPorTarea = useCategoriaPorTarea();
   const [clienteId, setClienteId] = React.useState("");
   const [proyectoId, setProyectoId] = React.useState("");
   const [categoriaTarea, setCategoriaTarea] = React.useState<CategoriaEntrega | "">("");
@@ -253,10 +260,12 @@ export function CrearModal() {
       ? estimar(
           {
             titulo: titulo || undefined,
+            categoria: (categoriaTarea || undefined) as CategoriaEntrega | undefined,
             cliente_id: clienteId || undefined,
             responsable_id: responsableId || undefined,
           },
           tareasDB,
+          categoriaPorTarea,
         )
       : null;
 

@@ -8,10 +8,15 @@ import {
   proyectoPorId,
   entregaPorId,
   ACTIVIDAD_MOCK,
-  TAREAS_MOCK,
   tituloTarea,
 } from "@/lib/mock-tareas";
-import { useComentarios, useColaboradores, useEnlaces } from "@/lib/queries";
+import {
+  useComentarios,
+  useColaboradores,
+  useEnlaces,
+  useTareas,
+  useCategoriaPorTarea,
+} from "@/lib/queries";
 import { miembroPorId, nombrePorId } from "@/lib/equipo";
 import { PersonaPicker } from "@/components/PersonaPicker";
 import { Input } from "@/components/ui/input";
@@ -82,6 +87,8 @@ export function TareaModal() {
   const { data: comentarios = [] } = useComentarios(tareaId ?? undefined);
   const { data: colaboradores = [] } = useColaboradores(tareaId ?? undefined);
   const { data: enlaces = [] } = useEnlaces(tareaId ?? undefined);
+  const { data: todasTareas = [] } = useTareas();
+  const categoriaPorTarea = useCategoriaPorTarea();
 
   React.useEffect(() => {
     if (!tareaId) return;
@@ -105,7 +112,7 @@ export function TareaModal() {
   const responsable = miembroPorId(tarea.responsable_id);
   const solicitante = miembroPorId(tarea.solicitante_id);
   const actividad = ACTIVIDAD_MOCK.filter((a) => a.tarea_id === tarea.id);
-  const estim = estimarTarea(tarea, TAREAS_MOCK);
+  const estim = estimarTarea(tarea, todasTareas, categoriaPorTarea);
   const horasEstim = tarea.horas_estimadas ?? estim?.horas ?? null;
   const horasTimer = timer.ms > 0 ? Math.round((timer.ms / 3600000) * 10) / 10 : null;
   const sugeridaCerrar = horasTimer ?? horasEstim;

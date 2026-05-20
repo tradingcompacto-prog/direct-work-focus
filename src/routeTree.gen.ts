@@ -9,6 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RevisionRouteImport } from './routes/revision'
+import { Route as MisRevisionesRouteImport } from './routes/mis-revisiones'
+import { Route as MisDevolucionesRouteImport } from './routes/mis-devoluciones'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as BrujulaRouteImport } from './routes/brujula'
 import { Route as IndexRouteImport } from './routes/index'
@@ -31,6 +34,21 @@ import { Route as ClientesTarjetasRouteImport } from './routes/clientes.tarjetas
 import { Route as ClientesTablaRouteImport } from './routes/clientes.tabla'
 import { Route as ClientesIdRouteImport } from './routes/clientes.$id'
 
+const RevisionRoute = RevisionRouteImport.update({
+  id: '/revision',
+  path: '/revision',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MisRevisionesRoute = MisRevisionesRouteImport.update({
+  id: '/mis-revisiones',
+  path: '/mis-revisiones',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MisDevolucionesRoute = MisDevolucionesRouteImport.update({
+  id: '/mis-devoluciones',
+  path: '/mis-devoluciones',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -141,6 +159,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/brujula': typeof BrujulaRoute
   '/login': typeof LoginRoute
+  '/mis-devoluciones': typeof MisDevolucionesRoute
+  '/mis-revisiones': typeof MisRevisionesRoute
+  '/revision': typeof RevisionRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
@@ -164,6 +185,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/brujula': typeof BrujulaRoute
   '/login': typeof LoginRoute
+  '/mis-devoluciones': typeof MisDevolucionesRoute
+  '/mis-revisiones': typeof MisRevisionesRoute
+  '/revision': typeof RevisionRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
@@ -188,6 +212,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/brujula': typeof BrujulaRoute
   '/login': typeof LoginRoute
+  '/mis-devoluciones': typeof MisDevolucionesRoute
+  '/mis-revisiones': typeof MisRevisionesRoute
+  '/revision': typeof RevisionRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
@@ -213,6 +240,9 @@ export interface FileRouteTypes {
     | '/'
     | '/brujula'
     | '/login'
+    | '/mis-devoluciones'
+    | '/mis-revisiones'
+    | '/revision'
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
@@ -236,6 +266,9 @@ export interface FileRouteTypes {
     | '/'
     | '/brujula'
     | '/login'
+    | '/mis-devoluciones'
+    | '/mis-revisiones'
+    | '/revision'
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
@@ -259,6 +292,9 @@ export interface FileRouteTypes {
     | '/'
     | '/brujula'
     | '/login'
+    | '/mis-devoluciones'
+    | '/mis-revisiones'
+    | '/revision'
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
@@ -283,6 +319,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BrujulaRoute: typeof BrujulaRoute
   LoginRoute: typeof LoginRoute
+  MisDevolucionesRoute: typeof MisDevolucionesRoute
+  MisRevisionesRoute: typeof MisRevisionesRoute
+  RevisionRoute: typeof RevisionRoute
   ClientesIdRoute: typeof ClientesIdRoute
   ClientesTablaRoute: typeof ClientesTablaRoute
   ClientesTarjetasRoute: typeof ClientesTarjetasRoute
@@ -305,6 +344,27 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/revision': {
+      id: '/revision'
+      path: '/revision'
+      fullPath: '/revision'
+      preLoaderRoute: typeof RevisionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mis-revisiones': {
+      id: '/mis-revisiones'
+      path: '/mis-revisiones'
+      fullPath: '/mis-revisiones'
+      preLoaderRoute: typeof MisRevisionesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mis-devoluciones': {
+      id: '/mis-devoluciones'
+      path: '/mis-devoluciones'
+      fullPath: '/mis-devoluciones'
+      preLoaderRoute: typeof MisDevolucionesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -459,6 +519,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BrujulaRoute: BrujulaRoute,
   LoginRoute: LoginRoute,
+  MisDevolucionesRoute: MisDevolucionesRoute,
+  MisRevisionesRoute: MisRevisionesRoute,
+  RevisionRoute: RevisionRoute,
   ClientesIdRoute: ClientesIdRoute,
   ClientesTablaRoute: ClientesTablaRoute,
   ClientesTarjetasRoute: ClientesTarjetasRoute,
