@@ -1,4 +1,4 @@
-import type { Tarea, UUID } from "@/types/database";
+import type { CategoriaEntrega, Tarea, UUID } from "@/types/database";
 
 export type Estimacion = {
   horas: number;
@@ -24,42 +24,63 @@ function similitud(a: string, b: string) {
 }
 
 export function estimar(
-  parcial: { titulo?: string; cliente_id?: UUID; responsable_id?: UUID },
+  parcial: {
+    titulo?: string;
+    categoria?: CategoriaEntrega;
+    cliente_id?: UUID;
+    responsable_id?: UUID;
+  },
   historico: Tarea[],
+  categoriaPorTarea?: Map<UUID, CategoriaEntrega>,
 ): Estimacion {
   const cerradas = historico.filter(
     (t) => t.estado === "completada" && typeof t.horas_reales === "number",
   );
-  if (!cerradas.length) return null;
+  if (cerradas.length === 0) return null;
+
   const candidatas = cerradas
     .map((t) => {
       let s = 0;
+      const catT = categoriaPorTarea?.get(t.id);
+      if (parcial.categoria && catT && catT === parcial.categoria) s += 5;
       if (parcial.cliente_id && t.cliente_id === parcial.cliente_id) s += 2;
       if (parcial.responsable_id && t.responsable_id === parcial.responsable_id) s += 2;
-      if (parcial.titulo) s += similitud(parcial.titulo, t.titulo) * 3;
+      if (parcial.titulo) s += similitud(parcial.titulo, t.titulo) * 2;
       return { t, s };
     })
-    .filter((x) => x.s >= 2)
+    .filter((x) => x.s >= 5)
     .sort((a, b) => b.s - a.s)
-    .slice(0, 8);
-  if (!candidatas.length) return null;
+    .slice(0, 10);
+
+  if (candidatas.length < 3) return null;
+
   const horas =
-    candidatas.reduce((acc, x) => acc + (x.t.horas_reales as number), 0) / candidatas.length;
-  const r = Math.round(horas * 2) / 2;
+    candidatas.reduce((acc, x) => acc + (x.t.horas_reales as number), 0) /
+    candidatas.length;
   return {
-    horas: r,
-    confianza: candidatas.length >= 3 ? "alta" : "baja",
+    horas: Math.round(horas * 2) / 2,
+    confianza: candidatas.length >= 5 ? "alta" : "baja",
     muestras: candidatas.length,
   };
 }
 
-export function estimarTarea(t: Tarea, historico: Tarea[]): Estimacion {
+export function estimarTarea(
+  t: Tarea,
+  historico: Tarea[],
+  categoriaPorTarea?: Map<UUID, CategoriaEntrega>,
+): Estimacion {
   if (typeof t.horas_estimadas === "number") {
     return { horas: t.horas_estimadas, confianza: "alta", muestras: 0 };
   }
   return estimar(
-    { titulo: t.titulo, cliente_id: t.cliente_id, responsable_id: t.responsable_id },
+    {
+      titulo: t.titulo,
+      categoria: categoriaPorTarea?.get(t.id),
+      cliente_id: t.cliente_id,
+      responsable_id: t.responsable_id,
+    },
     historico.filter((x) => x.id !== t.id),
+    categoriaPorTarea,
   );
 }
 

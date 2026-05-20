@@ -324,6 +324,109 @@ export const useMisEntregas = () => {
   });
 };
 
+// ---------- revisión y devoluciones ----------
+
+/** Todas las tareas en estado=revision (solo útil para directores). */
+export const useRevisionGlobal = () => {
+  const { user } = useAuth();
+  return useQuery<Tarea[]>({
+    queryKey: ["revision-global"],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tareas")
+        .select("*")
+        .eq("estado", "revision")
+        .order("fecha_fin_max", { ascending: true });
+      if (error) throw error;
+      const rows = (data ?? []) as Tarea[];
+      if (rows.length === 0) {
+        // eslint-disable-next-line no-console
+        console.log("[useRevisionGlobal] 0 rows");
+      }
+      return rows;
+    },
+  });
+};
+
+/**
+ * Tareas en revisión de clientes donde el usuario es PM (principal o secundario).
+ * Se calcula a partir de `useClientes()` y un IN sobre `tareas.cliente_id`.
+ */
+export const useMisRevisiones = () => {
+  const { user } = useAuth();
+  const { data: clientes = [] } = useClientes();
+  const clientesPM = clientes
+    .filter(
+      (c) =>
+        (c.pm_principal_id && c.pm_principal_id === user?.id) ||
+        (c.pm_secundario_id && c.pm_secundario_id === user?.id),
+    )
+    .map((c) => c.id);
+  const key = [...clientesPM].sort().join(",");
+  return useQuery<Tarea[]>({
+    queryKey: ["mis-revisiones", user?.id, key],
+    enabled: !!user && clientesPM.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tareas")
+        .select("*")
+        .eq("estado", "revision")
+        .in("cliente_id", clientesPM)
+        .order("fecha_fin_max", { ascending: true });
+      if (error) throw error;
+      const rows = (data ?? []) as Tarea[];
+      if (rows.length === 0) {
+        // eslint-disable-next-line no-console
+        console.log("[useMisRevisiones] 0 rows for PM", user?.id);
+      }
+      return rows;
+    },
+  });
+};
+
+/** Tareas que ME devolvieron (responsable_id=yo, devuelta_at no nula, sin completar). */
+export const useMisDevoluciones = () => {
+  const { user } = useAuth();
+  return useQuery<Tarea[]>({
+    queryKey: ["mis-devoluciones", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tareas")
+        .select("*")
+        .eq("responsable_id", user!.id)
+        .not("devuelta_at", "is", null)
+        .neq("estado", "completada")
+        .order("devuelta_at", { ascending: false });
+      if (error) throw error;
+      const rows = (data ?? []) as Tarea[];
+      if (rows.length === 0) {
+        // eslint-disable-next-line no-console
+        console.log("[useMisDevoluciones] 0 rows for user", user?.id);
+      }
+      return rows;
+    },
+  });
+};
+
+/** Roles del usuario indicado (lectura directa de user_roles). */
+export const useUserRoles = (userId: string | undefined | null) => {
+  const { user } = useAuth();
+  return useQuery<AppRole[]>({
+    queryKey: ["user-roles", userId],
+    enabled: !!user && !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId!);
+      if (error) throw error;
+      return ((data ?? []) as { role: AppRole }[]).map((r) => r.role);
+    },
+  });
+};
+
 // ---------- mega-hook: dataset completo + lookups ----------
 // Sustituye a los antiguos arrays mock importados desde "@/lib/mock-tareas".
 // Cada consumidor llama a useDataset() en su top-level y desestructura.
