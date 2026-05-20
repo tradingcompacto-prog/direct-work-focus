@@ -30,10 +30,17 @@ function rowToPub(r: Record<string, unknown>): PublicacionRRSS {
     formato: r.formato as PublicacionRRSS["formato"],
     plataformas: (r.plataformas as PublicacionRRSS["plataformas"]) ?? [],
     briefing: (r.briefing as string | null | undefined) ?? null,
+    copy_final: (r.copy_final as string | null | undefined) ?? null,
+    recursos_visuales:
+      (r.recursos_visuales as PublicacionRRSS["recursos_visuales"]) ?? [],
     slides: (r.slides as Array<{ texto?: string; imagen_url?: string }> | undefined) ?? undefined,
     estado: (r.estado as PublicacionRRSS["estado"]) ?? "borrador",
     responsable_diseno_id: (r.responsable_diseno_id as string | null | undefined) ?? null,
     responsable_copy_id: (r.responsable_copy_id as string | null | undefined) ?? null,
+    impresiones: (r.impresiones as number | null | undefined) ?? null,
+    alcance: (r.alcance as number | null | undefined) ?? null,
+    interacciones: (r.interacciones as number | null | undefined) ?? null,
+    ctr: (r.ctr as number | null | undefined) ?? null,
     created_at: (r.created_at as string | undefined) ?? undefined,
     updated_at: (r.updated_at as string | undefined) ?? undefined,
   };
@@ -52,6 +59,23 @@ export function usePlanRRSS(tareaId?: string) {
         .order("fecha", { ascending: true });
       if (error) throw error;
       return ((data ?? []) as Record<string, unknown>[]).map(rowToPub);
+    },
+  });
+}
+
+/** Hook: una sola publicación por id (para PublicacionPanel). */
+export function usePublicacion(publicacionId?: string | null) {
+  return useQuery<PublicacionRRSS | null>({
+    queryKey: ["plan-rrss-pub", publicacionId],
+    enabled: !!publicacionId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("publicaciones_rrss")
+        .select("*")
+        .eq("id", publicacionId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? rowToPub(data as Record<string, unknown>) : null;
     },
   });
 }
@@ -160,6 +184,50 @@ export function setPublicacionResponsable(
     .update(patch)
     .eq("id", id)
     .then(({ error }) => (error ? fail("asignar responsable", error) : done()));
+}
+
+export function setPublicacionCopy(id: string, copy_final: string | null) {
+  supabase
+    .from("publicaciones_rrss")
+    .update({ copy_final: copy_final?.trim() || null })
+    .eq("id", id)
+    .then(({ error }) => (error ? fail("guardar copy", error) : done()));
+}
+
+export function setPublicacionRecursos(
+  id: string,
+  recursos: NonNullable<PublicacionRRSS["recursos_visuales"]>,
+) {
+  supabase
+    .from("publicaciones_rrss")
+    .update({ recursos_visuales: recursos })
+    .eq("id", id)
+    .then(({ error }) => (error ? fail("guardar recursos", error) : done()));
+}
+
+export async function addRecursoVisual(
+  id: string,
+  recurso: NonNullable<PublicacionRRSS["recursos_visuales"]>[number],
+) {
+  const { data, error } = await supabase
+    .from("publicaciones_rrss")
+    .select("recursos_visuales")
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data) return fail("añadir recurso", error);
+  const arr = (data.recursos_visuales as NonNullable<PublicacionRRSS["recursos_visuales"]>) ?? [];
+  setPublicacionRecursos(id, [...arr, recurso]);
+}
+
+export async function removeRecursoVisual(id: string, index: number) {
+  const { data, error } = await supabase
+    .from("publicaciones_rrss")
+    .select("recursos_visuales")
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data) return fail("quitar recurso", error);
+  const arr = (data.recursos_visuales as NonNullable<PublicacionRRSS["recursos_visuales"]>) ?? [];
+  setPublicacionRecursos(id, arr.filter((_, i) => i !== index));
 }
 
 export async function bulkUpdatePublicaciones(
