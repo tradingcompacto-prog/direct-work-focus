@@ -201,6 +201,26 @@ export const useNotificaciones = () => {
   });
 };
 
+// Categorías habilitadas para un cliente. Devuelve las categorías disponibles
+// para el selector de "+ Tarea" y para la sección "Categorías habilitadas"
+// de la ficha del cliente.
+export const useCategoriasHabilitadas = (clienteId: string | null | undefined) => {
+  const { user } = useAuth();
+  return useQuery<CategoriaEntrega[]>({
+    queryKey: ["cliente_categorias", clienteId],
+    enabled: !!user && !!clienteId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cliente_categorias")
+        .select("categoria")
+        .eq("cliente_id", clienteId!)
+        .order("categoria");
+      if (error) throw error;
+      return (data ?? []).map((d) => d.categoria as CategoriaEntrega);
+    },
+  });
+};
+
 // ---------- vistas derivadas ("mis…") ----------
 
 export const useMisTareas = () => {
