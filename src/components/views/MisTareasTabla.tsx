@@ -155,7 +155,7 @@ export function MisTareasTabla() {
         onCambiarEstado={() => { toast.success(`Estado cambiado en ${sel.size} tareas`); setSel(new Set()); }}
         onReasignar={() => { toast.success(`${sel.size} tareas reasignadas`); setSel(new Set()); }}
         onExportar={() => { toast.success(`${sel.size} tareas exportadas a CSV`); }}
-        onEliminar={() => { toast.success(`${sel.size} tareas eliminadas`); setSel(new Set()); }}
+        onEliminar={() => { eliminarTareas(Array.from(sel)); setSel(new Set()); }}
       />
     </div>
   );

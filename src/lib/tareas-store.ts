@@ -72,6 +72,21 @@ export function completarTarea(id: string) {
     .catch((e) => fail("completar tarea", e));
 }
 
+export async function eliminarTareas(ids: string[]) {
+  if (ids.length === 0) return;
+  const { error } = await supabase.from("tareas").delete().in("id", ids);
+  if (error) {
+    fail("eliminar tareas", error);
+    return;
+  }
+  emit();
+  toast.success(ids.length === 1 ? "Tarea eliminada" : `${ids.length} tareas eliminadas`);
+}
+
+export function eliminarTarea(id: string) {
+  return eliminarTareas([id]);
+}
+
 export function notifyTareasChanged() {
   emit();
 }
