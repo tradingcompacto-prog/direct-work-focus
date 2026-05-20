@@ -41,55 +41,47 @@ function AuthGate() {
     }
   }, [loading, user, isLogin, navigate]);
 
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-foreground/20 border-t-foreground" />
-      </div>
-    );
-  }
-
-  // Pantalla pública /login sin layout interno.
-  if (isLogin) {
-    return (
-      <>
-        <Outlet />
-        <Toaster />
-      </>
-    );
-  }
-
-  // No autenticado en una ruta privada: el useEffect de arriba redirige a /login.
-  // Mientras tanto, NO montamos <Outlet/> porque las vistas privadas (Home, etc.)
-  // usan hooks como useTareaModal que requieren sus providers.
-  if (!user) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-foreground/20 border-t-foreground" />
-      </div>
-    );
-  }
-
+  // Providers SIEMPRE montados para evitar que componentes hijos exploten
+  // durante la transición login → app autenticada. DataSync/EquipoSync solo
+  // cuando hay usuario (tienen efectos que requieren sesión).
   return (
     <BusquedaProvider>
       <TareaModalProvider>
         <CrearModalProvider>
-          <DataSync />
-          <EquipoSync />
-          <div className="flex h-screen w-full overflow-hidden bg-background">
-            <Sidebar />
-            <div className="flex-1 flex flex-col min-w-0">
-              <TopBar />
-              <main className="flex-1 overflow-y-auto">
-                <Outlet />
-              </main>
+          {user && !isLogin && <DataSync />}
+          {user && !isLogin && <EquipoSync />}
+
+          {loading ? (
+            <div className="flex h-screen items-center justify-center bg-background">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-foreground/20 border-t-foreground" />
             </div>
-          </div>
-          <TareaModal />
-          <CrearModal />
-          <BusquedaGlobal />
-          <AtajosGlobales />
-          <Toaster />
+          ) : isLogin ? (
+            <>
+              <Outlet />
+              <Toaster />
+            </>
+          ) : !user ? (
+            <div className="flex h-screen items-center justify-center bg-background">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-foreground/20 border-t-foreground" />
+            </div>
+          ) : (
+            <>
+              <div className="flex h-screen w-full overflow-hidden bg-background">
+                <Sidebar />
+                <div className="flex-1 flex flex-col min-w-0">
+                  <TopBar />
+                  <main className="flex-1 overflow-y-auto">
+                    <Outlet />
+                  </main>
+                </div>
+              </div>
+              <TareaModal />
+              <CrearModal />
+              <BusquedaGlobal />
+              <AtajosGlobales />
+              <Toaster />
+            </>
+          )}
         </CrearModalProvider>
       </TareaModalProvider>
     </BusquedaProvider>
