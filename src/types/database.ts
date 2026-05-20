@@ -75,7 +75,7 @@ export interface PublicacionRRSS {
     | "publicado";
 }
 
-export type EstadoEntrega = "en_curso" | "cerrada";
+export type EstadoEntrega = "en_curso" | "completada";
 
 export interface Entrega {
   id: UUID;
