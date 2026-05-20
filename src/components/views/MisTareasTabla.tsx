@@ -18,6 +18,7 @@ import { es } from "date-fns/locale";
 import { Download } from "lucide-react";
 import { EstadoVacio } from "@/components/EstadoVacio";
 import { FiltrosBar, useFiltros } from "@/components/FiltrosBar";
+import { eliminarTareas } from "@/lib/tareas-store";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AccionesMasivasBar } from "@/components/AccionesMasivasBar";
 import { toast } from "sonner";
@@ -155,7 +156,7 @@ export function MisTareasTabla() {
         onCambiarEstado={() => { toast.success(`Estado cambiado en ${sel.size} tareas`); setSel(new Set()); }}
         onReasignar={() => { toast.success(`${sel.size} tareas reasignadas`); setSel(new Set()); }}
         onExportar={() => { toast.success(`${sel.size} tareas exportadas a CSV`); }}
-        onEliminar={() => { toast.success(`${sel.size} tareas eliminadas`); setSel(new Set()); }}
+        onEliminar={() => { eliminarTareas(Array.from(sel)); setSel(new Set()); }}
       />
     </div>
   );

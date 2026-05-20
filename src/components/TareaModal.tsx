@@ -67,6 +67,7 @@ export function TareaModal() {
   const timer = useTimer(tareaId);
   const [rolVista] = useRolVista();
   const esPmODirector = rolVista === "pm" || rolVista === "director";
+  const { data: comentarios = [] } = useComentarios(tareaId ?? undefined);
 
   React.useEffect(() => {
     if (!tareaId) return;
@@ -89,7 +90,6 @@ export function TareaModal() {
   const entrega = entregaPorId(tarea.entrega_id);
   const responsable = miembroPorId(tarea.responsable_id);
   const solicitante = miembroPorId(tarea.solicitante_id);
-  const { data: comentarios = [] } = useComentarios(tarea.id);
   const actividad = ACTIVIDAD_MOCK.filter((a) => a.tarea_id === tarea.id);
   const estim = estimarTarea(tarea, TAREAS_MOCK);
   const horasEstim = tarea.horas_estimadas ?? estim?.horas ?? null;
