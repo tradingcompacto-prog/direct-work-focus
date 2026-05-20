@@ -498,22 +498,6 @@ export function CrearModal() {
                   </div>
                 </>
               )}
-              {tipo === "entrega" && (
-                <Field label="Categoría">
-                  <Select value={categoria} onValueChange={(v) => setCategoria(v as CategoriaEntrega)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona categoría" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CATEGORIAS_ENTREGA.map((c) => (
-                        <SelectItem key={c.value} value={c.value}>
-                          {labelCategoria(c.value)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-              )}
             </>
           )}
           <DialogFooter>
