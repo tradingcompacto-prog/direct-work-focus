@@ -363,7 +363,10 @@ export function TareaModal() {
                 label="Inicio"
                 valueIso={fInicio}
                 onChange={(iso) => {
-                  setTareaFechas(tarea.id, { inicio: iso });
+                  const patch: { inicio: string; fin_min?: string; fin_max?: string } = { inicio: iso };
+                  if (iso > fFinMin) patch.fin_min = iso;
+                  if (iso > fFinMax) patch.fin_max = iso;
+                  setTareaFechas(tarea.id, patch);
                   toast.success("Fecha de inicio actualizada");
                 }}
               />
@@ -395,21 +398,25 @@ export function TareaModal() {
               <div className="flex gap-4 text-sm items-center flex-wrap">
                 <div className="flex items-center gap-1.5">
                   <span className="text-muted-foreground">Estimado:</span>
-                  <HorasInput
-                    value={tarea.horas_estimadas ?? null}
-                    onCommit={(h) => setHorasEstimadas(tarea.id, h)}
-                  />
-                  <span className="text-muted-foreground">h</span>
-                  {estim && tarea.horas_estimadas == null && (
-                    <span
-                      className={cn(
-                        "ml-1 text-[10px] px-1.5 py-0.5 rounded",
-                        estim.confianza === "alta"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-amber-100 text-amber-700",
+                  {horasEstim != null ? (
+                    <>
+                      <span className="font-medium">{horasEstim}h</span>
+                      {estim && (
+                        <span
+                          className={cn(
+                            "ml-1 text-[10px] px-1.5 py-0.5 rounded",
+                            estim.confianza === "alta"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-amber-100 text-amber-700",
+                          )}
+                        >
+                          auto · {estim.muestras} ref.
+                        </span>
                       )}
-                    >
-                      auto · {estim.muestras} ref.
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground italic text-xs">
+                      Aún no hay histórico suficiente para esta categoría
                     </span>
                   )}
                 </div>
