@@ -1,4 +1,6 @@
 import * as React from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { Instagram, Facebook, Linkedin, Music2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +39,9 @@ import { toast } from "sonner";
 import { ComboboxCrear } from "@/components/ComboboxCrear";
 import { CATEGORIAS_ENTREGA, labelCategoria } from "@/lib/categorias";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { CategoriaEntrega } from "@/types/database";
+import type { CategoriaEntrega, PublicacionRRSS } from "@/types/database";
+import { TIPO_LABEL, FORMATO_LABEL } from "@/types/database";
+import { PersonaPicker } from "@/components/PersonaPicker";
 
 const TITLES: Record<string, string> = {
   tarea: "Nueva tarea",
@@ -47,6 +51,7 @@ const TITLES: Record<string, string> = {
 
 export function CrearModal() {
   const { tipo, contexto, cerrar } = useCrearModal();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { data: clientesDB = [] } = useClientes();
   const { data: proyectosDB = [] } = useProyectos();
@@ -70,6 +75,12 @@ export function CrearModal() {
   const [descripcion, setDescripcion] = React.useState("");
   const [prioridad, setPrioridad] = React.useState<"baja" | "media" | "alta" | "critica">("media");
   const [numPubs, setNumPubs] = React.useState(4);
+  const [distrib, setDistrib] = React.useState<"uniforme" | "mismo-dia" | "personalizada">("uniforme");
+  const [tipoDefault, setTipoDefault] = React.useState<PublicacionRRSS["tipo"]>("post");
+  const [formatoDefault, setFormatoDefault] = React.useState<PublicacionRRSS["formato"]>("copy_imagen");
+  const [plataformasDefault, setPlataformasDefault] = React.useState<PublicacionRRSS["plataformas"]>(["ig"]);
+  const [disenoDefault, setDisenoDefault] = React.useState<string>("");
+  const [copyDefault, setCopyDefault] = React.useState<string>("");
   const [enviando, setEnviando] = React.useState(false);
 
   React.useEffect(() => {
@@ -88,6 +99,12 @@ export function CrearModal() {
     setDescripcion("");
     setPrioridad("media");
     setNumPubs(4);
+    setDistrib("uniforme");
+    setTipoDefault("post");
+    setFormatoDefault("copy_imagen");
+    setPlataformasDefault(["ig"]);
+    setDisenoDefault("");
+    setCopyDefault("");
   }, [contexto, tipo]);
 
   // Regla: 1 cliente = 1 proyecto. Auto-seleccionar proyecto al elegir cliente.
@@ -214,19 +231,27 @@ export function CrearModal() {
             .select("id")
             .single();
           if (error) throw error;
-          const filas = Array.from({ length: Math.max(1, numPubs) }).map((_, i) => ({
+          const fechas = distribuirFechas(inicio, fin, Math.max(1, numPubs), distrib);
+          const filas = fechas.map((fechaPub) => ({
             tarea_id: t!.id,
-            fecha: inicio,
-            tipo: "post",
-            formato: "copy_imagen",
-            plataformas: ["ig"],
+            cliente_id: clienteId,
+            entrega_id: entregaTargetId,
+            fecha: fechaPub,
+            tipo: tipoDefault,
+            formato: formatoDefault,
+            plataformas: plataformasDefault,
             estado: "borrador",
-            briefing: `Publicación ${i + 1}`,
+            briefing: null,
+            responsable_diseno_id: disenoDefault || null,
+            responsable_copy_id: copyDefault || null,
           }));
           const { error: e2 } = await supabase.from("publicaciones_rrss").insert(filas);
           if (e2) throw e2;
           invalidateKeys(["tareas"], ["mis-tareas"], ["plan-rrss", t!.id]);
-          toast.success(`Plan creado con ${numPubs} publicaciones`);
+          toast.success(`Plan creado con ${numPubs} publicaciones. Configúralas en detalle desde la entrega.`);
+          cerrar();
+          navigate({ to: "/entregas/$id", params: { id: entregaTargetId } } as never);
+          return;
         } else {
           const { error } = await supabase.from("tareas").insert({
             titulo,
@@ -401,18 +426,15 @@ export function CrearModal() {
                     <PersonaSelect value={responsableId} onChange={setResponsableId} />
                   </Field>
                   {esRRSS && (
-                    <Field label="Número de publicaciones">
-                      <Input
-                        type="number"
-                        min={1}
-                        max={60}
-                        value={numPubs}
-                        onChange={(e) => setNumPubs(Number(e.target.value) || 1)}
-                      />
-                      <p className="text-[11px] text-muted-foreground mt-1">
-                        Se crearán {numPubs} filas en el plan (todas como borrador, fecha base = inicio).
-                      </p>
-                    </Field>
+                    <RRSSDefaultsBloque
+                      numPubs={numPubs} setNumPubs={setNumPubs}
+                      distrib={distrib} setDistrib={setDistrib}
+                      tipoDefault={tipoDefault} setTipoDefault={setTipoDefault}
+                      formatoDefault={formatoDefault} setFormatoDefault={setFormatoDefault}
+                      plataformasDefault={plataformasDefault} setPlataformasDefault={setPlataformasDefault}
+                      disenoDefault={disenoDefault} setDisenoDefault={setDisenoDefault}
+                      copyDefault={copyDefault} setCopyDefault={setCopyDefault}
+                    />
                   )}
                   {!usarRango ? (
                     <Field label="Fecha">
@@ -568,4 +590,116 @@ function enDiasISO(n: number) {
 
 function nombreMes() {
   return new Date().toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+}
+
+function distribuirFechas(
+  inicio: string,
+  fin: string,
+  n: number,
+  modo: "uniforme" | "mismo-dia" | "personalizada",
+): string[] {
+  if (modo === "mismo-dia" || modo === "personalizada" || !fin || inicio === fin) {
+    return Array.from({ length: n }, () => inicio);
+  }
+  const inicioMs = new Date(inicio).getTime();
+  const finMs = new Date(fin).getTime();
+  if (n === 1) return [inicio];
+  const step = (finMs - inicioMs) / (n - 1);
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(inicioMs + step * i);
+    return d.toISOString().slice(0, 10);
+  });
+}
+
+const PLAT_META: Array<{ value: PublicacionRRSS["plataformas"][number]; label: string; Icon: React.ComponentType<{ className?: string }> }> = [
+  { value: "ig", label: "Instagram", Icon: Instagram },
+  { value: "fb", label: "Facebook", Icon: Facebook },
+  { value: "li", label: "LinkedIn", Icon: Linkedin },
+  { value: "tt", label: "TikTok", Icon: Music2 },
+];
+
+function RRSSDefaultsBloque(props: {
+  numPubs: number; setNumPubs: (n: number) => void;
+  distrib: "uniforme" | "mismo-dia" | "personalizada"; setDistrib: (v: "uniforme" | "mismo-dia" | "personalizada") => void;
+  tipoDefault: PublicacionRRSS["tipo"]; setTipoDefault: (v: PublicacionRRSS["tipo"]) => void;
+  formatoDefault: PublicacionRRSS["formato"]; setFormatoDefault: (v: PublicacionRRSS["formato"]) => void;
+  plataformasDefault: PublicacionRRSS["plataformas"]; setPlataformasDefault: (v: PublicacionRRSS["plataformas"]) => void;
+  disenoDefault: string; setDisenoDefault: (v: string) => void;
+  copyDefault: string; setCopyDefault: (v: string) => void;
+}) {
+  const togglePlat = (v: PublicacionRRSS["plataformas"][number]) => {
+    const set = new Set(props.plataformasDefault);
+    if (set.has(v)) set.delete(v); else set.add(v);
+    props.setPlataformasDefault(Array.from(set) as PublicacionRRSS["plataformas"]);
+  };
+  return (
+    <div className="space-y-3 rounded-md border border-border p-3 bg-muted/20">
+      <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        Defaults del plan
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Número de publicaciones">
+          <Input type="number" min={1} max={60} value={props.numPubs}
+            onChange={(e) => props.setNumPubs(Number(e.target.value) || 1)} />
+        </Field>
+        <Field label="Distribución">
+          <Select value={props.distrib} onValueChange={(v) => props.setDistrib(v as typeof props.distrib)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="uniforme">Uniforme en el rango</SelectItem>
+              <SelectItem value="mismo-dia">Todas el mismo día</SelectItem>
+              <SelectItem value="personalizada">Personalizada (editar después)</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Tipo por defecto">
+          <Select value={props.tipoDefault} onValueChange={(v) => props.setTipoDefault(v as PublicacionRRSS["tipo"])}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(["post", "reel", "carrusel", "story"] as const).map((t) => (
+                <SelectItem key={t} value={t}>{TIPO_LABEL[t]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field label="Formato por defecto">
+          <Select value={props.formatoDefault} onValueChange={(v) => props.setFormatoDefault(v as PublicacionRRSS["formato"])}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(["solo_copy", "copy_imagen", "solo_imagen", "slide"] as const).map((f) => (
+                <SelectItem key={f} value={f}>{FORMATO_LABEL[f]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+      </div>
+      <Field label="Plataformas por defecto">
+        <div className="flex flex-wrap gap-1.5">
+          {PLAT_META.map(({ value, label, Icon }) => {
+            const on = props.plataformasDefault.includes(value);
+            return (
+              <button key={value} type="button" onClick={() => togglePlat(value)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-medium transition",
+                  on ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border hover:bg-muted",
+                )}
+              >
+                <Icon className="h-3 w-3" /> {label}
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Responsable diseño (opcional)">
+          <PersonaPicker value={props.disenoDefault || undefined} onChange={props.setDisenoDefault} placeholder="—" />
+        </Field>
+        <Field label="Responsable copy (opcional)">
+          <PersonaPicker value={props.copyDefault || undefined} onChange={props.setCopyDefault} placeholder="—" />
+        </Field>
+      </div>
+    </div>
+  );
 }

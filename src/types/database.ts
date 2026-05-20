@@ -62,13 +62,15 @@ export interface PublicacionRRSS {
   id: string;
   /** Vínculo en BD: en producción cada publicación cuelga de una tarea. */
   tarea_id?: UUID;
+  entrega_id?: UUID;
+  cliente_id?: UUID;
   fecha: string;
   hora?: string | null;
   tipo: "reel" | "post" | "carrusel" | "story";
   formato: "solo_copy" | "copy_imagen" | "solo_imagen" | "slide";
   plataformas: Array<"ig" | "fb" | "tt" | "li">;
-  briefing?: string;
-  slides?: string[];
+  briefing?: string | null;
+  slides?: Array<{ texto?: string; imagen_url?: string }>;
   estado?:
     | "borrador"
     | "diseno"
@@ -77,7 +79,69 @@ export interface PublicacionRRSS {
     | "listo"
     | "programado"
     | "publicado";
+  responsable_diseno_id?: UUID | null;
+  responsable_copy_id?: UUID | null;
+  created_at?: string;
+  updated_at?: string;
 }
+
+export const TIPO_LABEL: Record<PublicacionRRSS["tipo"], string> = {
+  post: "Post",
+  reel: "Reel",
+  carrusel: "Carrusel",
+  story: "Story",
+};
+
+export const TIPO_TOOLTIP: Record<PublicacionRRSS["tipo"], string> = {
+  post: "Pieza estática en el feed",
+  reel: "Vídeo vertical corto",
+  carrusel: "Múltiples slides deslizables",
+  story: "Pieza efímera 24h",
+};
+
+export const FORMATO_LABEL: Record<PublicacionRRSS["formato"], string> = {
+  solo_copy: "Solo copy",
+  copy_imagen: "Copy + imagen",
+  solo_imagen: "Solo imagen",
+  slide: "Slides",
+};
+
+export const FORMATO_TOOLTIP: Record<PublicacionRRSS["formato"], string> = {
+  solo_copy: "Solo texto, sin imagen",
+  copy_imagen: "Texto + 1 imagen",
+  solo_imagen: "Solo imagen, sin copy",
+  slide: "Carrusel de varios slides (texto + imagen cada uno)",
+};
+
+export const ESTADO_PUB_LABEL: Record<NonNullable<PublicacionRRSS["estado"]>, string> = {
+  borrador: "Borrador",
+  diseno: "Diseño",
+  copy: "Copy",
+  revision: "Revisión",
+  listo: "Listo",
+  programado: "Programado",
+  publicado: "Publicado",
+};
+
+export const ESTADO_PUB_TOOLTIP: Record<NonNullable<PublicacionRRSS["estado"]>, string> = {
+  borrador: "Recién creada, sin trabajo aún",
+  diseno: "En manos de diseño",
+  copy: "En manos de copy",
+  revision: "Pendiente de aprobación del PM",
+  listo: "Aprobada, lista para programar",
+  programado: "Programada en plataforma",
+  publicado: "Publicada",
+};
+
+export const ESTADO_PUB_COLOR: Record<NonNullable<PublicacionRRSS["estado"]>, string> = {
+  borrador: "bg-zinc-100 text-zinc-700 border-zinc-200",
+  diseno: "bg-blue-100 text-blue-700 border-blue-200",
+  copy: "bg-purple-100 text-purple-700 border-purple-200",
+  revision: "bg-amber-100 text-amber-700 border-amber-200",
+  listo: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  programado: "bg-cyan-100 text-cyan-700 border-cyan-200",
+  publicado: "bg-green-200 text-green-900 border-green-300",
+};
 
 export type EstadoEntrega = "en_curso" | "completada";
 

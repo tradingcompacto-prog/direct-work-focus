@@ -44,6 +44,9 @@ import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/entregas/$id")({
   component: FichaEntrega,
+  validateSearch: (search: Record<string, unknown>): { pub?: string } => ({
+    pub: typeof search.pub === "string" ? search.pub : undefined,
+  }),
 });
 
 const estadoTareaCls: Record<string, string> = {
@@ -55,6 +58,7 @@ const estadoTareaCls: Record<string, string> = {
 
 function FichaEntrega() {
   const { id } = Route.useParams();
+  const { pub } = Route.useSearch();
   useOverrides();
   useTareasVersion();
   useEntregasOverridesVersion();
@@ -63,6 +67,10 @@ function FichaEntrega() {
   const { abrir } = useCrearModal();
   const { abrir: abrirTarea } = useTareaModal();
   const [tab, setTab] = React.useState("resumen");
+
+  React.useEffect(() => {
+    if (pub) setTab("plan");
+  }, [pub]);
 
   if (!e) {
     return (
