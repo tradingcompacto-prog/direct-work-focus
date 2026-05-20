@@ -213,7 +213,7 @@ function FichaEntrega() {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="resumen">Resumen</TabsTrigger>
-          <TabsTrigger value="tareas">Tareas ({tareas.length})</TabsTrigger>
+          <TabsTrigger value="tareas">Tareas ({abiertas.length})</TabsTrigger>
           {e.categoria === "redes_sociales" && (
             <TabsTrigger value="plan">Plan de contenido</TabsTrigger>
           )}
