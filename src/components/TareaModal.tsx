@@ -27,7 +27,6 @@ import { useTimer, empezar, pausar, formatearMs } from "@/lib/timer-store";
 import {
   setEstadoTarea,
   marcarParaRevisar,
-  devolverAResponsable,
   completarTarea,
   reasignarTarea,
   setDescripcion,
