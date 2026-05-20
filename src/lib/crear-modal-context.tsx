@@ -1,7 +1,7 @@
 import * as React from "react";
 
 interface CrearModalState {
-  tipo: "tarea" | "entrega" | "proyecto" | "cliente" | null;
+  tipo: "tarea" | "proyecto" | "cliente" | null;
   contexto?: { cliente_id?: string; proyecto_id?: string; entrega_id?: string };
   abrir: (tipo: NonNullable<CrearModalState["tipo"]>, contexto?: CrearModalState["contexto"]) => void;
   cerrar: () => void;

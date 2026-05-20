@@ -3,14 +3,14 @@ import type { CategoriaEntrega } from "@/types/database";
 export const CATEGORIAS_ENTREGA: { value: CategoriaEntrega; label: string }[] = [
   { value: "redes_sociales", label: "Redes Sociales" },
   { value: "web", label: "Web" },
-  { value: "campana", label: "Campaña" },
-  { value: "informe_mensual", label: "Informe mensual" },
+  { value: "campana", label: "Campañas" },
+  { value: "informe_mensual", label: "Informe Mensual" },
   { value: "seo", label: "SEO" },
   { value: "diseno", label: "Diseño" },
   { value: "anuncios", label: "Anuncios" },
   { value: "fotografia", label: "Fotografía" },
   { value: "product_brief", label: "Product Brief" },
-  { value: "plan_marketing", label: "Plan de marketing" },
+  { value: "plan_marketing", label: "Plan de Marketing" },
   { value: "campanas_activas", label: "Campañas Activas" },
 ];
 

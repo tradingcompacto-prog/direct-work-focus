@@ -60,7 +60,7 @@ export function MisEntregasKanban() {
   });
 
   const enCurso = todas.filter((e) => e.estado === "en_curso");
-  const cerradas = todas.filter((e) => e.estado === "cerrada" && e.fecha_cierre);
+  const cerradas = todas.filter((e) => e.estado === "completada" && e.fecha_cierre);
   const cerradasHoy = cerradas.filter((e) => parseISO(e.fecha_cierre!).toDateString() === hoy.toDateString());
   const cerradasSemana = cerradas.filter(
     (e) => isAfter(parseISO(e.fecha_cierre!), inicioSemana) && !cerradasHoy.includes(e),

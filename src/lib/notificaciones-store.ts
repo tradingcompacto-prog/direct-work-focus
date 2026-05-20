@@ -36,16 +36,20 @@ export function marcarTodasLeidas() {
     });
 }
 
-export function agregarNotificacion(
-  n: Omit<Notificacion, "id" | "fecha" | "leida"> &
-    Partial<Pick<Notificacion, "leida" | "fecha">>,
-) {
+export function agregarNotificacion(n: {
+  user_id: string;
+  texto: string;
+  ruta?: string;
+  icono?: Notificacion["icono"];
+  categoria?: Notificacion["categoria"];
+  leida?: boolean;
+}) {
   const row = {
+    user_id: n.user_id,
     texto: n.texto,
     ruta: n.ruta ?? null,
     icono: n.icono ?? null,
-    categoria: n.categoria ?? null,
-    fecha: n.fecha ?? new Date().toISOString(),
+    categoria: n.categoria ?? "info",
     leida: n.leida ?? false,
   };
   supabase

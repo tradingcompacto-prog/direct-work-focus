@@ -45,7 +45,7 @@ export function moverEntrega(
   const d = new Date(today);
   if (destino === "semana") d.setDate(today.getDate() - 2);
   if (destino === "mes") d.setDate(today.getDate() - 10);
-  updateEntrega(id, { estado: "cerrada", fecha_cierre: d.toISOString().slice(0, 10) })
+  updateEntrega(id, { estado: "completada", fecha_cierre: d.toISOString().slice(0, 10) })
     .then(emit)
     .catch((e) => fail("mover entrega", e));
 }
@@ -53,7 +53,7 @@ export function moverEntrega(
 /** Cierre manual: marca la entrega como cerrada con la fecha actual. */
 export function cerrarEntrega(id: string) {
   const today = new Date().toISOString().slice(0, 10);
-  updateEntrega(id, { estado: "cerrada", fecha_cierre: today })
+  updateEntrega(id, { estado: "completada", fecha_cierre: today })
     .then(emit)
     .catch((e) => fail("cerrar entrega", e));
 }

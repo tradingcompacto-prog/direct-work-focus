@@ -52,7 +52,7 @@ export function MisEntregasTabla() {
           placeholder="Buscar entregas…"
           estados={[
             { value: "en_curso", label: "En curso" },
-            { value: "cerrada", label: "Cerrada" },
+            { value: "completada", label: "Cerrada" },
           ]}
         />
         <div className="flex-1" />
