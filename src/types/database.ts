@@ -70,6 +70,12 @@ export interface PublicacionRRSS {
   formato: "solo_copy" | "copy_imagen" | "solo_imagen" | "slide";
   plataformas: Array<"ig" | "fb" | "tt" | "li">;
   briefing?: string | null;
+  copy_final?: string | null;
+  recursos_visuales?: Array<{
+    url: string;
+    tipo?: "imagen" | "video";
+    descripcion?: string;
+  }>;
   slides?: Array<{ texto?: string; imagen_url?: string }>;
   estado?:
     | "borrador"
@@ -81,8 +87,30 @@ export interface PublicacionRRSS {
     | "publicado";
   responsable_diseno_id?: UUID | null;
   responsable_copy_id?: UUID | null;
+  impresiones?: number | null;
+  alcance?: number | null;
+  interacciones?: number | null;
+  ctr?: number | null;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface PublicacionReferencia {
+  id: string;
+  publicacion_id: UUID;
+  url: string;
+  descripcion?: string | null;
+  created_by?: UUID | null;
+  created_at: string;
+}
+
+export interface PublicacionComentario {
+  id: string;
+  publicacion_id: UUID;
+  user_id: UUID;
+  contenido: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export const TIPO_LABEL: Record<PublicacionRRSS["tipo"], string> = {
