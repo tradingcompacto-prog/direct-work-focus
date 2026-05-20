@@ -30,7 +30,6 @@ import {
   devolverAResponsable,
   completarTarea,
   reasignarTarea,
-  setHorasEstimadas,
   setDescripcion,
   setResponsable,
   setSolicitante,
