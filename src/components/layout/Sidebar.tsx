@@ -21,14 +21,16 @@ import {
   GalleryHorizontalEnd,
   BarChart3,
   PenSquare,
+  ShieldCheck,
+  Inbox,
+  Undo2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { tienePermiso, USUARIO_ACTUAL_ID } from "@/lib/equipo";
-import { TAREAS_MOCK, ENTREGAS_MOCK } from "@/lib/mock-tareas";
+import { useMisTareas, useMisEntregas, useTareas } from "@/lib/queries";
 import { urgenciaTarea } from "@/lib/fechas";
 import { usePrefSidebarCollapsed } from "@/lib/preferencias";
 import { useCrearModal } from "@/lib/crear-modal-context";
-import { useRolVista } from "@/lib/rol-vista";
+import { useUserCaps } from "@/lib/user-caps";
 import { useTareasVersion } from "@/lib/tareas-store";
 import {
   DropdownMenu,
@@ -48,23 +50,43 @@ interface SectionDef {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   items: ItemDef[];
-  // Roles que pueden ver esta sección. Si vacío, todos.
-  roles?: ("director" | "pm" | "ejecutor")[];
+  /** Si se devuelve false la sección se oculta entera. */
+  visibleSi?: (caps: ReturnType<typeof useUserCaps>) => boolean;
 }
 
-const SECCIONES: SectionDef[] = [
+function construirSecciones(caps: ReturnType<typeof useUserCaps>): SectionDef[] {
+  const SECS: SectionDef[] = [
   {
     label: "Mis tareas",
     icon: ListChecks,
     items: [
       { to: "/tareas/timeline", label: "Timeline", icon: CalendarDays, atajo: "G T" },
       { to: "/tareas/tabla", label: "Tabla", icon: Table2 },
+      ...(caps.hasDevoluciones
+        ? [{ to: "/mis-devoluciones", label: "Mis devoluciones", icon: Undo2 } as ItemDef]
+        : []),
     ],
   },
+  ...(caps.isPM || caps.isDirector
+    ? [
+        {
+          label: "Revisión",
+          icon: ShieldCheck,
+          items: [
+            ...(caps.isPM
+              ? [{ to: "/mis-revisiones", label: "Mis revisiones", icon: Inbox } as ItemDef]
+              : []),
+            ...(caps.isDirector
+              ? [{ to: "/revision", label: "Revisión global", icon: ShieldCheck } as ItemDef]
+              : []),
+          ],
+        } as SectionDef,
+      ]
+    : []),
   {
     label: "Mis entregas",
     icon: Package,
-    roles: ["director", "pm"],
+    visibleSi: (c) => c.isPM || c.isDirector,
     items: [
       { to: "/entregas/kanban", label: "Kanban", icon: KanbanSquare, atajo: "G K" },
       { to: "/entregas/gantt", label: "Timeline", icon: CalendarDays },
@@ -83,7 +105,7 @@ const SECCIONES: SectionDef[] = [
   {
     label: "Clientes",
     icon: Building2,
-    roles: ["director", "pm"],
+    visibleSi: (c) => c.isPM || c.isDirector,
     items: [
       { to: "/clientes/tarjetas", label: "Tarjetas", icon: Building2, atajo: "G L" },
       { to: "/clientes/tabla", label: "Tabla", icon: Table2 },
@@ -92,31 +114,11 @@ const SECCIONES: SectionDef[] = [
   {
     label: "Brújula",
     icon: Compass,
-    roles: ["director"],
+    visibleSi: (c) => c.isDirector,
     items: [{ to: "/brujula", label: "Resumen ejecutivo", icon: Compass, atajo: "G B" }],
   },
-];
-
-function badgesPorRuta(): Record<string, { n: number; tone?: "rojo" | "alerta" }> {
-  const misT = TAREAS_MOCK.filter(
-    (t) => t.responsable_id === USUARIO_ACTUAL_ID && t.estado !== "completada",
-  );
-  const misE = ENTREGAS_MOCK.filter((e) => e.pm_id === USUARIO_ACTUAL_ID && e.estado === "en_curso");
-  const vencidas = TAREAS_MOCK.filter(
-    (t) => t.estado !== "completada" && urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) === "rojo",
-  );
-  const cargaAlertas = misT.filter(
-    (t) => urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) === "rojo",
-  ).length;
-  return {
-    "/tareas/timeline": { n: misT.length },
-    "/tareas/tabla": { n: misT.length },
-    "/entregas/kanban": { n: misE.length },
-    "/entregas/gantt": { n: misE.length },
-    "/entregas/tabla": { n: misE.length },
-    "/equipo/carga": { n: cargaAlertas, tone: cargaAlertas > 0 ? "alerta" : undefined },
-    "/brujula": { n: vencidas.length, tone: vencidas.length > 0 ? "rojo" : undefined },
-  };
+  ];
+  return SECS.filter((s) => (s.visibleSi ? s.visibleSi(caps) : true));
 }
 
 export function Sidebar() {
@@ -124,15 +126,35 @@ export function Sidebar() {
   useTareasVersion();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { abrir } = useCrearModal();
-  const [rolVista] = useRolVista();
-  const esDirector = rolVista === "director";
-  const esPm = rolVista === "pm" || rolVista === "director";
-  const badges = badgesPorRuta();
-
-  const visibleSecciones = SECCIONES.filter((s) => {
-    if (!s.roles) return true;
-    return s.roles.includes(rolVista);
-  });
+  const caps = useUserCaps();
+  const esDirector = caps.isDirector;
+  const esPm = caps.isPM || esDirector;
+  const { data: misT = [] } = useMisTareas();
+  const { data: misE = [] } = useMisEntregas();
+  const { data: todasT = [] } = useTareas();
+  const badges: Record<string, { n: number; tone?: "rojo" | "alerta" }> = React.useMemo(() => {
+    const misActivas = misT.filter((t) => t.estado !== "completada");
+    const cargaAlertas = misActivas.filter(
+      (t) => urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) === "rojo",
+    ).length;
+    const vencidasGlobal = todasT.filter(
+      (t) => t.estado !== "completada" && urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) === "rojo",
+    ).length;
+    return {
+      "/tareas/timeline": { n: misActivas.length },
+      "/tareas/tabla": { n: misActivas.length },
+      "/entregas/kanban": { n: misE.length },
+      "/entregas/gantt": { n: misE.length },
+      "/entregas/tabla": { n: misE.length },
+      "/equipo/carga": { n: cargaAlertas, tone: cargaAlertas > 0 ? "alerta" : undefined },
+      "/mis-devoluciones": {
+        n: caps.devolucionesCount,
+        tone: caps.devolucionesCount > 0 ? "rojo" : undefined,
+      },
+      "/brujula": { n: vencidasGlobal, tone: vencidasGlobal > 0 ? "rojo" : undefined },
+    };
+  }, [misT, misE, todasT, caps.devolucionesCount]);
+  const visibleSecciones = React.useMemo(() => construirSecciones(caps), [caps]);
 
   return (
     <TooltipProvider delayDuration={150}>
