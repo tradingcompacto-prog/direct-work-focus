@@ -1,4 +1,6 @@
 import * as React from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { Instagram, Facebook, Linkedin, Music2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +39,9 @@ import { toast } from "sonner";
 import { ComboboxCrear } from "@/components/ComboboxCrear";
 import { CATEGORIAS_ENTREGA, labelCategoria } from "@/lib/categorias";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { CategoriaEntrega } from "@/types/database";
+import type { CategoriaEntrega, PublicacionRRSS } from "@/types/database";
+import { TIPO_LABEL, FORMATO_LABEL } from "@/types/database";
+import { PersonaPicker } from "@/components/PersonaPicker";
 
 const TITLES: Record<string, string> = {
   tarea: "Nueva tarea",
@@ -47,6 +51,7 @@ const TITLES: Record<string, string> = {
 
 export function CrearModal() {
   const { tipo, contexto, cerrar } = useCrearModal();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { data: clientesDB = [] } = useClientes();
   const { data: proyectosDB = [] } = useProyectos();
@@ -70,6 +75,12 @@ export function CrearModal() {
   const [descripcion, setDescripcion] = React.useState("");
   const [prioridad, setPrioridad] = React.useState<"baja" | "media" | "alta" | "critica">("media");
   const [numPubs, setNumPubs] = React.useState(4);
+  const [distrib, setDistrib] = React.useState<"uniforme" | "mismo-dia" | "personalizada">("uniforme");
+  const [tipoDefault, setTipoDefault] = React.useState<PublicacionRRSS["tipo"]>("post");
+  const [formatoDefault, setFormatoDefault] = React.useState<PublicacionRRSS["formato"]>("copy_imagen");
+  const [plataformasDefault, setPlataformasDefault] = React.useState<PublicacionRRSS["plataformas"]>(["ig"]);
+  const [disenoDefault, setDisenoDefault] = React.useState<string>("");
+  const [copyDefault, setCopyDefault] = React.useState<string>("");
   const [enviando, setEnviando] = React.useState(false);
 
   React.useEffect(() => {
@@ -88,6 +99,12 @@ export function CrearModal() {
     setDescripcion("");
     setPrioridad("media");
     setNumPubs(4);
+    setDistrib("uniforme");
+    setTipoDefault("post");
+    setFormatoDefault("copy_imagen");
+    setPlataformasDefault(["ig"]);
+    setDisenoDefault("");
+    setCopyDefault("");
   }, [contexto, tipo]);
 
   // Regla: 1 cliente = 1 proyecto. Auto-seleccionar proyecto al elegir cliente.
@@ -214,19 +231,27 @@ export function CrearModal() {
             .select("id")
             .single();
           if (error) throw error;
-          const filas = Array.from({ length: Math.max(1, numPubs) }).map((_, i) => ({
+          const fechas = distribuirFechas(inicio, fin, Math.max(1, numPubs), distrib);
+          const filas = fechas.map((fechaPub) => ({
             tarea_id: t!.id,
-            fecha: inicio,
-            tipo: "post",
-            formato: "copy_imagen",
-            plataformas: ["ig"],
+            cliente_id: clienteId,
+            entrega_id: entregaTargetId,
+            fecha: fechaPub,
+            tipo: tipoDefault,
+            formato: formatoDefault,
+            plataformas: plataformasDefault,
             estado: "borrador",
-            briefing: `Publicación ${i + 1}`,
+            briefing: null,
+            responsable_diseno_id: disenoDefault || null,
+            responsable_copy_id: copyDefault || null,
           }));
           const { error: e2 } = await supabase.from("publicaciones_rrss").insert(filas);
           if (e2) throw e2;
           invalidateKeys(["tareas"], ["mis-tareas"], ["plan-rrss", t!.id]);
-          toast.success(`Plan creado con ${numPubs} publicaciones`);
+          toast.success(`Plan creado con ${numPubs} publicaciones. Configúralas en detalle desde la entrega.`);
+          cerrar();
+          navigate({ to: "/entregas/$id", params: { id: entregaTargetId } } as never);
+          return;
         } else {
           const { error } = await supabase.from("tareas").insert({
             titulo,
