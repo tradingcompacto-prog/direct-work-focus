@@ -12,6 +12,7 @@ import type {
   Notificacion,
   Miembro,
   CategoriaEntrega,
+  TareaEnlace,
 } from "@/types/database";
 
 // ---------- helpers de mapeo BD -> interfaces internas ----------
@@ -217,6 +218,49 @@ export const useCategoriasHabilitadas = (clienteId: string | null | undefined) =
         .order("categoria");
       if (error) throw error;
       return (data ?? []).map((d) => d.categoria as CategoriaEntrega);
+    },
+  });
+};
+
+export const useColaboradores = (tareaId?: string) => {
+  const { user } = useAuth();
+  return useQuery<string[]>({
+    queryKey: ["colaboradores", tareaId],
+    enabled: !!user && !!tareaId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tarea_colaboradores")
+        .select("user_id")
+        .eq("tarea_id", tareaId!);
+      if (error) throw error;
+      const rows = (data ?? []) as Array<{ user_id: string }>;
+      if (rows.length === 0) {
+        // eslint-disable-next-line no-console
+        console.log("[useColaboradores] 0 rows for", tareaId);
+      }
+      return rows.map((r) => r.user_id);
+    },
+  });
+};
+
+export const useEnlaces = (tareaId?: string) => {
+  const { user } = useAuth();
+  return useQuery<TareaEnlace[]>({
+    queryKey: ["enlaces", tareaId],
+    enabled: !!user && !!tareaId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tarea_enlaces")
+        .select("id,tarea_id,url,descripcion,created_at")
+        .eq("tarea_id", tareaId!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      const rows = (data ?? []) as TareaEnlace[];
+      if (rows.length === 0) {
+        // eslint-disable-next-line no-console
+        console.log("[useEnlaces] 0 rows for", tareaId);
+      }
+      return rows;
     },
   });
 };

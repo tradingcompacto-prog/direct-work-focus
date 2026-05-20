@@ -321,8 +321,6 @@ function NotasCliente({ clienteId }: { clienteId: string }) {
 
 function CategoriasHabilitadasSection({ clienteId }: { clienteId: string }) {
   const { data: habilitadas = [], isLoading } = useCategoriasHabilitadas(clienteId);
-  const entregasCli = ENTREGAS_MOCK.filter((e) => e.cliente_id === clienteId);
-  const tareasCli = TAREAS_MOCK.filter((t) => t.cliente_id === clienteId);
   const setHab = new Set(habilitadas);
 
   const toggle = async (cat: CategoriaEntrega, on: boolean) => {
@@ -336,12 +334,29 @@ function CategoriasHabilitadasSection({ clienteId }: { clienteId: string }) {
       }
       toast.success(`«${labelCategoria(cat)}» habilitada`);
     } else {
-      // Sólo permitir desactivar si la entrega no tiene tareas.
-      const ent = entregasCli.find((e) => e.categoria === cat);
+      // Sólo permitir desactivar si la entrega no tiene tareas activas (Supabase).
+      const { data: ent, error: entErr } = await supabase
+        .from("entregas")
+        .select("id")
+        .eq("cliente_id", clienteId)
+        .eq("categoria", cat)
+        .maybeSingle();
+      if (entErr) {
+        toast.error("Error al comprobar la entrega");
+        return;
+      }
       if (ent) {
-        const conTareas = tareasCli.some((t) => t.entrega_id === ent.id);
-        if (conTareas) {
-          toast.error("No se puede desactivar: la entrega tiene tareas");
+        const { count, error: countErr } = await supabase
+          .from("tareas")
+          .select("id", { count: "exact", head: true })
+          .eq("entrega_id", ent.id)
+          .neq("estado", "completada");
+        if (countErr) {
+          toast.error("Error al comprobar tareas");
+          return;
+        }
+        if ((count ?? 0) > 0) {
+          toast.error(`No se puede desactivar: la entrega tiene ${count} tareas activas`);
           return;
         }
       }
@@ -356,7 +371,7 @@ function CategoriasHabilitadasSection({ clienteId }: { clienteId: string }) {
       }
       toast.success(`«${labelCategoria(cat)}» desactivada`);
     }
-    invalidateKeys(["cliente_categorias", clienteId], ["entregas"]);
+    invalidateKeys(["cliente_categorias", clienteId], ["entregas"], ["tareas"]);
   };
 
   if (isLoading) {
