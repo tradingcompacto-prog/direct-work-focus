@@ -39,6 +39,7 @@ import {
 import { addEnlace, removeEnlace } from "@/lib/enlaces-store";
 import { useRolVista } from "@/lib/rol-vista";
 import { ReasignarTareaDialog } from "@/components/ReasignarTareaDialog";
+import { DevolverTareaDialog } from "@/components/DevolverTareaDialog";
 import { Send, UserCog, CheckCircle2 } from "lucide-react";
 import { Trash2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
@@ -75,6 +76,7 @@ export function TareaModal() {
   const tarea = tareaId ? tareaPorId(tareaId) : undefined;
   const [cerrandoOpen, setCerrandoOpen] = React.useState(false);
   const [reasignarOpen, setReasignarOpen] = React.useState(false);
+  const [devolverOpen, setDevolverOpen] = React.useState(false);
   const timer = useTimer(tareaId);
   const [rolVista] = useRolVista();
   const esPmODirector = rolVista === "pm" || rolVista === "director";
@@ -201,13 +203,10 @@ export function TareaModal() {
                 <div className="grid grid-cols-3 gap-2">
                   <Button
                     size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
-                    onClick={() => {
-                      devolverAResponsable(tarea.id);
-                      toast.success(`✓ Tarea devuelta a ${nombrePorId(tarea.responsable_id)}`);
-                    }}
+                    className="bg-orange-600 hover:bg-orange-700 text-white gap-1.5"
+                    onClick={() => setDevolverOpen(true)}
                   >
-                    <Send className="h-3.5 w-3.5" /> Volver a enviar
+                    <Send className="h-3.5 w-3.5" /> Devolver
                   </Button>
                   <Button
                     size="sm"
