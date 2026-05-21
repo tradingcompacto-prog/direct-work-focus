@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Monitor } from "lucide-react";
 import type { Tarea } from "@/types/database";
+import { VistaHeader } from "@/components/VistaHeader";
 
 const ordenUrg = { rojo: 0, amarillo: 1, azul: 2, neutro: 3 } as const;
 
@@ -81,6 +82,10 @@ export function EquipoCarga() {
 
   return (
     <div className="space-y-3">
+      <VistaHeader
+        titulo="Carga del equipo"
+        leyenda="Cuántas tareas tiene cada persona. Verde, ámbar o rojo según volumen."
+      />
       <div className="flex flex-wrap justify-end gap-2">
         <Button asChild variant="outline" size="sm" className="mr-auto">
           <a href="/carga-monitor" target="_blank" rel="noreferrer">

@@ -11,6 +11,7 @@ import { estimarTarea } from "@/lib/estimacion";
 import { Link } from "@tanstack/react-router";
 import { format, parseISO, addDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
+import { VistaHeader } from "@/components/VistaHeader";
 
 export function Brujula() {
   const { data: tareas = [] } = useTareas();
@@ -85,6 +86,11 @@ export function Brujula() {
     : null;
 
   return (
+    <>
+    <VistaHeader
+      titulo="Brújula"
+      leyenda="Vista operativa para directores: cumplimiento, carga, vencimientos y top clientes."
+    />
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       <Widget title="Vencidas en el equipo" big>
         <div className="text-6xl font-bold text-red-600">{vencidas.length}</div>

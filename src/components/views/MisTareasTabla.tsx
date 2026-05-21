@@ -41,6 +41,7 @@ import { urgenciaTarea } from "@/lib/fechas";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { PublicacionPanel } from "@/components/rrss/PublicacionPanel";
+import { VistaHeader } from "@/components/VistaHeader";
 
 const estadoBadge: Record<string, string> = {
   activa: "bg-blue-100 text-blue-800",
@@ -102,6 +103,10 @@ export function MisTareasTabla() {
   return (
     <TooltipProvider delayDuration={150}>
     <div className="space-y-3">
+      <VistaHeader
+        titulo="Mis tareas — Tabla"
+        leyenda="Tareas que tengo asignadas como responsable, en formato tabla con filtros."
+      />
       <div className="flex items-center gap-2 flex-wrap">
         <AlcanceFilter value={alcance} onChange={setAlcance} />
         {caps.isPM && (

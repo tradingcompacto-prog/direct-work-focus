@@ -21,6 +21,7 @@ import { EstadoVacio } from "@/components/EstadoVacio";
 import { setTareaFechas, getTareaOverride, useOverrides } from "@/lib/fechas-override-store";
 import { toast } from "sonner";
 import { PublicacionPanel } from "@/components/rrss/PublicacionPanel";
+import { VistaHeader } from "@/components/VistaHeader";
 
 const N_DIAS = 14;
 const DAY_W = 60;
@@ -101,6 +102,10 @@ export function MisTareasTimeline() {
   return (
     <TooltipProvider delayDuration={200}>
       <div className="space-y-3">
+      <VistaHeader
+        titulo="Mis tareas — Timeline"
+        leyenda="Tareas que tengo asignadas como responsable, en formato cronológico (próximos 14 días)."
+      />
       <div className="flex items-center gap-2 flex-wrap">
         <AlcanceFilter value={alcance} onChange={setAlcance} />
         {caps.isPM && (

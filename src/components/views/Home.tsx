@@ -12,6 +12,7 @@ import { colorCliente, bordeIzqCliente } from "@/lib/cliente-colors";
 import { cn } from "@/lib/utils";
 import { useRolVista } from "@/lib/rol-vista";
 import { useTareasVersion } from "@/lib/tareas-store";
+import { VistaHeader } from "@/components/VistaHeader";
 
 const iconoHora = () => {
   const h = new Date().getHours();
@@ -26,6 +27,10 @@ export function Home() {
   useTareasVersion();
   return (
     <div className="space-y-4 anim-in">
+      <VistaHeader
+        titulo="Inicio"
+        leyenda="Resumen de tu actividad y accesos rápidos."
+      />
       {rol === "director" && <HomeDirector />}
       {rol === "pm" && <HomePM />}
       {rol === "ejecutor" && <HomeEjecutor />}
