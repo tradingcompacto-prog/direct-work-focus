@@ -51,6 +51,8 @@ export function MisTareasTimeline() {
   const { data: todasTareas = [] } = useTareas();
   const { data: revisionesPM = [] } = useMisRevisiones();
 
+  const hoy = useMemo(() => startOfDay(new Date()), []);
+
   const base = useMemo(() => {
     const raw =
       alcance === "solo-mias"
@@ -80,7 +82,6 @@ export function MisTareasTimeline() {
   );
   const { abrir } = useTareaModal();
 
-  const hoy = useMemo(() => startOfDay(new Date()), []);
   const dias = useMemo(() => Array.from({ length: N_DIAS }, (_, i) => addDays(hoy, i)), [hoy]);
 
   const lista = useMemo(
