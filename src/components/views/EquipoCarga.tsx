@@ -8,6 +8,8 @@ import { estimarTarea } from "@/lib/estimacion";
 import { setResponsable, getResponsable, useOverrides } from "@/lib/fechas-override-store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Monitor } from "lucide-react";
 import type { Tarea } from "@/types/database";
 
 const ordenUrg = { rojo: 0, amarillo: 1, azul: 2, neutro: 3 } as const;
@@ -43,7 +45,7 @@ const dotEstado: Partial<Record<Tarea["estado"], { color: string; label: string 
 
 export function EquipoCarga() {
   useOverrides();
-  const [modo, setModo] = React.useState<"cards" | "barras">("cards");
+  const [modo, setModo] = React.useState<"fichas" | "cards" | "barras">("fichas");
   const [unidad, setUnidad] = React.useState<"tareas" | "horas">("tareas");
   const { data: tareas = [] } = useTareas();
   const { data: equipo = [] } = useEquipo();
@@ -79,7 +81,12 @@ export function EquipoCarga() {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button asChild variant="outline" size="sm" className="mr-auto">
+          <a href="/carga-monitor" target="_blank" rel="noreferrer">
+            <Monitor className="h-4 w-4 mr-1" /> Modo monitor
+          </a>
+        </Button>
         <div className="inline-flex rounded-md border border-border overflow-hidden text-sm">
           <button
             onClick={() => setUnidad("tareas")}
@@ -96,10 +103,16 @@ export function EquipoCarga() {
         </div>
         <div className="inline-flex rounded-md border border-border overflow-hidden text-sm">
           <button
+            onClick={() => setModo("fichas")}
+            className={cn("px-3 py-1.5", modo === "fichas" ? "bg-foreground text-background" : "")}
+          >
+            Fichas
+          </button>
+          <button
             onClick={() => setModo("cards")}
             className={cn("px-3 py-1.5", modo === "cards" ? "bg-foreground text-background" : "")}
           >
-            Cards
+            Kanban
           </button>
           <button
             onClick={() => setModo("barras")}
@@ -110,7 +123,63 @@ export function EquipoCarga() {
         </div>
       </div>
 
-      {modo === "cards" ? (
+      {modo === "fichas" ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {equipo.map((m) => {
+            const lista = porPersona.get(m.id) ?? [];
+            const total = totalPersona(lista);
+            const nivel = nivelCarga(total, unidad);
+            const max = unidad === "tareas" ? 10 : 35;
+            const pct = Math.min(100, Math.round((total / max) * 100));
+            const tono = {
+              verde: { bg: "bg-emerald-50", border: "border-emerald-200", bar: "bg-emerald-500", text: "text-emerald-800", label: "Carga sana" },
+              amarillo: { bg: "bg-amber-50", border: "border-amber-200", bar: "bg-amber-500", text: "text-amber-800", label: "Carga alta" },
+              rojo: { bg: "bg-red-50", border: "border-red-200", bar: "bg-red-500", text: "text-red-800", label: "Sobrecargado" },
+            }[nivel];
+            const cont = { rojo: 0, amarillo: 0, azul: 0, neutro: 0 };
+            for (const t of lista) cont[urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max)]++;
+            return (
+              <Link
+                key={m.id}
+                to="/personas/$id"
+                params={{ id: m.id }}
+                className={cn(
+                  "card-soft p-6 min-h-[200px] flex flex-col gap-3 border-2 transition hover:shadow-md hover:-translate-y-0.5",
+                  tono.bg,
+                  tono.border,
+                )}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <PersonaChip id={m.id} size="md" link={false} />
+                    <div className="text-sm text-muted-foreground mt-1 truncate">{m.rol}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-3xl font-bold tabular-nums leading-none">
+                      {total}
+                      <span className="text-base font-normal text-muted-foreground">
+                        {unidad === "horas" ? "h" : ""}
+                      </span>
+                    </div>
+                    <div className={cn("text-xs font-medium mt-1", tono.text)}>{tono.label}</div>
+                  </div>
+                </div>
+                <div className="mt-auto space-y-2">
+                  <div className="h-2.5 w-full rounded-full bg-white/60 overflow-hidden">
+                    <div className={cn("h-full transition-all", tono.bar)} style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    {cont.rojo > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" />{cont.rojo} urgentes</span>}
+                    {cont.amarillo > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" />{cont.amarillo} próximas</span>}
+                    {cont.azul > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" />{cont.azul} holgura</span>}
+                    {lista.length === 0 && <span>Sin tareas activas 🍃</span>}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      ) : modo === "cards" ? (
         <div className="overflow-x-auto pb-2">
           <div className="flex gap-3 min-w-max">
             {equipo.map((m) => {
