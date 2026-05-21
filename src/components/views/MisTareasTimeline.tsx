@@ -215,11 +215,24 @@ export function MisTareasTimeline() {
                 );
               })}
               {lista.length === 0 && (
-                <EstadoVacio
-                  emoji="🌴"
-                  titulo="Catorce días limpios por delante"
-                  hint="No tienes tareas con fecha en las próximas 2 semanas. Buen momento para planificar."
-                />
+                fueraDeRango > 0 ? (
+                  <EstadoVacio
+                    emoji="📅"
+                    titulo="Sin tareas en los próximos 14 días"
+                    hint={`Tienes ${fueraDeRango} ${fueraDeRango === 1 ? "tarea" : "tareas"} fuera del rango visible. Vela${fueraDeRango === 1 ? "" : "s"} en la tabla.`}
+                    accion={
+                      <Link to="/tareas/tabla" className="text-xs font-medium text-blue-600 hover:underline">
+                        Ir a la tabla →
+                      </Link>
+                    }
+                  />
+                ) : (
+                  <EstadoVacio
+                    emoji="🌴"
+                    titulo="Catorce días limpios por delante"
+                    hint="No tienes tareas con fecha en las próximas 2 semanas. Buen momento para planificar."
+                  />
+                )
               )}
             </div>
           </div>
