@@ -320,17 +320,7 @@ export function TareaModal() {
             <Section title="Asignación">
               <div className="text-sm flex gap-2 items-center">
                 <span className="text-muted-foreground w-20">Responsable:</span>
-                <PersonaPicker
-                  value={tarea.responsable_id}
-                  onChange={(id) => setResponsable(tarea.id, id)}
-                />
-              </div>
-              <div className="text-sm flex gap-2 items-center">
-                <span className="text-muted-foreground w-20">Solicitante:</span>
-                <PersonaPicker
-                  value={tarea.solicitante_id}
-                  onChange={(id) => setSolicitante(tarea.id, id)}
-                />
+                <ResponsablePickerRestringido tarea={tarea} />
               </div>
             </Section>
 
