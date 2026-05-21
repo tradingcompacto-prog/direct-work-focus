@@ -340,6 +340,16 @@ export function CrearModal() {
               <Field label="PM">
                 <PersonaSelect value={pmCliente} onChange={setPmCliente} />
               </Field>
+              <Field label="Prioridad">
+                <Select value={prioridadCliente} onValueChange={(v) => setPrioridadCliente(v as "1" | "2" | "3")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">🔴 Alta</SelectItem>
+                    <SelectItem value="2">🟡 Media</SelectItem>
+                    <SelectItem value="3">⚪ Baja</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
               <Field label="Categorías habilitadas">
                 <div className="grid grid-cols-2 gap-2 rounded-md border border-border p-3 max-h-56 overflow-auto">
                   {CATEGORIAS_ENTREGA.map((c) => {
