@@ -1,5 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ClientesTarjetas } from "@/components/views/ClientesTarjetas";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 export const Route = createFileRoute("/clientes/tarjetas")({
-  component: () => <div className="p-6"><ClientesTarjetas /></div>,
+  component: () => <Navigate to="/clientes/tabla" replace />,
 });
