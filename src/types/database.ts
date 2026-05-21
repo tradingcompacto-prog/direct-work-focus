@@ -78,13 +78,11 @@ export interface PublicacionRRSS {
   }>;
   slides?: Array<{ texto?: string; imagen_url?: string }>;
   estado?:
-    | "borrador"
-    | "diseno"
-    | "copy"
+    | "activa"
+    | "haciendola"
+    | "pausada"
     | "revision"
-    | "listo"
-    | "programado"
-    | "publicado";
+    | "completada";
   responsable_diseno_id?: UUID | null;
   responsable_copy_id?: UUID | null;
   impresiones?: number | null;
@@ -142,33 +140,27 @@ export const FORMATO_TOOLTIP: Record<PublicacionRRSS["formato"], string> = {
 };
 
 export const ESTADO_PUB_LABEL: Record<NonNullable<PublicacionRRSS["estado"]>, string> = {
-  borrador: "Borrador",
-  diseno: "Diseño",
-  copy: "Copy",
+  activa: "Activa",
+  haciendola: "Haciéndola",
+  pausada: "Pausada",
   revision: "Revisión",
-  listo: "Listo",
-  programado: "Programado",
-  publicado: "Publicado",
+  completada: "Completada",
 };
 
 export const ESTADO_PUB_TOOLTIP: Record<NonNullable<PublicacionRRSS["estado"]>, string> = {
-  borrador: "Recién creada, sin trabajo aún",
-  diseno: "En manos de diseño",
-  copy: "En manos de copy",
+  activa: "Sin empezar, esperando que alguien la haga",
+  haciendola: "En producción ahora mismo",
+  pausada: "Detenida temporalmente",
   revision: "Pendiente de aprobación del PM",
-  listo: "Aprobada, lista para programar",
-  programado: "Programada en plataforma",
-  publicado: "Publicada",
+  completada: "Aprobada y cerrada",
 };
 
 export const ESTADO_PUB_COLOR: Record<NonNullable<PublicacionRRSS["estado"]>, string> = {
-  borrador: "bg-zinc-100 text-zinc-700 border-zinc-200",
-  diseno: "bg-blue-100 text-blue-700 border-blue-200",
-  copy: "bg-purple-100 text-purple-700 border-purple-200",
-  revision: "bg-amber-100 text-amber-700 border-amber-200",
-  listo: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  programado: "bg-cyan-100 text-cyan-700 border-cyan-200",
-  publicado: "bg-green-200 text-green-900 border-green-300",
+  activa: "bg-blue-100 text-blue-800 border-blue-200",
+  haciendola: "bg-amber-100 text-amber-800 border-amber-200",
+  pausada: "bg-zinc-100 text-zinc-700 border-zinc-200",
+  revision: "bg-purple-100 text-purple-800 border-purple-200",
+  completada: "bg-green-100 text-green-800 border-green-200",
 };
 
 export type EstadoEntrega = "en_curso" | "completada";
