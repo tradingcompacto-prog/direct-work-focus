@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,10 +32,16 @@ function LoginPage() {
       if (error) throw error;
       window.location.href = "/";
     } catch (err) {
-      if (err && typeof err === "object" && "status" in err && err.status === 400) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "status" in err &&
+        err.status === 400
+      ) {
         toast.error("Email o contraseña incorrectos");
       } else {
-        const msg = err instanceof Error ? err.message : "Error al iniciar sesión";
+        const msg =
+          err instanceof Error ? err.message : "Error al iniciar sesión";
         toast.error(msg);
       }
     } finally {
@@ -51,14 +57,18 @@ function LoginPage() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
+          emailRedirectTo:
+            typeof window !== "undefined"
+              ? window.location.origin
+              : undefined,
         },
       });
       if (error) throw error;
       setSent(true);
       toast.success("Revisa tu email para entrar");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Error al enviar el enlace";
+      const msg =
+        err instanceof Error ? err.message : "Error al enviar el enlace";
       toast.error(msg);
     } finally {
       setSending(false);
@@ -73,12 +83,18 @@ function LoginPage() {
     setSending(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: typeof window !== "undefined" ? window.location.origin + "/login" : undefined,
+        redirectTo:
+          typeof window !== "undefined"
+            ? window.location.origin + "/login"
+            : undefined,
       });
       if (error) throw error;
-      toast.success("Si el email existe, recibirás un enlace para resetear contraseña.");
+      toast.success(
+        "Si el email existe, recibirás un enlace para resetear contraseña."
+      );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Error al enviar el enlace";
+      const msg =
+        err instanceof Error ? err.message : "Error al enviar el enlace";
       toast.error(msg);
     } finally {
       setSending(false);
@@ -104,7 +120,11 @@ function LoginPage() {
             Ábrelo desde este dispositivo para iniciar sesión.
             <button
               type="button"
-              onClick={() => { setSent(false); setEmail(""); setPassword(""); }}
+              onClick={() => {
+                setSent(false);
+                setEmail("");
+                setPassword("");
+              }}
               className="block mx-auto mt-3 text-xs underline text-muted-foreground"
             >
               Usar otro correo
@@ -123,7 +143,7 @@ function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoFocus
               />
-            </<parameter name="file_path">src/routes/login.tsx</parameter>
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">Contraseña</Label>
               <Input
