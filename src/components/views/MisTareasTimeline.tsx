@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useMemo } from "react";
+import { Link } from "@tanstack/react-router";
 import { addDays, differenceInDays, format, isSameDay, parseISO, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { useMisTareas, useTareas, useMisRevisiones } from "@/lib/queries";
@@ -50,6 +51,8 @@ export function MisTareasTimeline() {
   const { data: todasTareas = [] } = useTareas();
   const { data: revisionesPM = [] } = useMisRevisiones();
 
+  const hoy = useMemo(() => startOfDay(new Date()), []);
+
   const base = useMemo(() => {
     const raw =
       alcance === "solo-mias"
@@ -58,6 +61,15 @@ export function MisTareasTimeline() {
     // Las vistas de trabajo activo no muestran tareas completadas.
     return raw.filter((t) => t.estado !== "completada");
   }, [alcance, misTareas, todasTareas, user?.id, caps.clientesPM]);
+
+  const fueraDeRango = useMemo(() => {
+    const limite = addDays(hoy, N_DIAS);
+    return base.filter((t) => {
+      const fin = parseISO(t.fecha_fin_max);
+      const inicio = parseISO(t.fecha_inicio ?? t.fecha_fin_min);
+      return fin < hoy || inicio > limite;
+    }).length;
+  }, [base, hoy]);
 
   const tareas = useMemo(() => {
     if (!incluirRevisiones || !caps.isPM) return base;
@@ -70,7 +82,6 @@ export function MisTareasTimeline() {
   );
   const { abrir } = useTareaModal();
 
-  const hoy = useMemo(() => startOfDay(new Date()), []);
   const dias = useMemo(() => Array.from({ length: N_DIAS }, (_, i) => addDays(hoy, i)), [hoy]);
 
   const lista = useMemo(
@@ -131,6 +142,21 @@ export function MisTareasTimeline() {
               </div>
             </div>
 
+            {/* Banner tareas fuera de rango */}
+            {fueraDeRango > 0 && (
+              <div className="flex items-center justify-between bg-blue-50 border-y border-blue-100 px-4 py-2 text-xs text-blue-800">
+                <span>
+                  Hay {fueraDeRango} {fueraDeRango === 1 ? "tarea" : "tareas"} fuera del rango visible (próximos 14 días).
+                </span>
+                <Link
+                  to="/tareas/tabla"
+                  className="font-medium hover:underline"
+                >
+                  Ver en tabla →
+                </Link>
+              </div>
+            )}
+
             {/* Body */}
             <div className="relative">
               {/* Linea hoy */}
@@ -189,11 +215,24 @@ export function MisTareasTimeline() {
                 );
               })}
               {lista.length === 0 && (
-                <EstadoVacio
-                  emoji="🌴"
-                  titulo="Catorce días limpios por delante"
-                  hint="No tienes tareas con fecha en las próximas 2 semanas. Buen momento para planificar."
-                />
+                fueraDeRango > 0 ? (
+                  <EstadoVacio
+                    emoji="📅"
+                    titulo="Sin tareas en los próximos 14 días"
+                    hint={`Tienes ${fueraDeRango} ${fueraDeRango === 1 ? "tarea" : "tareas"} fuera del rango visible. Vela${fueraDeRango === 1 ? "" : "s"} en la tabla.`}
+                    cta={
+                      <Link to="/tareas/tabla" className="text-xs font-medium text-blue-600 hover:underline">
+                        Ir a la tabla →
+                      </Link>
+                    }
+                  />
+                ) : (
+                  <EstadoVacio
+                    emoji="🌴"
+                    titulo="Catorce días limpios por delante"
+                    hint="No tienes tareas con fecha en las próximas 2 semanas. Buen momento para planificar."
+                  />
+                )
               )}
             </div>
           </div>

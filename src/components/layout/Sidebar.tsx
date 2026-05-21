@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
+import { addDays, parseISO, startOfDay } from "date-fns";
 import {
   CalendarDays,
   Table2,
@@ -141,8 +142,15 @@ export function Sidebar() {
     const vencidasGlobal = todasT.filter(
       (t) => t.estado !== "completada" && urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) === "rojo",
     ).length;
+    const hoy = startOfDay(new Date());
+    const limite = addDays(hoy, 14);
+    const enRangoTimeline = misActivas.filter((t) => {
+      const fin = parseISO(t.fecha_fin_max);
+      const inicio = parseISO(t.fecha_inicio ?? t.fecha_fin_min);
+      return fin >= hoy && inicio <= limite;
+    });
     return {
-      "/tareas/timeline": { n: misActivas.length },
+      "/tareas/timeline": { n: enRangoTimeline.length },
       "/tareas/tabla": { n: misActivas.length },
       "/entregas/kanban": { n: misEActivas.length },
       "/entregas/gantt": { n: misEActivas.length },
