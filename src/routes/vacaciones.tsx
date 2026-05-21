@@ -18,7 +18,6 @@ import { PersonaChip } from "@/components/PersonaChip";
 import { SolicitarVacacionesDialog } from "@/components/SolicitarVacacionesDialog";
 import { RechazarVacacionesDialog } from "@/components/RechazarVacacionesDialog";
 import { useUserCaps } from "@/lib/user-caps";
-import { useAuth } from "@/lib/auth";
 import {
   useMisVacaciones,
   useVacacionesPorAprobar,
