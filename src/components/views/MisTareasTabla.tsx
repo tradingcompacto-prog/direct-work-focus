@@ -13,6 +13,8 @@ import {
   useMisTareas,
   useTareas,
   useMisRevisiones,
+  useMisPublicacionesComoTareas,
+  type PseudoTarea,
 } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
 import { useUserCaps } from "@/lib/user-caps";
@@ -38,6 +40,7 @@ import { toast } from "sonner";
 import { urgenciaTarea } from "@/lib/fechas";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { PublicacionPanel } from "@/components/rrss/PublicacionPanel";
 
 const estadoBadge: Record<string, string> = {
   activa: "bg-blue-100 text-blue-800",
@@ -56,11 +59,13 @@ export function MisTareasTabla() {
   const { data: misTareas = [] } = useMisTareas();
   const { data: todasTareas = [] } = useTareas();
   const { data: revisionesPM = [] } = useMisRevisiones();
+  const { data: misPubs = [] } = useMisPublicacionesComoTareas();
+  const [panelPubId, setPanelPubId] = React.useState<string | null>(null);
 
   const baseTareas = React.useMemo(() => {
-    if (alcance === "solo-mias") return misTareas;
+    if (alcance === "solo-mias") return [...misTareas, ...misPubs];
     return filtrarPorAlcance(todasTareas, alcance, user?.id, caps.clientesPM);
-  }, [alcance, misTareas, todasTareas, user?.id, caps.clientesPM]);
+  }, [alcance, misTareas, misPubs, todasTareas, user?.id, caps.clientesPM]);
 
   const tareas = React.useMemo(() => {
     if (!incluirRevisiones || !caps.isPM) return baseTareas;
@@ -158,7 +163,9 @@ export function MisTareasTabla() {
                 key={t.id}
                 onClick={(e) => {
                   if ((e.target as HTMLElement).closest("[data-noopen]")) return;
-                  abrir(t.id);
+                  const pt = t as PseudoTarea;
+                  if (pt.__esPub) setPanelPubId(pt.__publicacionId);
+                  else abrir(t.id);
                 }}
                 className={cn(
                   "cursor-pointer hover:bg-muted/40 transition-colors",
@@ -166,6 +173,7 @@ export function MisTareasTabla() {
                   t.devuelta_at && "bg-orange-50/60 border-l-4 border-orange-500",
                   incluirRevisiones && caps.isPM && revisionPMIds.has(t.id) &&
                     "bg-blue-50/40 border-l-4 border-blue-500",
+                  (t as PseudoTarea).__esPub && "border-l-4 border-violet-500",
                 )}
               >
                 <TableCell data-noopen onClick={(e) => e.stopPropagation()}>
@@ -174,6 +182,11 @@ export function MisTareasTabla() {
                 <TableCell className="font-medium">
                   <span className="inline-flex items-center gap-1.5">
                     {t.titulo}
+                    {(t as PseudoTarea).__esPub && (
+                      <span className="rounded bg-violet-100 text-violet-800 px-1.5 py-0.5 text-[10px] font-semibold">
+                        📱 RRSS · {(t as PseudoTarea).__rolPub === "diseno" ? "Diseño" : "Copy"}
+                      </span>
+                    )}
                     {t.devuelta_at && (
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -233,6 +246,11 @@ export function MisTareasTabla() {
         onReasignar={() => { toast.success(`${sel.size} tareas reasignadas`); setSel(new Set()); }}
         onExportar={() => { toast.success(`${sel.size} tareas exportadas a CSV`); }}
         onEliminar={() => { eliminarTareas(Array.from(sel)); setSel(new Set()); }}
+      />
+      <PublicacionPanel
+        publicacionId={panelPubId}
+        onOpenChange={(o) => !o && setPanelPubId(null)}
+        onChangeId={(id) => setPanelPubId(id)}
       />
     </div>
     </TooltipProvider>
