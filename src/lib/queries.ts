@@ -588,3 +588,26 @@ export const useMisPublicacionesComoTareas = () => {
     },
   });
 };
+
+// ---------- responsables permitidos para una tarea ----------
+
+/**
+ * Personas que pueden ser responsable (supervisor PM) de una tarea
+ * en un cliente concreto: PMs del cliente (principal+secundario) + directores.
+ */
+export const useResponsablesPermitidos = (clienteId?: string | null) => {
+  const { data: clientes = [] } = useClientes();
+  const { data: equipo = [] } = useEquipo();
+  return useMemo(() => {
+    if (!clienteId) return [];
+    const cliente = clientes.find((c) => c.id === clienteId);
+    if (!cliente) return [];
+    const ids = new Set<string>();
+    if (cliente.pm_principal_id) ids.add(cliente.pm_principal_id);
+    if (cliente.pm_secundario_id) ids.add(cliente.pm_secundario_id);
+    for (const m of equipo) {
+      if (m.grupos?.includes("director")) ids.add(m.id);
+    }
+    return equipo.filter((m) => ids.has(m.id) && m.activo);
+  }, [clienteId, clientes, equipo]);
+};
