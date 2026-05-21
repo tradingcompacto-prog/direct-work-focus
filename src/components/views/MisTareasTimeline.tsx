@@ -220,7 +220,7 @@ export function MisTareasTimeline() {
                     emoji="📅"
                     titulo="Sin tareas en los próximos 14 días"
                     hint={`Tienes ${fueraDeRango} ${fueraDeRango === 1 ? "tarea" : "tareas"} fuera del rango visible. Vela${fueraDeRango === 1 ? "" : "s"} en la tabla.`}
-                    accion={
+                    cta={
                       <Link to="/tareas/tabla" className="text-xs font-medium text-blue-600 hover:underline">
                         Ir a la tabla →
                       </Link>
