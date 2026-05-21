@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCrearModal } from "@/lib/crear-modal-context";
+import { useTareaModal } from "@/lib/tarea-modal-context";
 import { EQUIPO } from "@/lib/equipo";
 import { estimar } from "@/lib/estimacion";
 import {
@@ -52,6 +53,7 @@ const TITLES: Record<string, string> = {
 export function CrearModal() {
   const { tipo, contexto, cerrar } = useCrearModal();
   const navigate = useNavigate();
+  const { abrir: abrirTareaModal } = useTareaModal();
   const { user } = useAuth();
   const { data: clientesDB = [] } = useClientes();
   const { data: proyectosDB = [] } = useProyectos();
@@ -104,8 +106,9 @@ export function CrearModal() {
     setFormatoDefault("copy_imagen");
     setPlataformasDefault(["ig"]);
     setDisenoDefault("");
-    setCopyDefault("");
-  }, [contexto, tipo]);
+    // Copy por defecto = usuario actual (PM normalmente escribe). Diseño vacío.
+    setCopyDefault(user?.id ?? "");
+  }, [contexto, tipo, user?.id]);
 
   // Regla: 1 cliente = 1 proyecto. Auto-seleccionar proyecto al elegir cliente.
   React.useEffect(() => {
@@ -240,7 +243,7 @@ export function CrearModal() {
             tipo: tipoDefault,
             formato: formatoDefault,
             plataformas: plataformasDefault,
-            estado: "borrador",
+            estado: "activa",
             briefing: null,
             responsable_diseno_id: disenoDefault || null,
             responsable_copy_id: copyDefault || null,
@@ -248,9 +251,9 @@ export function CrearModal() {
           const { error: e2 } = await supabase.from("publicaciones_rrss").insert(filas);
           if (e2) throw e2;
           invalidateKeys(["tareas"], ["mis-tareas"], ["plan-rrss", t!.id]);
-          toast.success(`Plan creado con ${numPubs} publicaciones. Configúralas en detalle desde la entrega.`);
+          toast.success(`Plan creado con ${numPubs} publicaciones. Configúralas desde la tarea.`);
           cerrar();
-          navigate({ to: "/entregas/$id", params: { id: entregaTargetId } } as never);
+          abrirTareaModal(t!.id);
           return;
         } else {
           const { error } = await supabase.from("tareas").insert({

@@ -18,13 +18,11 @@ import { toast } from "sonner";
 type Estado = NonNullable<PublicacionRRSS["estado"]>;
 
 const TRANSICIONES: Record<Estado, Array<{ label: string; to: Estado; tone?: "danger" | "primary" }>> = {
-  borrador:   [{ label: "Marcar como En diseño", to: "diseno", tone: "primary" }],
-  diseno:     [{ label: "Marcar como En copy", to: "copy", tone: "primary" }, { label: "Volver a borrador", to: "borrador" }],
-  copy:       [{ label: "Marcar como En revisión", to: "revision", tone: "primary" }, { label: "Volver a diseño", to: "diseno" }],
-  revision:   [{ label: "Aprobar (Listo)", to: "listo", tone: "primary" }, { label: "Devolver a copy", to: "copy" }, { label: "Devolver a diseño", to: "diseno" }],
-  listo:      [{ label: "Marcar como Programado", to: "programado", tone: "primary" }],
-  programado: [{ label: "Marcar como Publicado", to: "publicado", tone: "primary" }],
-  publicado:  [{ label: "Reabrir como Listo", to: "listo" }],
+  activa:     [{ label: "Empezar", to: "haciendola", tone: "primary" }, { label: "Pausar", to: "pausada" }],
+  haciendola: [{ label: "Marcar para revisión", to: "revision", tone: "primary" }, { label: "Pausar", to: "pausada" }],
+  pausada:    [{ label: "Reanudar", to: "haciendola", tone: "primary" }, { label: "Volver a activa", to: "activa" }],
+  revision:   [{ label: "Aprobar (completar)", to: "completada", tone: "primary" }, { label: "Devolver a producción", to: "haciendola" }],
+  completada: [{ label: "Reabrir", to: "revision" }],
 };
 
 export function PublicacionAvanceRapido({
@@ -34,7 +32,7 @@ export function PublicacionAvanceRapido({
   pub: PublicacionRRSS;
   ctx: { tareaId: string; entregaId: string; clienteId: string };
 }) {
-  const estado = (pub.estado ?? "borrador") as Estado;
+  const estado = (pub.estado ?? "activa") as Estado;
   const items = TRANSICIONES[estado];
 
   return (

@@ -27,7 +27,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMisTareas, useMisEntregas, useTareas } from "@/lib/queries";
+import { useMisTareas, useMisEntregas, useTareas, useMisPublicacionesComoTareas } from "@/lib/queries";
 import { urgenciaTarea } from "@/lib/fechas";
 import { usePrefSidebarCollapsed } from "@/lib/preferencias";
 import { useCrearModal } from "@/lib/crear-modal-context";
@@ -133,8 +133,11 @@ export function Sidebar() {
   const { data: misT = [] } = useMisTareas();
   const { data: misE = [] } = useMisEntregas();
   const { data: todasT = [] } = useTareas();
+  const { data: misPubs = [] } = useMisPublicacionesComoTareas();
   const badges: Record<string, { n: number; tone?: "rojo" | "alerta" }> = React.useMemo(() => {
     const misActivas = misT.filter((t) => t.estado !== "completada");
+    const pubsActivas = misPubs.filter((p) => p.estado !== "completada");
+    const totalActivas = misActivas.length + pubsActivas.length;
     const misEActivas = misE.filter((e) => e.estado === "en_curso");
     const cargaAlertas = misActivas.filter(
       (t) => urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) === "rojo",
@@ -144,14 +147,14 @@ export function Sidebar() {
     ).length;
     const hoy = startOfDay(new Date());
     const limite = addDays(hoy, 14);
-    const enRangoTimeline = misActivas.filter((t) => {
+    const enRangoTimeline = [...misActivas, ...pubsActivas].filter((t) => {
       const fin = parseISO(t.fecha_fin_max);
       const inicio = parseISO(t.fecha_inicio ?? t.fecha_fin_min);
       return fin >= hoy && inicio <= limite;
     });
     return {
       "/tareas/timeline": { n: enRangoTimeline.length },
-      "/tareas/tabla": { n: misActivas.length },
+      "/tareas/tabla": { n: totalActivas },
       "/entregas/kanban": { n: misEActivas.length },
       "/entregas/gantt": { n: misEActivas.length },
       "/entregas/tabla": { n: misEActivas.length },
@@ -162,7 +165,7 @@ export function Sidebar() {
       },
       "/brujula": { n: vencidasGlobal, tone: vencidasGlobal > 0 ? "rojo" : undefined },
     };
-  }, [misT, misE, todasT, caps.devolucionesCount]);
+  }, [misT, misE, todasT, misPubs, caps.devolucionesCount]);
   const visibleSecciones = React.useMemo(() => construirSecciones(caps), [caps]);
 
   return (

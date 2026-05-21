@@ -21,10 +21,13 @@ export function MiniPublicacionesGrid({
   tareaId,
   entregaId,
   onNavigate,
+  onOpenPanel,
 }: {
   tareaId: string;
   entregaId: string;
   onNavigate?: () => void;
+  /** Si se pasa, hace click → abre panel local en lugar de navegar a la entrega. */
+  onOpenPanel?: (pubId: string) => void;
 }) {
   const { data: plan = [] } = usePlanRRSS(tareaId);
   const navigate = useNavigate();
@@ -32,6 +35,10 @@ export function MiniPublicacionesGrid({
   const ordenado = [...plan].sort((a, b) => a.fecha.localeCompare(b.fecha));
 
   const ir = (pub?: string) => {
+    if (pub && onOpenPanel) {
+      onOpenPanel(pub);
+      return;
+    }
     onNavigate?.();
     navigate({
       to: "/entregas/$id",
@@ -44,7 +51,7 @@ export function MiniPublicacionesGrid({
     <div className="space-y-2">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {ordenado.map((p, idx) => {
-          const estado = (p.estado ?? "borrador") as NonNullable<PublicacionRRSS["estado"]>;
+          const estado = (p.estado ?? "activa") as NonNullable<PublicacionRRSS["estado"]>;
           return (
             <button
               key={p.id}

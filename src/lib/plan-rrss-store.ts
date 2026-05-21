@@ -34,7 +34,7 @@ function rowToPub(r: Record<string, unknown>): PublicacionRRSS {
     recursos_visuales:
       (r.recursos_visuales as PublicacionRRSS["recursos_visuales"]) ?? [],
     slides: (r.slides as Array<{ texto?: string; imagen_url?: string }> | undefined) ?? undefined,
-    estado: (r.estado as PublicacionRRSS["estado"]) ?? "borrador",
+    estado: (r.estado as PublicacionRRSS["estado"]) ?? "activa",
     responsable_diseno_id: (r.responsable_diseno_id as string | null | undefined) ?? null,
     responsable_copy_id: (r.responsable_copy_id as string | null | undefined) ?? null,
     impresiones: (r.impresiones as number | null | undefined) ?? null,
@@ -95,7 +95,7 @@ export function addPublicacion(
     plataformas: pub.plataformas,
     briefing: pub.briefing ?? null,
     slides: pub.slides ?? null,
-    estado: pub.estado ?? "borrador",
+    estado: pub.estado ?? "activa",
     responsable_diseno_id: pub.responsable_diseno_id ?? null,
     responsable_copy_id: pub.responsable_copy_id ?? null,
   };
@@ -153,7 +153,7 @@ export async function duplicarPublicacion(
     plataformas: orig.plataformas,
     briefing: orig.briefing,
     slides: orig.slides,
-    estado: "borrador",
+    estado: "activa",
     responsable_diseno_id: (orig.responsable_diseno_id as string | null) ?? null,
     responsable_copy_id: (orig.responsable_copy_id as string | null) ?? null,
   };
