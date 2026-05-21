@@ -42,6 +42,8 @@ import {
 } from "@/lib/tareas-store";
 import { addEnlace, removeEnlace } from "@/lib/enlaces-store";
 import { MiniPublicacionesGrid } from "@/components/rrss/MiniPublicacionesGrid";
+import { EstadoProduccionRRSS } from "@/components/rrss/EstadoProduccionRRSS";
+import { PublicacionPanel } from "@/components/rrss/PublicacionPanel";
 import { usePlanRRSS } from "@/lib/plan-rrss-store";
 import { useRolVista } from "@/lib/rol-vista";
 import { ReasignarTareaDialog } from "@/components/ReasignarTareaDialog";
@@ -92,6 +94,7 @@ export function TareaModal() {
   const { data: todasTareas = [] } = useTareas();
   const categoriaPorTarea = useCategoriaPorTarea();
   const { data: publicaciones = [] } = usePlanRRSS(tareaId ?? undefined);
+  const [panelPubId, setPanelPubId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!tareaId) return;
@@ -477,13 +480,16 @@ export function TareaModal() {
             </Section>
 
             {publicaciones.length > 0 && (
-              <Section title={`Publicaciones (${publicaciones.length})`}>
-                <MiniPublicacionesGrid
-                  tareaId={tarea.id}
-                  entregaId={tarea.entrega_id}
-                  onNavigate={cerrar}
-                />
-              </Section>
+              <>
+                <EstadoProduccionRRSS publicaciones={publicaciones} />
+                <Section title={`Publicaciones (${publicaciones.length})`}>
+                  <MiniPublicacionesGrid
+                    tareaId={tarea.id}
+                    entregaId={tarea.entrega_id}
+                    onOpenPanel={(id) => setPanelPubId(id)}
+                  />
+                </Section>
+              </>
             )}
 
             <Section title="Archivos (Drive)" icon={<Paperclip className="h-3.5 w-3.5" />}>
@@ -551,6 +557,11 @@ export function TareaModal() {
         onOpenChange={setDevolverOpen}
         tareaIds={[tarea.id]}
         onSuccess={() => cerrar()}
+      />
+      <PublicacionPanel
+        publicacionId={panelPubId}
+        onOpenChange={(o) => !o && setPanelPubId(null)}
+        onChangeId={(id) => setPanelPubId(id)}
       />
     </div>
   );
