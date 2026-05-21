@@ -60,6 +60,15 @@ export function MisTareasTimeline() {
     return raw.filter((t) => t.estado !== "completada");
   }, [alcance, misTareas, todasTareas, user?.id, caps.clientesPM]);
 
+  const fueraDeRango = useMemo(() => {
+    const limite = addDays(hoy, N_DIAS);
+    return base.filter((t) => {
+      const fin = parseISO(t.fecha_fin_max);
+      const inicio = parseISO(t.fecha_inicio ?? t.fecha_fin_min);
+      return fin < hoy || inicio > limite;
+    }).length;
+  }, [base, hoy]);
+
   const tareas = useMemo(() => {
     if (!incluirRevisiones || !caps.isPM) return base;
     const ids = new Set(base.map((t) => t.id));
