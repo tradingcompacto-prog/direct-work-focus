@@ -283,13 +283,14 @@ export function CrearModal() {
           }));
           const { error: e2 } = await supabase.from("publicaciones_rrss").insert(filas);
           if (e2) throw e2;
+          await insertColaboradores(t!.id, colaboradoresIds);
           invalidateKeys(["tareas"], ["mis-tareas"], ["plan-rrss", t!.id]);
           toast.success(`Plan creado con ${numPubs} publicaciones. Configúralas desde la tarea.`);
           cerrar();
           abrirTareaModal(t!.id);
           return;
         } else {
-          const { error } = await supabase.from("tareas").insert({
+          const { data: t, error } = await supabase.from("tareas").insert({
             titulo,
             descripcion: descripcion || null,
             cliente_id: clienteId,
@@ -302,8 +303,9 @@ export function CrearModal() {
             fecha_inicio: inicio,
             fecha_fin_min: fin,
             fecha_fin_max: fin,
-          });
+          }).select("id").single();
           if (error) throw error;
+          await insertColaboradores(t!.id as string, colaboradoresIds);
           invalidateKeys(["tareas"], ["mis-tareas"]);
           toast.success("Tarea creada");
         }
