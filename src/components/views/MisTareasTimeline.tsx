@@ -186,10 +186,16 @@ export function MisTareasTimeline() {
                       "flex items-center border-b border-border/40",
                       esDevuelta && "bg-orange-50/60 border-l-4 border-l-orange-500",
                       esPorRevisar && !esDevuelta && "bg-blue-50/40 border-l-4 border-l-blue-500",
+                      (t as PseudoTarea).__esPub && "border-l-4 border-l-violet-500",
                     )}
                     style={{ height: ROW_H }}
                   >
                     <div className="w-[220px] shrink-0 px-3 text-xs truncate inline-flex items-center gap-1">
+                      {(t as PseudoTarea).__esPub && (
+                        <span className="rounded bg-violet-100 text-violet-800 px-1 py-px text-[9px] font-semibold shrink-0">
+                          📱 {(t as PseudoTarea).__rolPub === "diseno" ? "Diseño" : "Copy"}
+                        </span>
+                      )}
                       {esDevuelta && (
                         <span className="rounded bg-orange-100 text-orange-800 px-1 py-px text-[9px] font-semibold">
                           ↩
@@ -211,7 +217,11 @@ export function MisTareasTimeline() {
                         width={width}
                         inicio={inicio}
                         fin={fin}
-                        onClick={() => abrir(t.id)}
+                        onClick={() => {
+                          const pt = t as PseudoTarea;
+                          if (pt.__esPub) setPanelPubId(pt.__publicacionId);
+                          else abrir(t.id);
+                        }}
                       />
                     </div>
                   </div>
@@ -250,6 +260,11 @@ export function MisTareasTimeline() {
         </div>
       </div>
       </div>
+      <PublicacionPanel
+        publicacionId={panelPubId}
+        onOpenChange={(o) => !o && setPanelPubId(null)}
+        onChangeId={(id) => setPanelPubId(id)}
+      />
     </TooltipProvider>
   );
 }
