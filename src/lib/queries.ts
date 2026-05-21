@@ -13,7 +13,9 @@ import type {
   Miembro,
   CategoriaEntrega,
   TareaEnlace,
+  PublicacionRRSS,
 } from "@/types/database";
+import { TIPO_LABEL } from "@/types/database";
 
 // ---------- helpers de mapeo BD -> interfaces internas ----------
 
@@ -486,3 +488,77 @@ export function useCategoriaPorTarea(): Map<string, CategoriaEntrega> {
   }
   return m;
 }
+
+// ---------- Vista virtual: publicaciones del usuario como pseudo-tareas ----------
+
+export interface PseudoTarea extends Tarea {
+  __esPub: true;
+  __rolPub: "diseno" | "copy";
+  __publicacionId: string;
+  __clienteNombre: string;
+  __tipo: PublicacionRRSS["tipo"];
+}
+
+function transformarPubAPseudoTarea(pub: Record<string, unknown>, userId: string): PseudoTarea {
+  const esDiseno = pub.responsable_diseno_id === userId;
+  const tarea = (pub.tareas as { titulo?: string; proyecto_id?: string }) ?? {};
+  const cliente = (pub.clientes as { nombre?: string }) ?? {};
+  const nombreCliente = cliente.nombre ?? "—";
+  const tipo = pub.tipo as PublicacionRRSS["tipo"];
+  const fecha = (pub.fecha as string) ?? "";
+  return {
+    id: pub.id as string,
+    titulo: `${esDiseno ? "Diseño" : "Copy"} · ${nombreCliente} · ${TIPO_LABEL[tipo]}`,
+    descripcion: (pub.briefing as string | undefined) ?? undefined,
+    cliente_id: (pub.cliente_id as string) ?? "",
+    proyecto_id: tarea.proyecto_id ?? "",
+    entrega_id: (pub.entrega_id as string) ?? "",
+    responsable_id: userId,
+    solicitante_id: userId,
+    estado: (pub.estado as Tarea["estado"]) ?? "activa",
+    prioridad: "media",
+    fecha_inicio: fecha,
+    fecha_fin_min: fecha,
+    fecha_fin_max: fecha,
+    horas_estimadas: null,
+    horas_reales: null,
+    devuelta_at: null,
+    motivo_devolucion: null,
+    __esPub: true,
+    __rolPub: esDiseno ? "diseno" : "copy",
+    __publicacionId: pub.id as string,
+    __clienteNombre: nombreCliente,
+    __tipo: tipo,
+  };
+}
+
+/**
+ * Publicaciones donde el usuario es responsable de diseño o copy,
+ * en cualquier estado salvo `completada`, transformadas en pseudo-tareas
+ * para mostrarse en Timeline/Tabla junto a las tareas reales.
+ */
+export const useMisPublicacionesComoTareas = () => {
+  const { user } = useAuth();
+  return useQuery<PseudoTarea[]>({
+    queryKey: ["mis-pubs-pseudo-tareas", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("publicaciones_rrss")
+        .select(
+          `id, tarea_id, cliente_id, entrega_id, fecha, tipo,
+           estado, briefing, copy_final,
+           responsable_diseno_id, responsable_copy_id,
+           tareas!inner(titulo, proyecto_id),
+           clientes!inner(nombre)`,
+        )
+        .or(`responsable_diseno_id.eq.${user.id},responsable_copy_id.eq.${user.id}`)
+        .neq("estado", "completada");
+      if (error) throw error;
+      return ((data ?? []) as Record<string, unknown>[]).map((p) =>
+        transformarPubAPseudoTarea(p, user.id),
+      );
+    },
+  });
+};
