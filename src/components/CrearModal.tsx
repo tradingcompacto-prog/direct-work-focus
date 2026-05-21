@@ -468,8 +468,37 @@ export function CrearModal() {
               </Field>
               {tipo === "tarea" && (
                 <>
-                  <Field label="Responsable">
-                    <PersonaSelect value={responsableId} onChange={setResponsableId} />
+                  <Field label="Responsable (PM supervisor)">
+                    {clienteId ? (
+                      responsablesPermitidos.length === 0 ? (
+                        <p className="text-xs text-amber-700">
+                          Este cliente no tiene PM asignado. Asígnalo desde la ficha del cliente.
+                        </p>
+                      ) : (
+                        <PersonaPicker
+                          value={responsableId}
+                          onChange={setResponsableId}
+                          candidatos={responsablesPermitidos}
+                          placeholder="Selecciona responsable"
+                        />
+                      )
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Elige cliente primero</p>
+                    )}
+                  </Field>
+                  <Field label="Colaboradores (ejecutores)">
+                    <ColaboradoresMultiSelect
+                      equipo={equipoCompleto.filter((m) => m.activo)}
+                      seleccionados={colaboradoresIds}
+                      onToggle={(id) =>
+                        setColaboradoresIds((prev) =>
+                          prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+                        )
+                      }
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Quienes realmente ejecutan la tarea. Opcional.
+                    </p>
                   </Field>
                   {esRRSS && (
                     <RRSSDefaultsBloque
