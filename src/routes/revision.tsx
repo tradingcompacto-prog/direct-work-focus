@@ -29,6 +29,7 @@ import { DevolverTareaDialog } from "@/components/DevolverTareaDialog";
 import { completarTarea } from "@/lib/tareas-store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { VistaHeader } from "@/components/VistaHeader";
 
 export const Route = createFileRoute("/revision")({
   component: RevisionGlobalPage,
@@ -79,15 +80,11 @@ function RevisionContent({
 
   return (
     <div className="p-6 space-y-4">
-      <header className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold">Revisión global</h1>
-          <p className="text-sm text-muted-foreground">
-            Cola de aprobación de todo el equipo. Apruébalas o devuélvelas al responsable.
-          </p>
-        </div>
-        <AlcanceFilter value={alcance} onChange={setAlcance} />
-      </header>
+      <VistaHeader
+        titulo="Revisión global"
+        leyenda="Todas las tareas en revisión del equipo. Solo accesible para directores."
+        acciones={<AlcanceFilter value={alcance} onChange={setAlcance} />}
+      />
       <div className="card-soft overflow-hidden">
         <Table>
           <TableHeader>

@@ -41,6 +41,7 @@ import { PlanRRSS } from "@/components/PlanRRSS";
 import { supabase } from "@/lib/supabase";
 import { invalidateKeys } from "@/lib/qc";
 import { useAuth } from "@/lib/auth";
+import { VistaHeader } from "@/components/VistaHeader";
 
 export const Route = createFileRoute("/entregas/$id")({
   component: FichaEntrega,
@@ -98,6 +99,10 @@ function FichaEntrega() {
 
   return (
     <div className="p-6 space-y-6 anim-in max-w-6xl">
+      <VistaHeader
+        titulo={e.nombre}
+        leyenda="Cajón de tareas de esta categoría para este cliente."
+      />
       {/* Header */}
       <header className="card-soft p-5 border-l-4" style={bordeIzqCliente(e.cliente_id)}>
         <div className="flex items-start justify-between gap-4">

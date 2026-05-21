@@ -20,6 +20,7 @@ import { useFechasImportantes } from "@/lib/fechas-importantes-store";
 import { useVacacionesAprobadas } from "@/lib/vacaciones-store";
 import { useAuth } from "@/lib/auth";
 import { TIPO_FECHA_COLOR } from "@/types/database";
+import { VistaHeader } from "@/components/VistaHeader";
 
 type Capa = "fechas" | "vacaciones";
 
@@ -81,6 +82,10 @@ export function EquipoFechas() {
 
   return (
     <div className="space-y-3">
+      <VistaHeader
+        titulo="Fechas y vacaciones"
+        leyenda="Calendario unificado con fechas importantes del calendario y vacaciones aprobadas del equipo."
+      />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-amber-600" />

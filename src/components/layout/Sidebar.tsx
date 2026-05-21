@@ -4,8 +4,6 @@ import { addDays, parseISO, startOfDay } from "date-fns";
 import {
   CalendarDays,
   Table2,
-  KanbanSquare,
-  GanttChartSquare,
   Map,
   CalendarRange,
   Sparkles,
@@ -15,19 +13,13 @@ import {
   ChevronLeft,
   ChevronRight,
   ListChecks,
-  Package,
   Users,
-  FileImage,
-  CalendarRange as CalRange2,
-  GalleryHorizontalEnd,
-  BarChart3,
-  PenSquare,
   ShieldCheck,
   Inbox,
   Undo2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMisTareas, useMisEntregas, useTareas, useMisPublicacionesComoTareas } from "@/lib/queries";
+import { useMisTareas, useTareas, useMisPublicacionesComoTareas } from "@/lib/queries";
 import { useVacacionesPorAprobar } from "@/lib/vacaciones-store";
 import { Plane } from "lucide-react";
 import { urgenciaTarea } from "@/lib/fechas";
@@ -35,6 +27,7 @@ import { usePrefSidebarCollapsed } from "@/lib/preferencias";
 import { useCrearModal } from "@/lib/crear-modal-context";
 import { useUserCaps } from "@/lib/user-caps";
 import { useTareasVersion } from "@/lib/tareas-store";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,16 +80,6 @@ function construirSecciones(caps: ReturnType<typeof useUserCaps>): SectionDef[] 
       ]
     : []),
   {
-    label: "Mis entregas",
-    icon: Package,
-    visibleSi: (c) => c.isPM || c.isDirector,
-    items: [
-      { to: "/entregas/kanban", label: "Kanban", icon: KanbanSquare, atajo: "G K" },
-      { to: "/entregas/gantt", label: "Timeline", icon: CalendarDays },
-      { to: "/entregas/tabla", label: "Tabla", icon: Table2 },
-    ],
-  },
-  {
     label: "El equipo",
     icon: Users,
     items: [
@@ -132,9 +115,7 @@ export function Sidebar() {
   const { abrir } = useCrearModal();
   const caps = useUserCaps();
   const esDirector = caps.isDirector;
-  const esPm = caps.isPM || esDirector;
   const { data: misT = [] } = useMisTareas();
-  const { data: misE = [] } = useMisEntregas();
   const { data: todasT = [] } = useTareas();
   const { data: misPubs = [] } = useMisPublicacionesComoTareas();
   const { data: vacPend = [] } = useVacacionesPorAprobar();
@@ -142,7 +123,6 @@ export function Sidebar() {
     const misActivas = misT.filter((t) => t.estado !== "completada");
     const pubsActivas = misPubs.filter((p) => p.estado !== "completada");
     const totalActivas = misActivas.length + pubsActivas.length;
-    const misEActivas = misE.filter((e) => e.estado === "en_curso");
     const cargaAlertas = misActivas.filter(
       (t) => urgenciaTarea(t.fecha_fin_min, t.fecha_fin_max) === "rojo",
     ).length;
@@ -159,9 +139,6 @@ export function Sidebar() {
     return {
       "/tareas/timeline": { n: enRangoTimeline.length },
       "/tareas/tabla": { n: totalActivas },
-      "/entregas/kanban": { n: misEActivas.length },
-      "/entregas/gantt": { n: misEActivas.length },
-      "/entregas/tabla": { n: misEActivas.length },
       "/equipo/carga": { n: cargaAlertas, tone: cargaAlertas > 0 ? "alerta" : undefined },
       "/mis-devoluciones": {
         n: caps.devolucionesCount,
@@ -172,7 +149,7 @@ export function Sidebar() {
         ? { n: vacPend.length, tone: vacPend.length > 0 ? "alerta" : undefined }
         : { n: 0 },
     };
-  }, [misT, misE, todasT, misPubs, caps.devolucionesCount, caps.isDirector, vacPend]);
+  }, [misT, todasT, misPubs, caps.devolucionesCount, caps.isDirector, vacPend]);
   const visibleSecciones = React.useMemo(() => construirSecciones(caps), [caps]);
 
   return (
@@ -212,14 +189,18 @@ export function Sidebar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <DropdownMenuItem onSelect={() => abrir("tarea")}>Nueva tarea</DropdownMenuItem>
-              {(esPm || esDirector) && (
-                <DropdownMenuItem onSelect={() => abrir("proyecto")}>
-                  Nuevo proyecto
-                </DropdownMenuItem>
-              )}
               {esDirector && (
                 <DropdownMenuItem onSelect={() => abrir("cliente")}>
                   Nuevo cliente
+                </DropdownMenuItem>
+              )}
+              {esDirector && (
+                <DropdownMenuItem
+                  onSelect={() =>
+                    toast.info("Próximamente — gestión de categorías desde aquí.")
+                  }
+                >
+                  Nueva categoría
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>

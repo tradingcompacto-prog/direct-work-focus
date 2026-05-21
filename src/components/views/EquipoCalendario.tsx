@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Megaphone } from "lucide-react";
 import { ENTREGAS_MOCK, clientePorId } from "@/lib/mock-tareas";
 import { cn } from "@/lib/utils";
+import { VistaHeader } from "@/components/VistaHeader";
 
 /**
  * Calendario exclusivo de Campañas activas.
@@ -54,6 +55,10 @@ export function EquipoCalendario() {
 
   return (
     <div className="space-y-3">
+      <VistaHeader
+        titulo="Calendario"
+        leyenda="Vista mensual con todas las entregas, tareas, fechas importantes y vacaciones."
+      />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Megaphone className="h-5 w-5 text-purple-600" />

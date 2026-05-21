@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, ArrowUpDown } from "lucide-react";
 import { PRIORIDAD_COLOR, PRIORIDAD_LABEL } from "@/types/database";
+import { VistaHeader } from "@/components/VistaHeader";
 
 const saludColor = { verde: "bg-green-500", amarillo: "bg-amber-500", rojo: "bg-red-500" };
 
@@ -49,6 +50,10 @@ export function ClientesTabla() {
 
   return (
     <div className="space-y-3">
+      <VistaHeader
+        titulo="Clientes"
+        leyenda="Cartera de clientes activos. Solo los directores pueden añadir nuevos o cambiar prioridad."
+      />
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[220px] max-w-md">
           <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
