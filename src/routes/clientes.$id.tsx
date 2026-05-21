@@ -22,6 +22,13 @@ import { supabase } from "@/lib/supabase";
 import { invalidateKeys } from "@/lib/qc";
 import { toast } from "sonner";
 import type { CategoriaEntrega } from "@/types/database";
+import { PRIORIDAD_COLOR, PRIORIDAD_LABEL, TIPO_FECHA_COLOR, TIPO_FECHA_LABEL } from "@/types/database";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useUserCaps } from "@/lib/user-caps";
+import { useFechasImportantesPorCliente, removeFechaImportante } from "@/lib/fechas-importantes-store";
+import { FechaImportanteDialog } from "@/components/FechaImportanteDialog";
+import { CalendarDays, Trash2, Pencil } from "lucide-react";
+import type { FechaImportante } from "@/types/database";
 
 export const Route = createFileRoute("/clientes/$id")({
   component: FichaCliente,
@@ -34,6 +41,7 @@ function FichaCliente() {
   const { abrir } = useCrearModal();
   const { abrir: abrirTarea } = useTareaModal();
   const [tab, setTab] = useState("resumen");
+  const caps = useUserCaps();
 
   if (!c) return <div className="p-6">Cliente no encontrado</div>;
 
@@ -67,6 +75,19 @@ function FichaCliente() {
   const color = colorCliente(c.id);
   const saludColor = c.salud === "verde" ? "bg-emerald-500" : c.salud === "amarillo" ? "bg-amber-500" : "bg-red-500";
 
+  const onChangePrioridad = async (v: "1" | "2" | "3") => {
+    const { error } = await supabase
+      .from("clientes")
+      .update({ prioridad: parseInt(v, 10) })
+      .eq("id", c.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    invalidateKeys(["clientes"]);
+    toast.success("Prioridad actualizada");
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -90,6 +111,23 @@ function FichaCliente() {
                 <span className="flex items-center gap-1"><span className="text-xs">PM</span> <PersonaChip id={c.pm_id} size="xs" /></span>
                 {c.web && <a href={`https://${c.web}`} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:underline"><Globe className="h-3 w-3" /> {c.web}</a>}
                 {c.slack && <span className="flex items-center gap-1"><Hash className="h-3 w-3" /> {c.slack}</span>}
+                <span>·</span>
+                {caps.isDirector ? (
+                  <Select defaultValue={String(c.prioridad ?? 2)} onValueChange={(v) => onChangePrioridad(v as "1" | "2" | "3")}>
+                    <SelectTrigger className="h-7 w-[120px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Alta</SelectItem>
+                      <SelectItem value="2">Media</SelectItem>
+                      <SelectItem value="3">Baja</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Badge variant="outline" className={cn("border", PRIORIDAD_COLOR[c.prioridad ?? 2])}>
+                    {PRIORIDAD_LABEL[c.prioridad ?? 2]}
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
@@ -118,6 +156,7 @@ function FichaCliente() {
           <TabsTrigger value="categorias"><Layers className="h-3.5 w-3.5 mr-1" /> Categorías</TabsTrigger>
           <TabsTrigger value="tareas"><ListChecks className="h-3.5 w-3.5 mr-1" /> Tareas</TabsTrigger>
           <TabsTrigger value="equipo"><Users className="h-3.5 w-3.5 mr-1" /> Equipo</TabsTrigger>
+          <TabsTrigger value="fechas"><CalendarDays className="h-3.5 w-3.5 mr-1" /> Fechas</TabsTrigger>
           <TabsTrigger value="actividad"><History className="h-3.5 w-3.5 mr-1" /> Actividad</TabsTrigger>
           <TabsTrigger value="notas"><StickyNote className="h-3.5 w-3.5 mr-1" /> Notas</TabsTrigger>
         </TabsList>
@@ -252,6 +291,11 @@ function FichaCliente() {
         {/* Notas */}
         <TabsContent value="notas" className="mt-4">
           <NotasCliente clienteId={c.id} />
+        </TabsContent>
+
+        {/* Fechas importantes */}
+        <TabsContent value="fechas" className="mt-4">
+          <FechasClienteSection clienteId={c.id} />
         </TabsContent>
       </Tabs>
     </div>
