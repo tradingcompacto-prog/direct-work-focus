@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabase";
 import { invalidateKeys } from "@/lib/qc";
 import { toast } from "sonner";
 import type { AppRole } from "@/lib/auth";
+import { VistaHeader } from "@/components/VistaHeader";
 
 export const Route = createFileRoute("/personas/$id")({
   component: FichaPersona,
@@ -30,6 +31,10 @@ function FichaPersona() {
 
   return (
     <div className="p-6 space-y-6">
+      <VistaHeader
+        titulo={m.nombre}
+        leyenda="Ficha de la persona con sus tareas asignadas, rol y carga."
+      />
       <header className="flex items-center gap-4">
         <Avatar className="h-16 w-16">
           <AvatarFallback className="text-lg bg-secondary">{m.iniciales}</AvatarFallback>

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { proyectoPorId, ENTREGAS_MOCK, clientePorId } from "@/lib/mock-tareas";
 import { PersonaChip } from "@/components/PersonaChip";
+import { VistaHeader } from "@/components/VistaHeader";
 
 export const Route = createFileRoute("/proyectos/$id")({
   component: FichaProyecto,
@@ -17,6 +18,10 @@ function FichaProyecto() {
 
   return (
     <div className="p-6 space-y-6">
+      <VistaHeader
+        titulo={p.nombre}
+        leyenda="Proyecto del cliente con todas sus tareas y entregas."
+      />
       <header className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold">{p.nombre}</h1>

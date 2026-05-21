@@ -29,6 +29,7 @@ import { useFechasImportantesPorCliente, removeFechaImportante } from "@/lib/fec
 import { FechaImportanteDialog } from "@/components/FechaImportanteDialog";
 import { CalendarDays, Trash2, Pencil } from "lucide-react";
 import type { FechaImportante } from "@/types/database";
+import { VistaHeader } from "@/components/VistaHeader";
 
 export const Route = createFileRoute("/clientes/$id")({
   component: FichaCliente,
@@ -90,6 +91,10 @@ function FichaCliente() {
 
   return (
     <div className="p-6 space-y-6">
+      <VistaHeader
+        titulo={c.nombre}
+        leyenda="Ficha del cliente con tareas, entregas, equipo y fechas relevantes."
+      />
       {/* Header */}
       <header className="card-soft p-5 border-l-4" style={bordeIzqCliente(c.id)}>
         <div className="flex items-start justify-between gap-4">
