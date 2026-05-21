@@ -16,6 +16,7 @@ import {
   useEnlaces,
   useTareas,
   useCategoriaPorTarea,
+  useResponsablesPermitidos,
 } from "@/lib/queries";
 import { miembroPorId, nombrePorId } from "@/lib/equipo";
 import { PersonaPicker } from "@/components/PersonaPicker";
@@ -36,7 +37,6 @@ import {
   reasignarTarea,
   setDescripcion,
   setResponsable,
-  setSolicitante,
   addColaborador,
   removeColaborador,
 } from "@/lib/tareas-store";
