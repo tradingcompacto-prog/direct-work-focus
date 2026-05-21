@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { addDays, differenceInDays, format, isSameDay, parseISO, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { useMisTareas, useTareas, useMisRevisiones } from "@/lib/queries";
+import { useMisTareas, useTareas, useMisRevisiones, useMisPublicacionesComoTareas, type PseudoTarea } from "@/lib/queries";
 import { useAuth } from "@/lib/auth";
 import { useUserCaps } from "@/lib/user-caps";
 import {
@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { EstadoVacio } from "@/components/EstadoVacio";
 import { setTareaFechas, getTareaOverride, useOverrides } from "@/lib/fechas-override-store";
 import { toast } from "sonner";
+import { PublicacionPanel } from "@/components/rrss/PublicacionPanel";
 
 const N_DIAS = 14;
 const DAY_W = 60;
@@ -50,17 +51,19 @@ export function MisTareasTimeline() {
   const { data: misTareas = [] } = useMisTareas();
   const { data: todasTareas = [] } = useTareas();
   const { data: revisionesPM = [] } = useMisRevisiones();
+  const { data: misPubs = [] } = useMisPublicacionesComoTareas();
+  const [panelPubId, setPanelPubId] = React.useState<string | null>(null);
 
   const hoy = useMemo(() => startOfDay(new Date()), []);
 
   const base = useMemo(() => {
     const raw =
       alcance === "solo-mias"
-        ? misTareas
+        ? [...misTareas, ...misPubs]
         : filtrarPorAlcance(todasTareas, alcance, user?.id, caps.clientesPM);
     // Las vistas de trabajo activo no muestran tareas completadas.
     return raw.filter((t) => t.estado !== "completada");
-  }, [alcance, misTareas, todasTareas, user?.id, caps.clientesPM]);
+  }, [alcance, misTareas, misPubs, todasTareas, user?.id, caps.clientesPM]);
 
   const fueraDeRango = useMemo(() => {
     const limite = addDays(hoy, N_DIAS);
