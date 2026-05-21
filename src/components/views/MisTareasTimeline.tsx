@@ -142,6 +142,21 @@ export function MisTareasTimeline() {
               </div>
             </div>
 
+            {/* Banner tareas fuera de rango */}
+            {fueraDeRango > 0 && (
+              <div className="flex items-center justify-between bg-blue-50 border-y border-blue-100 px-4 py-2 text-xs text-blue-800">
+                <span>
+                  Hay {fueraDeRango} {fueraDeRango === 1 ? "tarea" : "tareas"} fuera del rango visible (próximos 14 días).
+                </span>
+                <Link
+                  to="/tareas/tabla"
+                  className="font-medium hover:underline"
+                >
+                  Ver en tabla →
+                </Link>
+              </div>
+            )}
+
             {/* Body */}
             <div className="relative">
               {/* Linea hoy */}
