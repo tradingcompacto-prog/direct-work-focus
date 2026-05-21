@@ -461,3 +461,77 @@ function CategoriasHabilitadasSection({ clienteId }: { clienteId: string }) {
     </div>
   );
 }
+
+function FechasClienteSection({ clienteId }: { clienteId: string }) {
+  const caps = useUserCaps();
+  const puedeEditar = caps.isDirector || caps.clientesPM.includes(clienteId);
+  const { data: fechas = [], isLoading } = useFechasImportantesPorCliente(clienteId);
+  const [dlg, setDlg] = useState(false);
+  const [editing, setEditing] = useState<FechaImportante | null>(null);
+
+  if (isLoading) return <div className="text-sm text-muted-foreground">Cargando…</div>;
+
+  const onDelete = async (id: string) => {
+    if (!confirm("¿Eliminar esta fecha?")) return;
+    try {
+      await removeFechaImportante(id);
+      toast.success("Fecha eliminada");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error");
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Fechas específicas de este cliente + globales que le afectan.
+        </p>
+        {puedeEditar && (
+          <Button size="sm" onClick={() => { setEditing(null); setDlg(true); }}>
+            <Plus className="h-4 w-4 mr-1" /> Añadir fecha para este cliente
+          </Button>
+        )}
+      </div>
+      {fechas.length === 0 ? (
+        <div className="text-sm text-muted-foreground card-soft p-4 text-center">Sin fechas registradas.</div>
+      ) : (
+        <ul className="space-y-1.5">
+          {fechas.map((f) => (
+            <li key={f.id} className="card-soft p-3 flex items-center gap-3">
+              <Badge variant="outline" className={cn("border shrink-0", TIPO_FECHA_COLOR[f.tipo])}>
+                {TIPO_FECHA_LABEL[f.tipo]}
+              </Badge>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium truncate">{f.titulo}</div>
+                <div className="text-xs text-muted-foreground">
+                  {format(parseISO(f.fecha_inicio), "d MMM yyyy", { locale: es })}
+                  {f.fecha_fin && f.fecha_fin !== f.fecha_inicio
+                    ? ` → ${format(parseISO(f.fecha_fin), "d MMM yyyy", { locale: es })}`
+                    : ""}
+                  {f.cliente_id == null && " · 🌐 Global"}
+                </div>
+              </div>
+              {puedeEditar && f.cliente_id === clienteId && (
+                <div className="flex gap-1">
+                  <Button size="icon" variant="ghost" onClick={() => { setEditing(f); setDlg(true); }}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={() => onDelete(f.id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <FechaImportanteDialog
+        open={dlg}
+        onOpenChange={setDlg}
+        fecha={editing}
+        defaultClienteId={clienteId}
+      />
+    </div>
+  );
+}
