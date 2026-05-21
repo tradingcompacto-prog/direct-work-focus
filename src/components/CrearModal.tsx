@@ -30,6 +30,8 @@ import {
   useEntregas,
   useTareas,
   useCategoriaPorTarea,
+  useResponsablesPermitidos,
+  useEquipo,
 } from "@/lib/queries";
 import { supabase } from "@/lib/supabase";
 import { invalidateKeys } from "@/lib/qc";
@@ -67,6 +69,7 @@ export function CrearModal() {
   const [categoriaTarea, setCategoriaTarea] = React.useState<CategoriaEntrega | "">("");
   const [titulo, setTitulo] = React.useState("");
   const [responsableId, setResponsableId] = React.useState("");
+  const [colaboradoresIds, setColaboradoresIds] = React.useState<string[]>([]);
   const [fechaInicio, setFechaInicio] = React.useState<string>("");
   const [fechaFin, setFechaFin] = React.useState<string>("");
   const [usarRango, setUsarRango] = React.useState(false);
@@ -94,6 +97,7 @@ export function CrearModal() {
     setCategoriaTarea("");
     setTitulo("");
     setResponsableId("");
+    setColaboradoresIds([]);
     setFechaInicio("");
     setFechaFin("");
     setUsarRango(false);
