@@ -31,6 +31,7 @@ function AuthGate() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const isLogin = path === "/login";
+  const isBare = path === "/carga-monitor";
 
   React.useEffect(() => {
     if (loading) return;
@@ -67,6 +68,11 @@ function AuthGate() {
             <div className="flex h-screen items-center justify-center bg-background">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-foreground/20 border-t-foreground" />
             </div>
+          ) : isBare ? (
+            <>
+              <Outlet />
+              <Toaster />
+            </>
           ) : (
             <>
               <div className="flex h-screen w-full overflow-hidden bg-background">

@@ -21,6 +21,7 @@ import { TIPO_LABEL } from "@/types/database";
 
 function mapCliente(row: Record<string, unknown>): Cliente {
   const pmPrincipal = (row.pm_principal_id as string | null) ?? "";
+  const prio = row.prioridad as number | null | undefined;
   return {
     id: row.id as string,
     nombre: (row.nombre as string) ?? "",
@@ -32,6 +33,7 @@ function mapCliente(row: Record<string, unknown>): Cliente {
     slack: (row.slack as string | undefined) ?? undefined,
     salud: ((row.salud as Cliente["salud"]) ?? "verde"),
     activo: (row.activo as boolean) ?? true,
+    prioridad: prio === 1 || prio === 2 || prio === 3 ? (prio as 1 | 2 | 3) : 2,
   };
 }
 
@@ -98,7 +100,7 @@ export const useClientes = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clientes")
-        .select("id,nombre,sector,pm_principal_id,pm_secundario_id,web:sitio_web,slack:canal_slack,salud,activo")
+        .select("id,nombre,sector,pm_principal_id,pm_secundario_id,web:sitio_web,slack:canal_slack,salud,activo,prioridad")
         .order("nombre");
       if (error) {
         // eslint-disable-next-line no-console

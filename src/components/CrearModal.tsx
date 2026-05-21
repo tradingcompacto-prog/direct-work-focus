@@ -43,6 +43,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import type { CategoriaEntrega, PublicacionRRSS } from "@/types/database";
 import { TIPO_LABEL, FORMATO_LABEL } from "@/types/database";
 import { PersonaPicker } from "@/components/PersonaPicker";
+import { useUserCaps } from "@/lib/user-caps";
 
 const TITLES: Record<string, string> = {
   tarea: "Nueva tarea",
@@ -55,6 +56,7 @@ export function CrearModal() {
   const navigate = useNavigate();
   const { abrir: abrirTareaModal } = useTareaModal();
   const { user } = useAuth();
+  const caps = useUserCaps();
   const { data: clientesDB = [] } = useClientes();
   const { data: proyectosDB = [] } = useProyectos();
   const { data: entregasDB = [] } = useEntregas();
@@ -74,6 +76,7 @@ export function CrearModal() {
   const [catsCliente, setCatsCliente] = React.useState<CategoriaEntrega[]>(
     CATEGORIAS_ENTREGA.map((c) => c.value),
   );
+  const [prioridadCliente, setPrioridadCliente] = React.useState<"1" | "2" | "3">("2");
   const [descripcion, setDescripcion] = React.useState("");
   const [prioridad, setPrioridad] = React.useState<"baja" | "media" | "alta" | "critica">("media");
   const [numPubs, setNumPubs] = React.useState(4);
@@ -98,6 +101,7 @@ export function CrearModal() {
     setSectorCliente("");
     setPmCliente("");
     setCatsCliente(CATEGORIAS_ENTREGA.map((c) => c.value));
+    setPrioridadCliente("2");
     setDescripcion("");
     setPrioridad("media");
     setNumPubs(4);
@@ -136,6 +140,12 @@ export function CrearModal() {
   const esRRSS = tipo === "tarea" && categoriaTarea === "redes_sociales";
 
   if (!tipo) return null;
+  // Bloqueo defensivo: solo directores pueden crear clientes.
+  if (tipo === "cliente" && !caps.isDirector) {
+    toast.error("Solo los directores pueden crear clientes");
+    cerrar();
+    return null;
+  }
 
   const onSubmit = async (ev: React.FormEvent) => {
     ev.preventDefault();
@@ -157,6 +167,7 @@ export function CrearModal() {
             pm_principal_id: pmId,
             salud: "verde",
             activo: true,
+            prioridad: parseInt(prioridadCliente, 10),
           })
           .select("id")
           .single();
@@ -328,6 +339,16 @@ export function CrearModal() {
               </Field>
               <Field label="PM">
                 <PersonaSelect value={pmCliente} onChange={setPmCliente} />
+              </Field>
+              <Field label="Prioridad">
+                <Select value={prioridadCliente} onValueChange={(v) => setPrioridadCliente(v as "1" | "2" | "3")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">🔴 Alta</SelectItem>
+                    <SelectItem value="2">🟡 Media</SelectItem>
+                    <SelectItem value="3">⚪ Baja</SelectItem>
+                  </SelectContent>
+                </Select>
               </Field>
               <Field label="Categorías habilitadas">
                 <div className="grid grid-cols-2 gap-2 rounded-md border border-border p-3 max-h-56 overflow-auto">

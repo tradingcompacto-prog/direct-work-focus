@@ -9,10 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VacacionesRouteImport } from './routes/vacaciones'
 import { Route as RevisionRouteImport } from './routes/revision'
 import { Route as MisRevisionesRouteImport } from './routes/mis-revisiones'
 import { Route as MisDevolucionesRouteImport } from './routes/mis-devoluciones'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as FechasImportantesRouteImport } from './routes/fechas-importantes'
+import { Route as CargaMonitorRouteImport } from './routes/carga-monitor'
 import { Route as BrujulaRouteImport } from './routes/brujula'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TareasIndexRouteImport } from './routes/tareas.index'
@@ -34,6 +37,11 @@ import { Route as ClientesTarjetasRouteImport } from './routes/clientes.tarjetas
 import { Route as ClientesTablaRouteImport } from './routes/clientes.tabla'
 import { Route as ClientesIdRouteImport } from './routes/clientes.$id'
 
+const VacacionesRoute = VacacionesRouteImport.update({
+  id: '/vacaciones',
+  path: '/vacaciones',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RevisionRoute = RevisionRouteImport.update({
   id: '/revision',
   path: '/revision',
@@ -52,6 +60,16 @@ const MisDevolucionesRoute = MisDevolucionesRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FechasImportantesRoute = FechasImportantesRouteImport.update({
+  id: '/fechas-importantes',
+  path: '/fechas-importantes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CargaMonitorRoute = CargaMonitorRouteImport.update({
+  id: '/carga-monitor',
+  path: '/carga-monitor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrujulaRoute = BrujulaRouteImport.update({
@@ -158,10 +176,13 @@ const ClientesIdRoute = ClientesIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/brujula': typeof BrujulaRoute
+  '/carga-monitor': typeof CargaMonitorRoute
+  '/fechas-importantes': typeof FechasImportantesRoute
   '/login': typeof LoginRoute
   '/mis-devoluciones': typeof MisDevolucionesRoute
   '/mis-revisiones': typeof MisRevisionesRoute
   '/revision': typeof RevisionRoute
+  '/vacaciones': typeof VacacionesRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
@@ -184,10 +205,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/brujula': typeof BrujulaRoute
+  '/carga-monitor': typeof CargaMonitorRoute
+  '/fechas-importantes': typeof FechasImportantesRoute
   '/login': typeof LoginRoute
   '/mis-devoluciones': typeof MisDevolucionesRoute
   '/mis-revisiones': typeof MisRevisionesRoute
   '/revision': typeof RevisionRoute
+  '/vacaciones': typeof VacacionesRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
@@ -211,10 +235,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/brujula': typeof BrujulaRoute
+  '/carga-monitor': typeof CargaMonitorRoute
+  '/fechas-importantes': typeof FechasImportantesRoute
   '/login': typeof LoginRoute
   '/mis-devoluciones': typeof MisDevolucionesRoute
   '/mis-revisiones': typeof MisRevisionesRoute
   '/revision': typeof RevisionRoute
+  '/vacaciones': typeof VacacionesRoute
   '/clientes/$id': typeof ClientesIdRoute
   '/clientes/tabla': typeof ClientesTablaRoute
   '/clientes/tarjetas': typeof ClientesTarjetasRoute
@@ -239,10 +266,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/brujula'
+    | '/carga-monitor'
+    | '/fechas-importantes'
     | '/login'
     | '/mis-devoluciones'
     | '/mis-revisiones'
     | '/revision'
+    | '/vacaciones'
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
@@ -265,10 +295,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/brujula'
+    | '/carga-monitor'
+    | '/fechas-importantes'
     | '/login'
     | '/mis-devoluciones'
     | '/mis-revisiones'
     | '/revision'
+    | '/vacaciones'
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
@@ -291,10 +324,13 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/brujula'
+    | '/carga-monitor'
+    | '/fechas-importantes'
     | '/login'
     | '/mis-devoluciones'
     | '/mis-revisiones'
     | '/revision'
+    | '/vacaciones'
     | '/clientes/$id'
     | '/clientes/tabla'
     | '/clientes/tarjetas'
@@ -318,10 +354,13 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BrujulaRoute: typeof BrujulaRoute
+  CargaMonitorRoute: typeof CargaMonitorRoute
+  FechasImportantesRoute: typeof FechasImportantesRoute
   LoginRoute: typeof LoginRoute
   MisDevolucionesRoute: typeof MisDevolucionesRoute
   MisRevisionesRoute: typeof MisRevisionesRoute
   RevisionRoute: typeof RevisionRoute
+  VacacionesRoute: typeof VacacionesRoute
   ClientesIdRoute: typeof ClientesIdRoute
   ClientesTablaRoute: typeof ClientesTablaRoute
   ClientesTarjetasRoute: typeof ClientesTarjetasRoute
@@ -344,6 +383,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vacaciones': {
+      id: '/vacaciones'
+      path: '/vacaciones'
+      fullPath: '/vacaciones'
+      preLoaderRoute: typeof VacacionesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/revision': {
       id: '/revision'
       path: '/revision'
@@ -370,6 +416,20 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fechas-importantes': {
+      id: '/fechas-importantes'
+      path: '/fechas-importantes'
+      fullPath: '/fechas-importantes'
+      preLoaderRoute: typeof FechasImportantesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/carga-monitor': {
+      id: '/carga-monitor'
+      path: '/carga-monitor'
+      fullPath: '/carga-monitor'
+      preLoaderRoute: typeof CargaMonitorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/brujula': {
@@ -518,10 +578,13 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BrujulaRoute: BrujulaRoute,
+  CargaMonitorRoute: CargaMonitorRoute,
+  FechasImportantesRoute: FechasImportantesRoute,
   LoginRoute: LoginRoute,
   MisDevolucionesRoute: MisDevolucionesRoute,
   MisRevisionesRoute: MisRevisionesRoute,
   RevisionRoute: RevisionRoute,
+  VacacionesRoute: VacacionesRoute,
   ClientesIdRoute: ClientesIdRoute,
   ClientesTablaRoute: ClientesTablaRoute,
   ClientesTarjetasRoute: ClientesTarjetasRoute,

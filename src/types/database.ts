@@ -213,7 +213,81 @@ export interface Cliente {
   slack?: string;
   salud: SaludCliente;
   activo: boolean;
+  /** 1 = alta, 2 = media (default), 3 = baja. */
+  prioridad?: 1 | 2 | 3;
 }
+
+export const PRIORIDAD_LABEL: Record<1 | 2 | 3, string> = {
+  1: "Alta",
+  2: "Media",
+  3: "Baja",
+};
+
+export const PRIORIDAD_COLOR: Record<1 | 2 | 3, string> = {
+  1: "bg-red-100 text-red-800 border-red-200",
+  2: "bg-amber-100 text-amber-800 border-amber-200",
+  3: "bg-zinc-100 text-zinc-700 border-zinc-200",
+};
+
+// ---------- Fechas importantes ----------
+
+export interface FechaImportante {
+  id: string;
+  titulo: string;
+  descripcion?: string | null;
+  fecha_inicio: string;
+  fecha_fin?: string | null;
+  tipo: "efemeride" | "festivo" | "lanzamiento" | "campana";
+  cliente_id?: UUID | null;
+  created_by?: UUID | null;
+  created_at: string;
+}
+
+export const TIPO_FECHA_LABEL: Record<FechaImportante["tipo"], string> = {
+  efemeride: "Efeméride",
+  festivo: "Festivo",
+  lanzamiento: "Lanzamiento",
+  campana: "Campaña",
+};
+
+export const TIPO_FECHA_COLOR: Record<FechaImportante["tipo"], string> = {
+  efemeride: "bg-purple-100 text-purple-800 border-purple-200",
+  festivo: "bg-red-100 text-red-800 border-red-200",
+  lanzamiento: "bg-blue-100 text-blue-800 border-blue-200",
+  campana: "bg-emerald-100 text-emerald-800 border-emerald-200",
+};
+
+// ---------- Vacaciones ----------
+
+export type EstadoVacacion = "pendiente" | "aprobada" | "rechazada" | "cancelada";
+
+export interface Vacacion {
+  id: string;
+  user_id: UUID;
+  fecha_inicio: string;
+  fecha_fin: string;
+  motivo?: string | null;
+  estado: EstadoVacacion;
+  aprobado_por?: UUID | null;
+  aprobado_at?: string | null;
+  motivo_rechazo?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const ESTADO_VAC_LABEL: Record<EstadoVacacion, string> = {
+  pendiente: "Pendiente",
+  aprobada: "Aprobada",
+  rechazada: "Rechazada",
+  cancelada: "Cancelada",
+};
+
+export const ESTADO_VAC_COLOR: Record<EstadoVacacion, string> = {
+  pendiente: "bg-amber-100 text-amber-800 border-amber-200",
+  aprobada: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  rechazada: "bg-red-100 text-red-800 border-red-200",
+  cancelada: "bg-zinc-100 text-zinc-700 border-zinc-200",
+};
 
 export interface Comentario {
   id: UUID;
