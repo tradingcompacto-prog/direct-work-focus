@@ -143,6 +143,24 @@ export function CrearModal() {
   // Detectar contexto RRSS: la categoría elegida es redes_sociales.
   const esRRSS = tipo === "tarea" && categoriaTarea === "redes_sociales";
 
+  // Restringir responsable a PMs del cliente + directores
+  const responsablesPermitidos = useResponsablesPermitidos(clienteId);
+  const { data: equipoCompleto = [] } = useEquipo();
+
+  // Default responsable cuando cambia la lista de permitidos
+  React.useEffect(() => {
+    if (tipo !== "tarea") return;
+    if (responsablesPermitidos.length === 0) {
+      setResponsableId("");
+      return;
+    }
+    setResponsableId((prev) => {
+      if (prev && responsablesPermitidos.some((m) => m.id === prev)) return prev;
+      if (user && responsablesPermitidos.some((m) => m.id === user.id)) return user.id;
+      return responsablesPermitidos[0].id;
+    });
+  }, [responsablesPermitidos, tipo, user]);
+
   if (!tipo) return null;
   // Bloqueo defensivo: solo directores pueden crear clientes.
   if (tipo === "cliente" && !caps.isDirector) {
