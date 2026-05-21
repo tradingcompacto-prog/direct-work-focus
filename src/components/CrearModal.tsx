@@ -669,6 +669,53 @@ function nombreMes() {
   return new Date().toLocaleDateString("es-ES", { month: "long", year: "numeric" });
 }
 
+async function insertColaboradores(tareaId: string, userIds: string[]) {
+  if (!userIds.length) return;
+  const filas = userIds.map((uid) => ({ tarea_id: tareaId, user_id: uid }));
+  const { error } = await supabase.from("tarea_colaboradores").insert(filas);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("[insertColaboradores]", error);
+  }
+  invalidateKeys(["colaboradores", tareaId], ["colaboradores"], ["mis-tareas"]);
+}
+
+function ColaboradoresMultiSelect({
+  equipo,
+  seleccionados,
+  onToggle,
+}: {
+  equipo: Array<{ id: string; nombre: string; iniciales: string }>;
+  seleccionados: string[];
+  onToggle: (id: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5 rounded-md border border-border p-2 max-h-40 overflow-auto">
+      {equipo.length === 0 && (
+        <span className="text-xs text-muted-foreground">Sin miembros</span>
+      )}
+      {equipo.map((m) => {
+        const on = seleccionados.includes(m.id);
+        return (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => onToggle(m.id)}
+            className={cn(
+              "inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs transition",
+              on
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-background border-border hover:bg-muted",
+            )}
+          >
+            {m.nombre}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function distribuirFechas(
   inicio: string,
   fin: string,
