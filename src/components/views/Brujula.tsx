@@ -221,6 +221,7 @@ export function Brujula() {
         </Widget>
       )}
     </div>
+    </>
   );
 }
 
