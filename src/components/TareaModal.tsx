@@ -116,7 +116,6 @@ export function TareaModal() {
   const proyecto = proyectoPorId(tarea.proyecto_id);
   const entrega = entregaPorId(tarea.entrega_id);
   const responsable = miembroPorId(tarea.responsable_id);
-  const solicitante = miembroPorId(tarea.solicitante_id);
   const actividad = ACTIVIDAD_MOCK.filter((a) => a.tarea_id === tarea.id);
   const estim = estimarTarea(tarea, todasTareas, categoriaPorTarea);
   const horasEstim = tarea.horas_estimadas ?? estim?.horas ?? null;
@@ -737,5 +736,23 @@ function EnlaceForm({
         <Button size="sm" onClick={submit}>Guardar</Button>
       </div>
     </div>
+  );
+}
+
+function ResponsablePickerRestringido({ tarea }: { tarea: { id: string; cliente_id: string; responsable_id: string } }) {
+  const candidatos = useResponsablesPermitidos(tarea.cliente_id);
+  if (candidatos.length === 0) {
+    return (
+      <span className="text-xs text-amber-700">
+        Este cliente no tiene PM asignado. Asigna uno desde la ficha del cliente.
+      </span>
+    );
+  }
+  return (
+    <PersonaPicker
+      value={tarea.responsable_id}
+      onChange={(id) => setResponsable(tarea.id, id)}
+      candidatos={candidatos}
+    />
   );
 }
