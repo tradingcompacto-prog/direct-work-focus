@@ -37,13 +37,8 @@ export const Route = createFileRoute("/vacaciones")({
 
 function VacacionesPage() {
   const caps = useUserCaps();
-  const { user } = useAuth();
   const { data: mias = [] } = useMisVacaciones();
-  const { data: porAprobarRaw = [] } = useVacacionesPorAprobar();
-  const porAprobar = React.useMemo(
-    () => porAprobarRaw.filter((v) => v.user_id !== user?.id),
-    [porAprobarRaw, user?.id],
-  );
+  const { data: porAprobar = [] } = useVacacionesPorAprobar();
 
   const [openSolicitar, setOpenSolicitar] = React.useState(false);
   const [rechazarId, setRechazarId] = React.useState<string | null>(null);
