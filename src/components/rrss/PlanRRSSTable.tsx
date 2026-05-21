@@ -74,7 +74,7 @@ const PLATAFORMAS: Array<{ value: Plat; label: string; Icon: React.ComponentType
 
 const TIPOS: Array<PublicacionRRSS["tipo"]> = ["post", "reel", "carrusel", "story"];
 const FORMATOS: Array<PublicacionRRSS["formato"]> = ["solo_copy", "copy_imagen", "solo_imagen", "slide"];
-const ESTADOS: Estado[] = ["borrador", "diseno", "copy", "revision", "listo", "programado", "publicado"];
+const ESTADOS: Estado[] = ["activa", "haciendola", "pausada", "revision", "completada"];
 
 function siguienteFecha(ordenado: PublicacionRRSS[]): string {
   if (ordenado.length === 0) return new Date().toISOString().slice(0, 10);
@@ -111,7 +111,7 @@ export function PlanRRSSTable({
   );
 
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
-  const [filtro, setFiltro] = React.useState<"todas" | "revision" | "diseno" | "programado">("todas");
+  const [filtro, setFiltro] = React.useState<"todas" | "revision" | "haciendola" | "completada">("todas");
   const [slidesPub, setSlidesPub] = React.useState<PublicacionRRSS | null>(null);
   const [highlightId, setHighlightId] = React.useState<string | null>(null);
   const [panelId, setPanelId] = React.useState<string | null>(null);
@@ -135,14 +135,14 @@ export function PlanRRSSTable({
   const visibles = React.useMemo(() => {
     if (filtro === "todas") return ordenado;
     if (filtro === "revision") return ordenado.filter((p) => p.estado === "revision");
-    if (filtro === "diseno") return ordenado.filter((p) => p.estado === "diseno");
-    if (filtro === "programado") return ordenado.filter((p) => p.estado === "programado");
+    if (filtro === "haciendola") return ordenado.filter((p) => p.estado === "haciendola");
+    if (filtro === "completada") return ordenado.filter((p) => p.estado === "completada");
     return ordenado;
   }, [ordenado, filtro]);
 
   const stats = React.useMemo(() => {
-    const listas = ordenado.filter((p) => p.estado === "listo" || p.estado === "programado").length;
-    const publicadas = ordenado.filter((p) => p.estado === "publicado").length;
+    const listas = ordenado.filter((p) => p.estado === "revision" || p.estado === "completada").length;
+    const publicadas = ordenado.filter((p) => p.estado === "completada").length;
     return { total: ordenado.length, listas, publicadas };
   }, [ordenado]);
 
@@ -168,7 +168,7 @@ export function PlanRRSSTable({
           tipo: ult.tipo,
           formato: ult.formato,
           plataformas: ult.plataformas,
-          estado: "borrador",
+          estado: "activa",
           responsable_diseno_id: ult.responsable_diseno_id ?? null,
           responsable_copy_id: ult.responsable_copy_id ?? null,
         }
@@ -177,7 +177,7 @@ export function PlanRRSSTable({
           tipo: "post",
           formato: "copy_imagen",
           plataformas: ["ig"],
-          estado: "borrador",
+          estado: "activa",
         };
     addPublicacion(ctx, base);
     toast.success("Publicación añadida");
@@ -189,7 +189,7 @@ export function PlanRRSSTable({
       <div className="card-soft p-3 text-xs text-muted-foreground bg-muted/30">
         Cada publicación es una pieza independiente que avanza por su propio flujo:{" "}
         <span className="font-medium text-foreground">
-          Borrador → Diseño → Copy → Revisión → Listo → Programado → Publicado.
+          Activa → Haciéndola → Revisión → Completada.
         </span>
       </div>
 
@@ -207,8 +207,8 @@ export function PlanRRSSTable({
           {([
             ["todas", "Todas"],
             ["revision", "Por revisar"],
-            ["diseno", "En diseño"],
-            ["programado", "Programadas"],
+            ["haciendola", "En curso"],
+            ["completada", "Completadas"],
           ] as const).map(([k, lbl]) => (
             <button
               key={k}
@@ -322,7 +322,7 @@ function FilaPub({
   ctx: { tareaId: string; entregaId: string; clienteId: string };
   highlight: boolean;
 }) {
-  const estado = (p.estado ?? "borrador") as Estado;
+  const estado = (p.estado ?? "activa") as Estado;
   const tieneSlides = aplicaSlides(p);
   const tieneContenido =
     !!(p.briefing && p.briefing.trim()) ||
