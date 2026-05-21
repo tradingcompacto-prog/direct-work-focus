@@ -17,6 +17,7 @@ import { useTareaModal } from "@/lib/tarea-modal-context";
 import { ClienteLink, EntregaLink } from "@/components/EntidadLinks";
 import { EstadoVacio } from "@/components/EstadoVacio";
 import { cn } from "@/lib/utils";
+import { VistaHeader } from "@/components/VistaHeader";
 
 export const Route = createFileRoute("/mis-devoluciones")({
   component: MisDevolucionesPage,
@@ -29,12 +30,10 @@ function MisDevolucionesPage() {
   return (
     <TooltipProvider delayDuration={150}>
       <div className="p-6 space-y-4">
-        <header>
-          <h1 className="text-2xl font-bold">Mis devoluciones</h1>
-          <p className="text-sm text-muted-foreground">
-            Tareas que te devolvió un PM o director para corregir antes de enviar de nuevo a revisión.
-          </p>
-        </header>
+        <VistaHeader
+          titulo="Mis devoluciones"
+          leyenda="Tareas que te han sido devueltas para corregir. Las fechas se han reseteado a hoy."
+        />
         <div className="card-soft overflow-hidden">
           <Table>
             <TableHeader>

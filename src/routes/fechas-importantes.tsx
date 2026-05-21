@@ -29,6 +29,7 @@ import {
 } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { VistaHeader } from "@/components/VistaHeader";
 
 export const Route = createFileRoute("/fechas-importantes")({
   component: FechasImportantesPage,
@@ -72,17 +73,15 @@ function FechasImportantesPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <header className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Fechas importantes</h1>
-          <p className="text-sm text-muted-foreground">
-            Efemérides, festivos, lanzamientos y campañas. Globales o por cliente.
-          </p>
-        </div>
-        <Button onClick={() => { setEditing(null); setOpenDialog(true); }}>
-          <Plus className="h-4 w-4 mr-1" /> Añadir fecha
-        </Button>
-      </header>
+      <VistaHeader
+        titulo="Fechas importantes"
+        leyenda="Efemérides, festivos, lanzamientos y campañas. Pueden ser globales o de un cliente concreto."
+        acciones={
+          <Button onClick={() => { setEditing(null); setOpenDialog(true); }}>
+            <Plus className="h-4 w-4 mr-1" /> Añadir fecha
+          </Button>
+        }
+      />
 
       <div className="flex flex-wrap gap-2">
         <div className="inline-flex rounded-md border border-border overflow-hidden text-sm">

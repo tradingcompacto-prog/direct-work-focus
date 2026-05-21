@@ -29,6 +29,7 @@ import { DevolverTareaDialog } from "@/components/DevolverTareaDialog";
 import { completarTarea } from "@/lib/tareas-store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { VistaHeader } from "@/components/VistaHeader";
 
 export const Route = createFileRoute("/mis-revisiones")({
   component: MisRevisionesPage,
@@ -68,15 +69,11 @@ function MisRevisionesPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <header className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold">Mis revisiones</h1>
-          <p className="text-sm text-muted-foreground">
-            Tareas en revisión en tus proyectos. Apruébalas o devuélvelas al responsable.
-          </p>
-        </div>
-        <AlcanceFilter value={alcance} onChange={setAlcance} hideTodo={true} />
-      </header>
+      <VistaHeader
+        titulo="Mis revisiones"
+        leyenda="Tareas en revisión de los proyectos donde soy Project Manager."
+        acciones={<AlcanceFilter value={alcance} onChange={setAlcance} hideTodo={true} />}
+      />
       <div className="card-soft overflow-hidden">
         <Table>
           <TableHeader>

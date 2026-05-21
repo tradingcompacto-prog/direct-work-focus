@@ -29,6 +29,7 @@ import {
 import { ESTADO_VAC_COLOR, ESTADO_VAC_LABEL, type Vacacion } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { VistaHeader } from "@/components/VistaHeader";
 
 export const Route = createFileRoute("/vacaciones")({
   component: VacacionesPage,
@@ -68,17 +69,15 @@ function VacacionesPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <header className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Vacaciones</h1>
-          <p className="text-sm text-muted-foreground">
-            Solicita tus días libres y revisa el estado de tus solicitudes.
-          </p>
-        </div>
-        <Button onClick={() => setOpenSolicitar(true)}>
-          <Plus className="h-4 w-4 mr-1" /> Solicitar vacaciones
-        </Button>
-      </header>
+      <VistaHeader
+        titulo="Vacaciones"
+        leyenda="Solicitar vacaciones y, si eres director, aprobar las del equipo."
+        acciones={
+          <Button onClick={() => setOpenSolicitar(true)}>
+            <Plus className="h-4 w-4 mr-1" /> Solicitar vacaciones
+          </Button>
+        }
+      />
 
       <Tabs defaultValue="mias">
         <TabsList>
