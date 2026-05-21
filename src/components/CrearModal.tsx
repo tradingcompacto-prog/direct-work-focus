@@ -30,6 +30,8 @@ import {
   useEntregas,
   useTareas,
   useCategoriaPorTarea,
+  useResponsablesPermitidos,
+  useEquipo,
 } from "@/lib/queries";
 import { supabase } from "@/lib/supabase";
 import { invalidateKeys } from "@/lib/qc";
@@ -67,6 +69,7 @@ export function CrearModal() {
   const [categoriaTarea, setCategoriaTarea] = React.useState<CategoriaEntrega | "">("");
   const [titulo, setTitulo] = React.useState("");
   const [responsableId, setResponsableId] = React.useState("");
+  const [colaboradoresIds, setColaboradoresIds] = React.useState<string[]>([]);
   const [fechaInicio, setFechaInicio] = React.useState<string>("");
   const [fechaFin, setFechaFin] = React.useState<string>("");
   const [usarRango, setUsarRango] = React.useState(false);
@@ -94,6 +97,7 @@ export function CrearModal() {
     setCategoriaTarea("");
     setTitulo("");
     setResponsableId("");
+    setColaboradoresIds([]);
     setFechaInicio("");
     setFechaFin("");
     setUsarRango(false);
@@ -138,6 +142,24 @@ export function CrearModal() {
 
   // Detectar contexto RRSS: la categoría elegida es redes_sociales.
   const esRRSS = tipo === "tarea" && categoriaTarea === "redes_sociales";
+
+  // Restringir responsable a PMs del cliente + directores
+  const responsablesPermitidos = useResponsablesPermitidos(clienteId);
+  const { data: equipoCompleto = [] } = useEquipo();
+
+  // Default responsable cuando cambia la lista de permitidos
+  React.useEffect(() => {
+    if (tipo !== "tarea") return;
+    if (responsablesPermitidos.length === 0) {
+      setResponsableId("");
+      return;
+    }
+    setResponsableId((prev) => {
+      if (prev && responsablesPermitidos.some((m) => m.id === prev)) return prev;
+      if (user && responsablesPermitidos.some((m) => m.id === user.id)) return user.id;
+      return responsablesPermitidos[0].id;
+    });
+  }, [responsablesPermitidos, tipo, user]);
 
   if (!tipo) return null;
   // Bloqueo defensivo: solo directores pueden crear clientes.
@@ -261,13 +283,14 @@ export function CrearModal() {
           }));
           const { error: e2 } = await supabase.from("publicaciones_rrss").insert(filas);
           if (e2) throw e2;
+          await insertColaboradores(t!.id, colaboradoresIds);
           invalidateKeys(["tareas"], ["mis-tareas"], ["plan-rrss", t!.id]);
           toast.success(`Plan creado con ${numPubs} publicaciones. Configúralas desde la tarea.`);
           cerrar();
           abrirTareaModal(t!.id);
           return;
         } else {
-          const { error } = await supabase.from("tareas").insert({
+          const { data: t, error } = await supabase.from("tareas").insert({
             titulo,
             descripcion: descripcion || null,
             cliente_id: clienteId,
@@ -280,8 +303,9 @@ export function CrearModal() {
             fecha_inicio: inicio,
             fecha_fin_min: fin,
             fecha_fin_max: fin,
-          });
+          }).select("id").single();
           if (error) throw error;
+          await insertColaboradores(t!.id as string, colaboradoresIds);
           invalidateKeys(["tareas"], ["mis-tareas"]);
           toast.success("Tarea creada");
         }
@@ -446,8 +470,37 @@ export function CrearModal() {
               </Field>
               {tipo === "tarea" && (
                 <>
-                  <Field label="Responsable">
-                    <PersonaSelect value={responsableId} onChange={setResponsableId} />
+                  <Field label="Responsable (PM supervisor)">
+                    {clienteId ? (
+                      responsablesPermitidos.length === 0 ? (
+                        <p className="text-xs text-amber-700">
+                          Este cliente no tiene PM asignado. Asígnalo desde la ficha del cliente.
+                        </p>
+                      ) : (
+                        <PersonaPicker
+                          value={responsableId}
+                          onChange={setResponsableId}
+                          candidatos={responsablesPermitidos}
+                          placeholder="Selecciona responsable"
+                        />
+                      )
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Elige cliente primero</p>
+                    )}
+                  </Field>
+                  <Field label="Colaboradores (ejecutores)">
+                    <ColaboradoresMultiSelect
+                      equipo={equipoCompleto.filter((m) => m.activo)}
+                      seleccionados={colaboradoresIds}
+                      onToggle={(id) =>
+                        setColaboradoresIds((prev) =>
+                          prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+                        )
+                      }
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Quienes realmente ejecutan la tarea. Opcional.
+                    </p>
                   </Field>
                   {esRRSS && (
                     <RRSSDefaultsBloque
@@ -614,6 +667,53 @@ function enDiasISO(n: number) {
 
 function nombreMes() {
   return new Date().toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+}
+
+async function insertColaboradores(tareaId: string, userIds: string[]) {
+  if (!userIds.length) return;
+  const filas = userIds.map((uid) => ({ tarea_id: tareaId, user_id: uid }));
+  const { error } = await supabase.from("tarea_colaboradores").insert(filas);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("[insertColaboradores]", error);
+  }
+  invalidateKeys(["colaboradores", tareaId], ["colaboradores"], ["mis-tareas"]);
+}
+
+function ColaboradoresMultiSelect({
+  equipo,
+  seleccionados,
+  onToggle,
+}: {
+  equipo: Array<{ id: string; nombre: string; iniciales: string }>;
+  seleccionados: string[];
+  onToggle: (id: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5 rounded-md border border-border p-2 max-h-40 overflow-auto">
+      {equipo.length === 0 && (
+        <span className="text-xs text-muted-foreground">Sin miembros</span>
+      )}
+      {equipo.map((m) => {
+        const on = seleccionados.includes(m.id);
+        return (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => onToggle(m.id)}
+            className={cn(
+              "inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs transition",
+              on
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-background border-border hover:bg-muted",
+            )}
+          >
+            {m.nombre}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function distribuirFechas(
