@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useMemo } from "react";
+import { Link } from "@tanstack/react-router";
 import { addDays, differenceInDays, format, isSameDay, parseISO, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { useMisTareas, useTareas, useMisRevisiones } from "@/lib/queries";
