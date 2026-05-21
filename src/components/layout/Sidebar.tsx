@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMisTareas, useMisEntregas, useTareas, useMisPublicacionesComoTareas } from "@/lib/queries";
+import { useVacacionesPorAprobar } from "@/lib/vacaciones-store";
+import { Plane } from "lucide-react";
 import { urgenciaTarea } from "@/lib/fechas";
 import { usePrefSidebarCollapsed } from "@/lib/preferencias";
 import { useCrearModal } from "@/lib/crear-modal-context";
@@ -101,6 +103,7 @@ function construirSecciones(caps: ReturnType<typeof useUserCaps>): SectionDef[] 
       { to: "/equipo/carga", label: "Carga", icon: Map, atajo: "G C" },
       { to: "/equipo/calendario", label: "Calendario campañas", icon: CalendarRange },
       { to: "/equipo/fechas", label: "Fechas importantes", icon: Sparkles },
+      { to: "/vacaciones", label: "Vacaciones", icon: Plane },
     ],
   },
   {
@@ -108,8 +111,8 @@ function construirSecciones(caps: ReturnType<typeof useUserCaps>): SectionDef[] 
     icon: Building2,
     visibleSi: (c) => c.isPM || c.isDirector,
     items: [
-      { to: "/clientes/tarjetas", label: "Tarjetas", icon: Building2, atajo: "G L" },
-      { to: "/clientes/tabla", label: "Tabla", icon: Table2 },
+      { to: "/clientes/tabla", label: "Clientes", icon: Building2, atajo: "G L" },
+      { to: "/fechas-importantes", label: "Fechas importantes", icon: Sparkles },
     ],
   },
   {
@@ -134,6 +137,7 @@ export function Sidebar() {
   const { data: misE = [] } = useMisEntregas();
   const { data: todasT = [] } = useTareas();
   const { data: misPubs = [] } = useMisPublicacionesComoTareas();
+  const { data: vacPend = [] } = useVacacionesPorAprobar();
   const badges: Record<string, { n: number; tone?: "rojo" | "alerta" }> = React.useMemo(() => {
     const misActivas = misT.filter((t) => t.estado !== "completada");
     const pubsActivas = misPubs.filter((p) => p.estado !== "completada");
@@ -164,8 +168,11 @@ export function Sidebar() {
         tone: caps.devolucionesCount > 0 ? "rojo" : undefined,
       },
       "/brujula": { n: vencidasGlobal, tone: vencidasGlobal > 0 ? "rojo" : undefined },
+      "/vacaciones": caps.isDirector
+        ? { n: vacPend.length, tone: vacPend.length > 0 ? "alerta" : undefined }
+        : { n: 0 },
     };
-  }, [misT, misE, todasT, misPubs, caps.devolucionesCount]);
+  }, [misT, misE, todasT, misPubs, caps.devolucionesCount, caps.isDirector, vacPend]);
   const visibleSecciones = React.useMemo(() => construirSecciones(caps), [caps]);
 
   return (
@@ -210,7 +217,7 @@ export function Sidebar() {
                   Nuevo proyecto
                 </DropdownMenuItem>
               )}
-              {(esPm || esDirector) && (
+              {esDirector && (
                 <DropdownMenuItem onSelect={() => abrir("cliente")}>
                   Nuevo cliente
                 </DropdownMenuItem>
