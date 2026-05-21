@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth, type AppRole } from "@/lib/auth";
@@ -300,13 +301,36 @@ export const useMisTareas = () => {
     queryKey: ["mis-tareas", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
+      if (!user) return [];
+      const respPromise = supabase
         .from("tareas")
         .select("*")
-        .eq("responsable_id", user!.id)
-        .order("fecha_fin_max", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as Tarea[];
+        .eq("responsable_id", user.id);
+      const colabPromise = supabase
+        .from("tarea_colaboradores")
+        .select("tarea_id")
+        .eq("user_id", user.id);
+      const [respRes, colabRes] = await Promise.all([respPromise, colabPromise]);
+      if (respRes.error) throw respRes.error;
+      if (colabRes.error) throw colabRes.error;
+      const tareasResp = (respRes.data ?? []) as Tarea[];
+      const tareaIdsColab = ((colabRes.data ?? []) as { tarea_id: string }[]).map(
+        (r) => r.tarea_id,
+      );
+      const yaIds = new Set(tareasResp.map((t) => t.id));
+      const idsAFetch = tareaIdsColab.filter((id) => !yaIds.has(id));
+      let tareasColab: Tarea[] = [];
+      if (idsAFetch.length > 0) {
+        const { data, error } = await supabase
+          .from("tareas")
+          .select("*")
+          .in("id", idsAFetch);
+        if (error) throw error;
+        tareasColab = (data ?? []) as Tarea[];
+      }
+      return [...tareasResp, ...tareasColab].sort((a, b) =>
+        (a.fecha_fin_max ?? "").localeCompare(b.fecha_fin_max ?? ""),
+      );
     },
   });
 };
