@@ -13,6 +13,11 @@ interface Props {
   excludeIds?: string[];
   placeholder?: string;
   triggerVariant?: "inline" | "add";
+  /**
+   * Si se pasa, restringe la lista a estos miembros (PMs+directores, etc.).
+   * Si se omite, se usa el equipo completo (comportamiento por defecto).
+   */
+  candidatos?: Array<{ id: string; nombre: string; iniciales?: string; activo?: boolean }>;
 }
 
 export function PersonaPicker({
@@ -21,6 +26,7 @@ export function PersonaPicker({
   excludeIds = [],
   placeholder = "Selecciona…",
   triggerVariant = "inline",
+  candidatos,
 }: Props) {
   const { data: equipo = [] } = useEquipo();
   const [open, setOpen] = React.useState(false);
@@ -28,13 +34,19 @@ export function PersonaPicker({
   const current = value ? miembroPorId(value) : undefined;
   const filtrados = React.useMemo(() => {
     const ex = new Set(excludeIds);
-    return equipo.filter(
+    const base = (candidatos ?? equipo) as Array<{
+      id: string;
+      nombre: string;
+      iniciales?: string;
+      activo?: boolean;
+    }>;
+    return base.filter(
       (m) =>
-        m.activo &&
+        (m.activo ?? true) &&
         !ex.has(m.id) &&
         (!q.trim() || m.nombre.toLowerCase().includes(q.toLowerCase())),
     );
-  }, [equipo, excludeIds, q]);
+  }, [equipo, candidatos, excludeIds, q]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -97,7 +109,7 @@ export function PersonaPicker({
             >
               <Avatar className="h-6 w-6">
                 <AvatarFallback className="text-[10px] bg-secondary">
-                  {m.iniciales}
+                  {m.iniciales ?? m.nombre.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <span className="flex-1 truncate">{m.nombre}</span>
