@@ -14,9 +14,12 @@ import { es } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { ChevronLeft, ChevronRight, Sparkles, Plane } from "lucide-react";
-import { FECHAS_IMPORTANTES_MOCK } from "@/lib/mock-fechas-importantes";
 import { nombrePorId } from "@/lib/equipo";
 import { cn } from "@/lib/utils";
+import { useFechasImportantes } from "@/lib/fechas-importantes-store";
+import { useVacacionesAprobadas } from "@/lib/vacaciones-store";
+import { useAuth } from "@/lib/auth";
+import { TIPO_FECHA_COLOR } from "@/types/database";
 
 type Capa = "fechas" | "vacaciones";
 
@@ -30,29 +33,51 @@ export function EquipoFechas() {
     vacaciones: true,
   });
   const toggle = (c: Capa) => setCapas((s) => ({ ...s, [c]: !s[c] }));
+  const { data: fechas = [] } = useFechasImportantes();
+  const { data: vacAprobadas = [] } = useVacacionesAprobadas();
+  const { user } = useAuth();
 
   const inicio = startOfWeek(startOfMonth(mes), { weekStartsOn: 1 });
   const dias = Array.from({ length: 42 }, (_, i) => addDays(inicio, i));
   const hoy = new Date();
 
-  type Evento = { id: string; tipo: Capa; label: string };
+  type Evento = { id: string; tipo: Capa; label: string; cls: string; mio?: boolean };
   const porDia = React.useMemo(() => {
     const m = new Map<string, Evento[]>();
-    for (const f of FECHAS_IMPORTANTES_MOCK) {
+    for (const f of fechas) {
       const ini = parseISO(f.fecha_inicio);
-      const fin = parseISO(f.fecha_fin);
-      const tipo: Capa = f.tipo === "vacaciones" ? "vacaciones" : "fechas";
-      const label =
-        f.tipo === "vacaciones" ? `${nombrePorId(f.persona_id ?? "")} fuera` : f.titulo;
+      const fin = parseISO(f.fecha_fin ?? f.fecha_inicio);
       for (let d = new Date(ini); d <= fin; d = addDays(d, 1)) {
         const k = format(d, "yyyy-MM-dd");
         const arr = m.get(k) ?? [];
-        arr.push({ id: f.id, tipo, label });
+        arr.push({
+          id: f.id,
+          tipo: "fechas",
+          label: f.titulo,
+          cls: TIPO_FECHA_COLOR[f.tipo] ?? "bg-amber-100 text-amber-800",
+        });
+        m.set(k, arr);
+      }
+    }
+    for (const v of vacAprobadas) {
+      const ini = parseISO(v.fecha_inicio);
+      const fin = parseISO(v.fecha_fin);
+      const mio = !!user && v.user_id === user.id;
+      for (let d = new Date(ini); d <= fin; d = addDays(d, 1)) {
+        const k = format(d, "yyyy-MM-dd");
+        const arr = m.get(k) ?? [];
+        arr.push({
+          id: v.id,
+          tipo: "vacaciones",
+          label: `Vacaciones ${nombrePorId(v.user_id) ?? ""}`.trim(),
+          cls: "bg-slate-200 text-slate-800 border border-slate-300",
+          mio,
+        });
         m.set(k, arr);
       }
     }
     return m;
-  }, []);
+  }, [fechas, vacAprobadas, user]);
 
   return (
     <div className="space-y-3">
@@ -119,17 +144,15 @@ export function EquipoFechas() {
                 <div className="space-y-1">
                   {eventos.map((ev) => {
                     if (!capas[ev.tipo]) return null;
-                    const cls =
-                      ev.tipo === "fechas"
-                        ? "bg-amber-100 text-amber-800"
-                        : "bg-emerald-100 text-emerald-800";
                     return (
                       <span
                         key={ev.id + k}
                         className={cn(
                           "block px-1.5 py-0.5 rounded text-[10px] truncate",
-                          cls,
+                          ev.cls,
+                          ev.mio && "ring-1 ring-offset-1 ring-blue-400",
                         )}
+                        title={ev.label}
                       >
                         {ev.label}
                       </span>
