@@ -53,6 +53,7 @@ import {
   updatePublicacion,
   setPublicacionCopy,
   setPublicacionResponsable,
+  setPublicacionEstado,
 } from "@/lib/plan-rrss-store";
 import { useDataset } from "@/lib/queries";
 import {
@@ -77,7 +78,7 @@ const PLATAFORMAS: Array<{ value: Plat; label: string; Icon: React.ComponentType
 ];
 const TIPOS: Array<PublicacionRRSS["tipo"]> = ["post", "reel", "carrusel", "story"];
 const FORMATOS: Array<PublicacionRRSS["formato"]> = ["solo_copy", "copy_imagen", "solo_imagen", "slide"];
-const ESTADOS: Estado[] = ["borrador", "diseno", "copy", "revision", "listo", "programado", "publicado"];
+const ESTADOS: Estado[] = ["activa", "haciendola", "pausada", "revision", "completada"];
 
 function aplicaSlides(p: PublicacionRRSS) {
   return p.tipo === "carrusel" || p.formato === "slide";
@@ -159,6 +160,26 @@ export function PublicacionPanel({ publicacionId, onOpenChange, onChangeId }: Pr
               >
                 <TableIcon className="h-3.5 w-3.5 mr-1" /> Ver tabla
               </Button>
+              {(pub.estado === "activa" || pub.estado === "haciendola") && (
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    await setPublicacionEstado(pub.id, "revision");
+                    const restantes = (siblings ?? []).filter(
+                      (s) => s.id !== pub.id && s.estado !== "revision" && s.estado !== "completada",
+                    ).length;
+                    if (restantes === 0) {
+                      toast.success("Plan completo en revisión", {
+                        description: "El PM lo verá en su cola.",
+                      });
+                    } else {
+                      toast.success("Marcada para revisión");
+                    }
+                  }}
+                >
+                  ✓ Marcar para revisión
+                </Button>
+              )}
               <Button
                 size="icon"
                 variant="ghost"
@@ -231,7 +252,7 @@ export function PublicacionPanel({ publicacionId, onOpenChange, onChangeId }: Pr
                   <PublicacionComentarios publicacionId={pub.id} />
                 </Seccion>
 
-                {pub.estado === "publicado" && (
+                {pub.estado === "completada" && (
                   <Seccion
                     id="metricas"
                     titulo="Métricas"
@@ -266,7 +287,7 @@ function Seccion({
 }
 
 function PropiedadesRapidas({ pub }: { pub: PublicacionRRSS }) {
-  const estado = (pub.estado ?? "borrador") as Estado;
+  const estado = (pub.estado ?? "activa") as Estado;
   const guardar = (patch: Partial<PublicacionRRSS>) => {
     updatePublicacion("", pub.id, patch);
   };
