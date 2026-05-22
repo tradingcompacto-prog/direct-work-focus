@@ -46,6 +46,9 @@ import type { CategoriaEntrega, PublicacionRRSS } from "@/types/database";
 import { TIPO_LABEL, FORMATO_LABEL } from "@/types/database";
 import { PersonaPicker } from "@/components/PersonaPicker";
 import { useUserCaps } from "@/lib/user-caps";
+import { AvisoVacaciones } from "@/components/AvisoVacaciones";
+import { useVacacionConflicto, useVacacionConflictoBatch } from "@/lib/vacaciones-store";
+import { nombrePorId } from "@/lib/equipo";
 
 const TITLES: Record<string, string> = {
   tarea: "Nueva tarea",
@@ -332,6 +335,11 @@ export function CrearModal() {
         )
       : null;
 
+  // Conflictos de vacaciones (solo si hay fecha y es tarea)
+  const fechaParaConflicto = tipo === "tarea" ? (fechaFin || fechaInicio || "") : "";
+  const conflictoResp = useVacacionConflicto(responsableId || null, fechaParaConflicto || null);
+  const conflictosColab = useVacacionConflictoBatch(colaboradoresIds, fechaParaConflicto || null);
+
   return (
     <Dialog open onOpenChange={(o) => (o ? null : cerrar())}>
       <DialogContent className="max-w-lg">
@@ -482,6 +490,7 @@ export function CrearModal() {
                           onChange={setResponsableId}
                           candidatos={responsablesPermitidos}
                           placeholder="Selecciona responsable"
+                          fechaRelevante={fechaParaConflicto || undefined}
                         />
                       )
                     ) : (
