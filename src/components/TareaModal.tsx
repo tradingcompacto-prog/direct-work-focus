@@ -20,6 +20,8 @@ import {
 } from "@/lib/queries";
 import { miembroPorId, nombrePorId } from "@/lib/equipo";
 import { PersonaPicker } from "@/components/PersonaPicker";
+import { AvisoVacaciones } from "@/components/AvisoVacaciones";
+import { useVacacionConflicto, useVacacionConflictoBatch } from "@/lib/vacaciones-store";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -319,8 +321,12 @@ export function TareaModal() {
             <Section title="Asignación">
               <div className="text-sm flex gap-2 items-center">
                 <span className="text-muted-foreground w-20">Responsable:</span>
-                <ResponsablePickerRestringido tarea={tarea} />
+                <ResponsablePickerRestringido tarea={tarea} fechaRelevante={fFinMax} />
               </div>
+              <ConflictoResponsable
+                responsableId={tarea.responsable_id}
+                fecha={fFinMax}
+              />
             </Section>
 
             <Section title="Colaboradores">
@@ -353,8 +359,13 @@ export function TareaModal() {
                   triggerVariant="add"
                   excludeIds={[tarea.responsable_id, ...colaboradores]}
                   onChange={(id) => addColaborador(tarea.id, id)}
+                  fechaRelevante={fFinMax}
                 />
               </div>
+              <ConflictoColaboradores
+                userIds={colaboradores}
+                fecha={fFinMax}
+              />
             </Section>
 
             <Section title="Fechas">
@@ -739,7 +750,13 @@ function EnlaceForm({
   );
 }
 
-function ResponsablePickerRestringido({ tarea }: { tarea: { id: string; cliente_id: string; responsable_id: string } }) {
+function ResponsablePickerRestringido({
+  tarea,
+  fechaRelevante,
+}: {
+  tarea: { id: string; cliente_id: string; responsable_id: string };
+  fechaRelevante?: string | null;
+}) {
   const candidatos = useResponsablesPermitidos(tarea.cliente_id);
   if (candidatos.length === 0) {
     return (
@@ -753,6 +770,49 @@ function ResponsablePickerRestringido({ tarea }: { tarea: { id: string; cliente_
       value={tarea.responsable_id}
       onChange={(id) => setResponsable(tarea.id, id)}
       candidatos={candidatos}
+      fechaRelevante={fechaRelevante ?? undefined}
+    />
+  );
+}
+
+function ConflictoResponsable({
+  responsableId,
+  fecha,
+}: {
+  responsableId?: string | null;
+  fecha?: string | null;
+}) {
+  const v = useVacacionConflicto(responsableId, fecha);
+  if (!v) return null;
+  return (
+    <AvisoVacaciones
+      conflictos={[
+        {
+          persona: { id: v.user_id, nombre: nombrePorId(v.user_id) },
+          vacacion: v,
+          rol: "responsable",
+        },
+      ]}
+    />
+  );
+}
+
+function ConflictoColaboradores({
+  userIds,
+  fecha,
+}: {
+  userIds: string[];
+  fecha?: string | null;
+}) {
+  const map = useVacacionConflictoBatch(userIds, fecha);
+  if (map.size === 0) return null;
+  return (
+    <AvisoVacaciones
+      conflictos={Array.from(map.entries()).map(([uid, v]) => ({
+        persona: { id: uid, nombre: nombrePorId(uid) },
+        vacacion: v,
+        rol: "colaborador",
+      }))}
     />
   );
 }

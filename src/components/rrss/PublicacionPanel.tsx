@@ -45,6 +45,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PersonaPicker } from "@/components/PersonaPicker";
+import { AvisoVacaciones } from "@/components/AvisoVacaciones";
+import { useVacacionConflicto } from "@/lib/vacaciones-store";
+import { nombrePorId } from "@/lib/equipo";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -193,6 +196,7 @@ export function PublicacionPanel({ publicacionId, onOpenChange, onChangeId }: Pr
             {/* Cuerpo scrollable */}
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
               <PropiedadesRapidas pub={pub} />
+              <ConflictosPub pub={pub} />
 
               <Accordion
                 type="multiple"
@@ -409,6 +413,7 @@ function PropiedadesRapidas({ pub }: { pub: PublicacionRRSS }) {
           value={pub.responsable_diseno_id ?? undefined}
           onChange={(id) => setPublicacionResponsable(pub.id, "diseno", id)}
           placeholder="—"
+          fechaRelevante={pub.fecha}
         />
       </div>
       <div>
@@ -417,10 +422,37 @@ function PropiedadesRapidas({ pub }: { pub: PublicacionRRSS }) {
           value={pub.responsable_copy_id ?? undefined}
           onChange={(id) => setPublicacionResponsable(pub.id, "copy", id)}
           placeholder="—"
+          fechaRelevante={pub.fecha}
         />
       </div>
     </div>
   );
+}
+
+function ConflictosPub({ pub }: { pub: PublicacionRRSS }) {
+  const cDiseno = useVacacionConflicto(pub.responsable_diseno_id ?? null, pub.fecha);
+  const cCopy = useVacacionConflicto(pub.responsable_copy_id ?? null, pub.fecha);
+  const items: Array<{
+    persona: { id: string; nombre: string };
+    vacacion: { fecha_inicio: string; fecha_fin: string };
+    rol?: string;
+  }> = [];
+  if (cDiseno) {
+    items.push({
+      persona: { id: cDiseno.user_id, nombre: nombrePorId(cDiseno.user_id) },
+      vacacion: cDiseno,
+      rol: "Diseño",
+    });
+  }
+  if (cCopy) {
+    items.push({
+      persona: { id: cCopy.user_id, nombre: nombrePorId(cCopy.user_id) },
+      vacacion: cCopy,
+      rol: "Copy",
+    });
+  }
+  if (items.length === 0) return null;
+  return <AvisoVacaciones conflictos={items} />;
 }
 
 function BriefingEditor({ pub }: { pub: PublicacionRRSS }) {
