@@ -45,6 +45,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PersonaPicker } from "@/components/PersonaPicker";
+import { AvisoVacaciones } from "@/components/AvisoVacaciones";
+import { useVacacionConflicto } from "@/lib/vacaciones-store";
+import { nombrePorId } from "@/lib/equipo";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -193,6 +196,7 @@ export function PublicacionPanel({ publicacionId, onOpenChange, onChangeId }: Pr
             {/* Cuerpo scrollable */}
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
               <PropiedadesRapidas pub={pub} />
+              <ConflictosPub pub={pub} />
 
               <Accordion
                 type="multiple"
