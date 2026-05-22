@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Check, ChevronDown, Plus } from "lucide-react";
 import { useEquipo } from "@/lib/queries";
+import { useVacacionesAprobadas, fechaEnRango } from "@/lib/vacaciones-store";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,8 @@ interface Props {
    * Si se omite, se usa el equipo completo (comportamiento por defecto).
    */
   candidatos?: Array<{ id: string; nombre: string; iniciales?: string; activo?: boolean }>;
+  /** Si está definida, marca con 🌴 a quienes estén de vacaciones aprobadas en esa fecha. */
+  fechaRelevante?: string | null;
 }
 
 export function PersonaPicker({
@@ -27,11 +30,22 @@ export function PersonaPicker({
   placeholder = "Selecciona…",
   triggerVariant = "inline",
   candidatos,
+  fechaRelevante,
 }: Props) {
   const { data: equipo = [] } = useEquipo();
+  const { data: aprobadas = [] } = useVacacionesAprobadas();
   const [open, setOpen] = React.useState(false);
   const [q, setQ] = React.useState("");
   const current = value ? miembroPorId(value) : undefined;
+  const estaDeVacaciones = React.useCallback(
+    (uid: string) => {
+      if (!fechaRelevante) return false;
+      return aprobadas.some(
+        (v) => v.user_id === uid && fechaEnRango(fechaRelevante, v.fecha_inicio, v.fecha_fin),
+      );
+    },
+    [aprobadas, fechaRelevante],
+  );
   const filtrados = React.useMemo(() => {
     const ex = new Set(excludeIds);
     const base = (candidatos ?? equipo) as Array<{
@@ -113,6 +127,9 @@ export function PersonaPicker({
                 </AvatarFallback>
               </Avatar>
               <span className="flex-1 truncate">{m.nombre}</span>
+              {estaDeVacaciones(m.id) && (
+                <span className="text-base" title="De vacaciones en esta fecha">🌴</span>
+              )}
               {value === m.id && <Check className="h-3.5 w-3.5 text-emerald-600" />}
             </button>
           ))}
