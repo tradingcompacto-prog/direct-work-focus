@@ -2,7 +2,7 @@ import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Plus, Check, X, AlertCircle } from "lucide-react";
+import { Plus, Check, X, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -24,7 +24,10 @@ import {
   aprobarVacacion,
   cancelarVacacion,
   diasEntre,
+  useConflictosTareasVacaciones,
 } from "@/lib/vacaciones-store";
+import { useTareaModal } from "@/lib/tarea-modal-context";
+import { useDataset } from "@/lib/queries";
 import { ESTADO_VAC_COLOR, ESTADO_VAC_LABEL, type Vacacion } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -38,6 +41,7 @@ function VacacionesPage() {
   const caps = useUserCaps();
   const { data: mias = [] } = useMisVacaciones();
   const { data: porAprobar = [] } = useVacacionesPorAprobar();
+  const conflictos = useConflictosTareasVacaciones();
 
   const [openSolicitar, setOpenSolicitar] = React.useState(false);
   const [rechazarId, setRechazarId] = React.useState<string | null>(null);
@@ -77,14 +81,24 @@ function VacacionesPage() {
         <TabsList>
           <TabsTrigger value="mias">Mis vacaciones</TabsTrigger>
           {caps.isDirector && (
-            <TabsTrigger value="por-aprobar">
-              Por aprobar
-              {porAprobar.length > 0 && (
-                <span className="ml-1.5 text-[10px] tabular-nums font-semibold rounded px-1.5 py-0.5 bg-amber-100 text-amber-700">
-                  {porAprobar.length}
-                </span>
-              )}
-            </TabsTrigger>
+            <>
+              <TabsTrigger value="por-aprobar">
+                Por aprobar
+                {porAprobar.length > 0 && (
+                  <span className="ml-1.5 text-[10px] tabular-nums font-semibold rounded px-1.5 py-0.5 bg-amber-100 text-amber-700">
+                    {porAprobar.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="conflictos">
+                Conflictos detectados
+                {conflictos.length > 0 && (
+                  <span className="ml-1.5 text-[10px] tabular-nums font-semibold rounded px-1.5 py-0.5 bg-red-100 text-red-700">
+                    {conflictos.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            </>
           )}
         </TabsList>
 
@@ -175,6 +189,11 @@ function VacacionesPage() {
             </div>
           </TabsContent>
         )}
+        {caps.isDirector && (
+          <TabsContent value="conflictos" className="mt-4">
+            <ConflictosTab />
+          </TabsContent>
+        )}
       </Tabs>
 
       <SolicitarVacacionesDialog open={openSolicitar} onOpenChange={setOpenSolicitar} />
@@ -183,6 +202,68 @@ function VacacionesPage() {
         onOpenChange={(v) => { if (!v) setRechazarId(null); }}
         vacacionId={rechazarId}
       />
+    </div>
+  );
+}
+
+function ConflictosTab() {
+  const conflictos = useConflictosTareasVacaciones();
+  const ds = useDataset();
+  const { abrir: abrirTarea } = useTareaModal();
+
+  if (conflictos.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground text-sm">
+        <CheckCircle className="h-8 w-8 mx-auto mb-2 text-emerald-500" />
+        No hay conflictos detectados entre tareas y vacaciones aprobadas.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        Tareas activas cuya fecha límite cae dentro de un periodo de vacaciones aprobadas.
+        Considera reasignar o cambiar fechas.
+      </p>
+      <div className="card-soft overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Tarea</TableHead>
+              <TableHead>Cliente</TableHead>
+              <TableHead>Persona</TableHead>
+              <TableHead>Rol</TableHead>
+              <TableHead>Fecha límite</TableHead>
+              <TableHead>Vacaciones</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {conflictos.map((c, i) => (
+              <TableRow key={i}>
+                <TableCell className="font-medium">{c.tarea.titulo}</TableCell>
+                <TableCell>{ds.nombreCliente(c.tarea.cliente_id)}</TableCell>
+                <TableCell>{c.persona.nombre}</TableCell>
+                <TableCell>
+                  <Badge variant="outline">{c.rol}</Badge>
+                </TableCell>
+                <TableCell className="text-sm whitespace-nowrap">
+                  {format(parseISO(c.tarea.fecha_fin_max), "d MMM yyyy", { locale: es })}
+                </TableCell>
+                <TableCell className="text-xs whitespace-nowrap">
+                  {format(parseISO(c.vacacion.fecha_inicio), "d MMM", { locale: es })} – {format(parseISO(c.vacacion.fecha_fin), "d MMM yyyy", { locale: es })}
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button size="sm" variant="ghost" onClick={() => abrirTarea(c.tarea.id)}>
+                    Abrir
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
