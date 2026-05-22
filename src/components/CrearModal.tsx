@@ -617,6 +617,24 @@ export function CrearModal() {
               )}
             </>
           )}
+          {tipo === "tarea" && (conflictoResp || conflictosColab.size > 0) && (
+            <AvisoVacaciones
+              conflictos={[
+                ...(conflictoResp
+                  ? [{
+                      persona: { id: conflictoResp.user_id, nombre: nombrePorId(conflictoResp.user_id) },
+                      vacacion: conflictoResp,
+                      rol: "responsable",
+                    }]
+                  : []),
+                ...Array.from(conflictosColab.entries()).map(([uid, v]) => ({
+                  persona: { id: uid, nombre: nombrePorId(uid) },
+                  vacacion: v,
+                  rol: "colaborador",
+                })),
+              ]}
+            />
+          )}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={cerrar} disabled={enviando}>
               Cancelar
