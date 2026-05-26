@@ -124,7 +124,7 @@ export function FechaImportanteDialog({
         <DialogHeader>
           <DialogTitle>{fecha ? "Editar fecha" : "Nueva fecha importante"}</DialogTitle>
           <DialogDescription>
-            Efemérides, festivos, lanzamientos o campañas. Global o específica de un cliente.
+            Días señalados, festivos, lanzamientos o campañas. Global o específica de un cliente.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
