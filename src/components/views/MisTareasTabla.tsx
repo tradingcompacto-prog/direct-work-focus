@@ -65,7 +65,13 @@ export function MisTareasTabla() {
 
   const baseTareas = React.useMemo(() => {
     if (alcance === "solo-mias") return [...misTareas, ...misPubs];
-    return filtrarPorAlcance(todasTareas, alcance, user?.id, caps.clientesPM);
+    // "todo" / "mis-proyectos" deben ser un superset de "solo mías":
+    // unimos las tareas donde soy colaborador y mis publicaciones RRSS.
+    const ancho = filtrarPorAlcance(todasTareas, alcance, user?.id, caps.clientesPM);
+    const ids = new Set(ancho.map((t) => t.id));
+    const extrasMisTareas = misTareas.filter((t) => !ids.has(t.id));
+    const extrasPubs = misPubs.filter((t) => !ids.has(t.id));
+    return [...ancho, ...extrasMisTareas, ...extrasPubs];
   }, [alcance, misTareas, misPubs, todasTareas, user?.id, caps.clientesPM]);
 
   const tareas = React.useMemo(() => {
