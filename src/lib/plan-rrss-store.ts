@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { PublicacionRRSS } from "@/types/database";
 import { supabase } from "@/lib/supabase";
-import { invalidateKeys } from "@/lib/qc";
+import { invalidateKeys, getQueryClient } from "@/lib/qc";
 import { toast } from "sonner";
 
 // Plan de Contenido RRSS: la tabla `publicaciones_rrss` cuelga de una
