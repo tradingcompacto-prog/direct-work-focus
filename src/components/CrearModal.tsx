@@ -164,6 +164,12 @@ export function CrearModal() {
     });
   }, [responsablesPermitidos, tipo, user]);
 
+  // Detectar contexto RRSS también aquí para que los hooks de conflictos
+  // tengan dependencias estables (deben ir antes de cualquier early return).
+  const fechaParaConflicto = tipo === "tarea" ? (fechaFin || fechaInicio || "") : "";
+  const conflictoResp = useVacacionConflicto(responsableId || null, fechaParaConflicto || null);
+  const conflictosColab = useVacacionConflictoBatch(colaboradoresIds, fechaParaConflicto || null);
+
   if (!tipo) return null;
   // Bloqueo defensivo: solo directores pueden crear clientes.
   if (tipo === "cliente" && !caps.isDirector) {
@@ -334,11 +340,6 @@ export function CrearModal() {
           categoriaPorTarea,
         )
       : null;
-
-  // Conflictos de vacaciones (solo si hay fecha y es tarea)
-  const fechaParaConflicto = tipo === "tarea" ? (fechaFin || fechaInicio || "") : "";
-  const conflictoResp = useVacacionConflicto(responsableId || null, fechaParaConflicto || null);
-  const conflictosColab = useVacacionConflictoBatch(colaboradoresIds, fechaParaConflicto || null);
 
   return (
     <Dialog open onOpenChange={(o) => (o ? null : cerrar())}>
