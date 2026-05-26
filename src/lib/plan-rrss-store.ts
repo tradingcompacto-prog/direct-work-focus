@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { PublicacionRRSS } from "@/types/database";
 import { supabase } from "@/lib/supabase";
-import { invalidateKeys } from "@/lib/qc";
+import { invalidateKeys, getQueryClient } from "@/lib/qc";
 import { toast } from "sonner";
 
 // Plan de Contenido RRSS: la tabla `publicaciones_rrss` cuelga de una
@@ -113,6 +113,21 @@ export function updatePublicacion(
   const row: Record<string, unknown> = { ...patch };
   delete row.id;
   delete row.tarea_id;
+  // Optimistic update: refleja el cambio en la UI inmediatamente
+  // sin esperar al round-trip con Supabase. Evita la sensación de
+  // lentitud y que secciones dependientes (p.ej. Slides cuando
+  // tipo === "carrusel") no aparezcan al instante.
+  const qc = getQueryClient();
+  if (qc) {
+    qc.setQueryData<PublicacionRRSS | null>(["plan-rrss-pub", id], (prev) =>
+      prev ? { ...prev, ...patch } : prev,
+    );
+    const queries = qc.getQueriesData<PublicacionRRSS[]>({ queryKey: ["plan-rrss"] });
+    for (const [key, list] of queries) {
+      if (!Array.isArray(list)) continue;
+      qc.setQueryData<PublicacionRRSS[]>(key, list.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    }
+  }
   supabase
     .from("publicaciones_rrss")
     .update(row)
