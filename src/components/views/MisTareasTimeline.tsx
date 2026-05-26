@@ -58,10 +58,19 @@ export function MisTareasTimeline() {
   const hoy = useMemo(() => startOfDay(new Date()), []);
 
   const base = useMemo(() => {
-    const raw =
-      alcance === "solo-mias"
-        ? [...misTareas, ...misPubs]
-        : filtrarPorAlcance(todasTareas, alcance, user?.id, caps.clientesPM);
+    let raw: typeof misTareas;
+    if (alcance === "solo-mias") {
+      raw = [...misTareas, ...misPubs];
+    } else {
+      // "todo" / "mis-proyectos": parten de todasTareas pero SIEMPRE incluyen
+      // las tareas donde soy colaborador (vienen en misTareas) y mis
+      // publicaciones RRSS — así "todo" es un superset real de "solo mías".
+      const ancho = filtrarPorAlcance(todasTareas, alcance, user?.id, caps.clientesPM);
+      const ids = new Set(ancho.map((t) => t.id));
+      const extrasMisTareas = misTareas.filter((t) => !ids.has(t.id));
+      const extrasPubs = misPubs.filter((t) => !ids.has(t.id));
+      raw = [...ancho, ...extrasMisTareas, ...extrasPubs];
+    }
     // Las vistas de trabajo activo no muestran tareas completadas.
     return raw.filter((t) => t.estado !== "completada");
   }, [alcance, misTareas, misPubs, todasTareas, user?.id, caps.clientesPM]);
