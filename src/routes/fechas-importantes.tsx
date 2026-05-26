@@ -75,7 +75,7 @@ function FechasImportantesPage() {
     <div className="p-6 space-y-4">
       <VistaHeader
         titulo="Fechas importantes"
-        leyenda="Efemérides, festivos, lanzamientos y campañas. Pueden ser globales o de un cliente concreto."
+        leyenda="Días señalados, festivos, lanzamientos y campañas. Pueden ser globales o de un cliente concreto."
         acciones={
           <Button onClick={() => { setEditing(null); setOpenDialog(true); }}>
             <Plus className="h-4 w-4 mr-1" /> Añadir fecha
